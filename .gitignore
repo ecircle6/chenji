@@ -21,6 +21,12 @@ test_*.png
 review_*.png
 mockup_check.png
 
+# 签名密钥：绝不能进版本库。丢了 keystore 就无法给已装的 App 做覆盖升级，
+# 所以要单独备份到网盘/U盘，但不能提交到 git。
+*.jks
+*.keystore
+keystore.properties
+
 # 其他
 .DS_Store
 captures/
