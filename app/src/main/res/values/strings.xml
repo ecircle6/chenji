@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">辰记</string>
+    <string name="widget_label">辰记</string>
+    <string name="widget_description">在桌面看最近的生日与纪念日</string>
 </resources>

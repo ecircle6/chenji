@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavType
@@ -55,10 +56,16 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    BirthAppNav()
+                    // 从小组件的加号进来时直接落到新增页
+                    BirthAppNav(openAdd = intent?.action == ACTION_OPEN_ADD)
                 }
             }
         }
+    }
+
+    companion object {
+        /** 小组件加号的跳转标记。用 action 而不是 extra，否则两个 PendingIntent 会被系统当成同一个 */
+        const val ACTION_OPEN_ADD = "com.birthapp.action.OPEN_ADD"
     }
 
     private fun requestNotificationPermission() {
@@ -90,8 +97,14 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun BirthAppNav() {
+fun BirthAppNav(openAdd: Boolean = false) {
     val navController = rememberNavController()
+
+    // 入口仍然是首页，只是多跳一步到新增页；
+    // 这样从小组件进来后按返回是回到列表，而不是直接退出 App
+    LaunchedEffect(Unit) {
+        if (openAdd) navController.navigate("add")
+    }
 
     NavHost(
         navController = navController,

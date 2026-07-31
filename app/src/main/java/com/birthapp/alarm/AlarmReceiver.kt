@@ -6,6 +6,7 @@ import android.content.Intent
 import com.birthapp.BirthApp
 import com.birthapp.data.EventType
 import com.birthapp.notification.NotificationHelper
+import com.birthapp.widget.WidgetRefresher
 import kotlinx.coroutines.launch
 
 class AlarmReceiver : BroadcastReceiver() {
@@ -43,6 +44,8 @@ class AlarmReceiver : BroadcastReceiver() {
                 val birthday = app.database.birthdayDao().getById(birthdayId) ?: return@launch
                 val scheduler = AlarmScheduler(context, app.database)
                 scheduler.scheduleBirthdayReminder(birthday)
+                // 提醒响过之后倒计时已经翻到下一年，桌面小组件得跟着更新
+                WidgetRefresher.refresh(context)
             } finally {
                 pendingResult.finish()
             }

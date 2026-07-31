@@ -9,9 +9,10 @@ import com.birthapp.data.AppDatabase
 import com.birthapp.data.Birthday
 import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
-import com.birthapp.lunar.SolarDate
 import com.birthapp.util.DateUtils
+import com.birthapp.util.EventCalc
 import com.birthapp.util.ZodiacUtils
+import com.birthapp.widget.WidgetRefresher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -91,6 +92,8 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
                 // 顺手清掉缓存的下次提醒日期，避免详情页显示一个不会到来的日子
                 database.birthdayDao().updateNextReminderDate(id, null)
             }
+            // 暂停的记录不该再占着桌面小组件的位置
+            WidgetRefresher.refresh(getApplication())
         }
     }
 
@@ -101,6 +104,7 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
             scheduler.cancelBirthdayReminder(id)
             database.birthdayDao().deleteById(id)
             _deleted.value = true
+            WidgetRefresher.refresh(getApplication())
         }
     }
 
@@ -109,12 +113,7 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
         val currentYear = today.year
 
         // 下一次事件发生的阳历日期：今年的已经过了就取明年
-        val thisYear = nextEventSolarDate(currentYear)
-        val nextSolar = if (DateUtils.daysUntilDate(thisYear.toLocalDate()) < 0) {
-            nextEventSolarDate(currentYear + 1)
-        } else {
-            thisYear
-        }
+        val nextSolar = EventCalc.nextSolarDate(this, today)
         val countdown = DateUtils.daysUntilDate(nextSolar.toLocalDate())
 
         val primaryDate = if (calendarType == "lunar") {
@@ -184,15 +183,5 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
             notes = notes,
             isActive = isActive
         )
-    }
-
-    private fun Birthday.nextEventSolarDate(year: Int): SolarDate {
-        return if (calendarType == "lunar") {
-            runCatching {
-                LunarCalendar.getNextLunarBirthdayInSolar(birthMonth, birthDay, isLeapMonth, year)
-            }.getOrDefault(SolarDate(year, birthMonth, birthDay))
-        } else {
-            SolarDate(year, birthMonth, birthDay)
-        }
     }
 }

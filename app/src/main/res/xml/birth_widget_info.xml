@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  一个 provider 覆盖两种尺寸：默认摆成 4×2，用户可以缩到 2×2（会自动切成大字单条）。
+
+  minWidth 必须按 4 格给足（桌面网格换算 4 格 ≈ 250dp）。写成 110dp 时
+  launcher 会按 2 格落地，targetCellWidth 只是 Android 12+ 的建议值，压不过 minWidth。
+  minResizeWidth 仍留 110dp，这样用户能一路缩到 2 格。
+  updatePeriodMillis 设 6 小时：倒计时是按天变的，刷太勤只是白耗电。
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_description"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:maxResizeHeight="250dp"
+    android:maxResizeWidth="400dp"
+    android:minHeight="110dp"
+    android:minResizeHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minWidth="250dp"
+    android:previewImage="@mipmap/ic_launcher"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellHeight="2"
+    android:targetCellWidth="4"
+    android:updatePeriodMillis="21600000"
+    android:widgetCategory="home_screen" />

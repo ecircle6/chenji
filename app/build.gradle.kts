@@ -74,4 +74,8 @@ dependencies {
     // Material
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.core:core-ktx:1.15.0")
+
+    // Glance：桌面小组件。写法与 Compose 同源，但运行在系统的 RemoteViews 里，
+    // 所以只能用 Glance 自己的组件，不能直接搬 Compose UI 过去
+    implementation("androidx.glance:glance-appwidget:1.1.1")
 }

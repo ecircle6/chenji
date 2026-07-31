@@ -9,10 +9,11 @@ import com.birthapp.data.AppDatabase
 import com.birthapp.data.Birthday
 import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
-import com.birthapp.lunar.SolarDate
 import com.birthapp.util.DateUtils
+import com.birthapp.util.EventCalc
 import com.birthapp.util.EventTextUtils
 import com.birthapp.util.ZodiacUtils
+import com.birthapp.widget.WidgetRefresher
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -97,6 +98,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             scheduler.cancelBirthdayReminder(birthday.id)
             database.birthdayDao().delete(birthday)
+            WidgetRefresher.refresh(getApplication())
         }
     }
 
@@ -104,26 +106,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val today = LocalDate.now()
         val currentYear = today.year
 
-        val solarDate: SolarDate = if (calendarType == "lunar") {
-            try {
-                LunarCalendar.getNextLunarBirthdayInSolar(birthMonth, birthDay, isLeapMonth, currentYear)
-            } catch (_: Exception) {
-                SolarDate(currentYear, birthMonth, birthDay)
-            }
-        } else {
-            SolarDate(currentYear, birthMonth, birthDay)
-        }
-
-        var countdown = DateUtils.daysUntilDate(solarDate.toLocalDate())
-        if (countdown < 0) {
-            // 今年已过，算明年
-            val nextSolar = if (calendarType == "lunar") {
-                LunarCalendar.getNextLunarBirthdayInSolar(birthMonth, birthDay, isLeapMonth, currentYear + 1)
-            } else {
-                SolarDate(currentYear + 1, birthMonth, birthDay)
-            }
-            countdown = DateUtils.daysUntilDate(nextSolar.toLocalDate())
-        }
+        val countdown = EventCalc.countdown(this, today)
 
         val age = ZodiacUtils.getAge(birthYear, currentYear)
         val zodiac = ZodiacUtils.getZodiacName(birthYear)

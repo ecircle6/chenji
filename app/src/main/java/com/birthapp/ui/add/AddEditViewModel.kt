@@ -9,6 +9,7 @@ import com.birthapp.data.AppDatabase
 import com.birthapp.data.Birthday
 import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
+import com.birthapp.widget.WidgetRefresher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -154,6 +155,7 @@ class AddEditViewModel(application: Application) : AndroidViewModel(application)
             }
 
             _uiState.value = _uiState.value.copy(saved = true)
+            WidgetRefresher.refresh(getApplication())
         }
     }
 
@@ -164,6 +166,7 @@ class AddEditViewModel(application: Application) : AndroidViewModel(application)
             scheduler.cancelBirthdayReminder(state.id)
             database.birthdayDao().deleteById(state.id)
             _uiState.value = _uiState.value.copy(saved = true)
+            WidgetRefresher.refresh(getApplication())
         }
     }
 
