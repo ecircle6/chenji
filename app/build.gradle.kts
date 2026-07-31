@@ -22,8 +22,19 @@ android {
         applicationId = "com.birthapp"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        // versionCode 给系统判断新旧版用，每次发版 +1；
+        // versionName 是给人看的版本号，与发布说明保持一致
+        versionCode = 3
+        versionName = "2.1.0"
+    }
+
+    // 安装包文件名改成「辰记_v版本号.apk」，
+    // 发给手机安装时一眼能认出是什么软件、什么版本
+    applicationVariants.all {
+        outputs.all {
+            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl)
+                .outputFileName = "辰记_v${versionName}.apk"
+        }
     }
 
     signingConfigs {

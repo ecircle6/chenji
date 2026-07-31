@@ -256,7 +256,10 @@ fun HomeScreen(
                                         deleteTargetId = display.birthday.id
                                         false
                                     } else false
-                                }
+                                },
+                                // 默认滑一小段就算删除，手指上下滑动时带的横向偏移
+                                // 很容易误触；改成要滑过卡片一半宽度才弹删除确认
+                                positionalThreshold = { totalDistance -> totalDistance * 0.5f }
                             ),
                             backgroundContent = {
                                 Row(
