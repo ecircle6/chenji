@@ -34,8 +34,10 @@ data class DetailUiState(
     val relationEmoji: String = "",
     /** 记录本身的日期，按录入时的历法显示 */
     val primaryDate: String = "",
-    /** 换算成另一种历法的日期，农历记录尤其需要——不然不知道今年到底是哪天 */
+    /** 换算成另一种历法的日期，和“记录”一样指出生（发生）那一天 */
     val convertedDate: String = "",
+    /** 下一次事件发生的阳历日期。农历记录尤其需要——不然不知道今年到底是哪天 */
+    val nextDate: String = "",
     /** 生日类型是“属相 · N 岁”，纪念日类型是“第 N 周年” */
     val ageLine: String = "",
     val countdown: Int = 0,
@@ -123,12 +125,16 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
             "阳历 ${DateUtils.formatSolarDate(birthYear, birthMonth, birthDay)}"
         }
 
-        // 农历记录换算成下次事件的阳历；阳历记录反过来换算成农历。
-        // 注意：对应农历必须拿出生当天去换算，不能拿下次生日那天——
-        // 同一个阳历月日在不同年份对应的农历日期年年不同，
-        // 紧挨着“记录 阳历xxxx年x月x日”显示时读者默认是出生那天的农历
+        // 换算行：两个方向都必须拿出生当天去换算，不能拿下次生日那天——
+        // 紧挨着“记录 xxxx年x月x日”显示时，读者默认看到的就是出生那天
+        // 换出来的日子。之前农历这边错拿了下次生日的阳历，“记录 农历
+        // 1997年冬月廿四”旁边显示成“对应阳历 2027年1月1日”，像算错了一样。
+        // 下次日期用户同样关心，但单独放一行“下次”去显示，不和出生日期混在一起
         val convertedDate = if (calendarType == "lunar") {
-            "对应阳历 ${DateUtils.formatSolarDate(nextSolar.year, nextSolar.month, nextSolar.day)}"
+            runCatching {
+                val solar = LunarCalendar.lunarToSolar(birthYear, birthMonth, birthDay, isLeapMonth)
+                "对应阳历 ${DateUtils.formatSolarDate(solar.year, solar.month, solar.day)}"
+            }.getOrDefault("")
         } else {
             runCatching {
                 val lunar = LunarCalendar.solarToLunar(birthYear, birthMonth, birthDay)
@@ -177,6 +183,7 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
             relationEmoji = ZodiacUtils.getRelationEmoji(relation),
             primaryDate = primaryDate,
             convertedDate = convertedDate,
+            nextDate = "阳历 ${DateUtils.formatSolarDate(nextSolar.year, nextSolar.month, nextSolar.day)}",
             ageLine = ageLine,
             countdown = countdown,
             isToday = countdown == 0,

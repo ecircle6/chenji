@@ -162,4 +162,22 @@ class LunarCalendarTest {
         assertEquals(6, lunar2027.month)
         assertEquals(21, lunar2027.day)
     }
+
+    @Test
+    fun `用户实例回归 农历1997年冬月廿四应为1997-12-23`() {
+        // 用户真机反馈的案例：详情页“对应阳历”错拿了下次生日的日期，
+        // “记录 农历1997年冬月廿四”旁边显示成了“对应阳历 2027年1月1日”。
+        // 正确答案取自公开万年历：农历1997年十一月廿四 = 1997年12月23日
+        val solar = LunarCalendar.lunarToSolar(1997, 11, 24)
+        assertEquals(1997, solar.year)
+        assertEquals(12, solar.month)
+        assertEquals(23, solar.day)
+
+        // 而下次生日（农历2026年冬月廿四）确实是 2027-01-01——
+        // 两个日期都没算错，错的是详情页拿错了年份。固定住防回退
+        val next = LunarCalendar.lunarToSolar(2026, 11, 24)
+        assertEquals(2027, next.year)
+        assertEquals(1, next.month)
+        assertEquals(1, next.day)
+    }
 }

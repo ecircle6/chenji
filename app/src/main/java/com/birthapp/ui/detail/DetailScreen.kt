@@ -199,6 +199,10 @@ fun DetailScreen(
                 if (state.convertedDate.isNotEmpty()) {
                     InfoRow(label = "换算", value = state.convertedDate)
                 }
+                // 不叫“下次生日”：忌日、纪念日类型也用这一行
+                if (state.nextDate.isNotEmpty()) {
+                    InfoRow(label = "下次", value = state.nextDate)
+                }
                 InfoRow(
                     label = if (EventType.usesAge(state.eventType)) "年龄" else "周年",
                     value = state.ageLine
