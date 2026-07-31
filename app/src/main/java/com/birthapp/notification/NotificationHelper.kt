@@ -7,6 +7,7 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import com.birthapp.BirthApp
 import com.birthapp.MainActivity
+import com.birthapp.R
 import com.birthapp.lunar.LunarCalendar
 import com.birthapp.util.ZodiacUtils
 import java.time.LocalDate
@@ -55,7 +56,7 @@ class NotificationHelper(private val context: Context) {
         )
 
         val notification = NotificationCompat.Builder(context, BirthApp.CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))

@@ -2,6 +2,7 @@ package com.birthapp.ui.home
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -42,13 +43,15 @@ fun HomeScreen(
     val birthdays by viewModel.displayBirthdays.collectAsStateWithLifecycle()
     val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
     var deleteTargetId by remember { mutableLongStateOf(-1L) }
+    // 卡片背景色必须跟随系统深色模式，否则深色下会变成浅底浅字看不清
+    val isDark = isSystemInDarkTheme()
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        "生日提醒",
+                        "辰记",
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp
                     )
@@ -150,7 +153,8 @@ fun HomeScreen(
                             BirthdayCard(
                                 display = display,
                                 index = index,
-                                onClick = { onEditClick(display.birthday.id) }
+                                onClick = { onEditClick(display.birthday.id) },
+                                darkTheme = isDark
                             )
                         }
                     }

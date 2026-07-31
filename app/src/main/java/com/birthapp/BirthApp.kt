@@ -26,10 +26,10 @@ class BirthApp : Application() {
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "生日提醒",
+            "生日与纪念日提醒",
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "家人朋友的生日提醒通知"
+            description = "家人朋友的生日、纪念日提醒通知"
             enableVibration(true)
             // 锁屏下隐藏通知内容，防止生日隐私信息被旁人看到
             lockscreenVisibility = Notification.VISIBILITY_PRIVATE

@@ -115,7 +115,7 @@ fun BirthdayCard(
             if (display.isToday) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = SunnyYellow.copy(alpha = 0.3f),
+                    color = SunnyYellow.copy(alpha = if (darkTheme) 0.18f else 0.3f),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
@@ -123,7 +123,8 @@ fun BirthdayCard(
                         modifier = Modifier.padding(vertical = 10.dp, horizontal = 12.dp),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Coral700
+                        // 深色下用浅珊瑚色，否则深红字压在深橄榄底上看不清
+                        color = if (darkTheme) Coral300 else Coral700
                     )
                 }
             } else {
