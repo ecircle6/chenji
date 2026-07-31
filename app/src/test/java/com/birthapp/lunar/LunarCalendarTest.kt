@@ -145,4 +145,21 @@ class LunarCalendarTest {
         }
         assertTrue(checked > 70000)
     }
+
+    @Test
+    fun `用户实例回归 1998-07-24 应为农历六月初二`() {
+        // 用户拿手机自带日历对照出的真实案例：1998年7月24日 = 戊寅年六月初二
+        // （当年闰五月，换算容易出错的年份）
+        val lunar = LunarCalendar.solarToLunar(1998, 7, 24)
+        assertEquals(1998, lunar.year)
+        assertEquals(6, lunar.month)
+        assertEquals(2, lunar.day)
+        assertEquals(false, lunar.isLeapMonth)
+
+        // 而下次生日 2027-07-24 的农历是六月廿一——详情页之前错拿它当“对应农历”展示，
+        // 两者都没算错，错的是喂给换算的日期。固定住这两个值防回退
+        val lunar2027 = LunarCalendar.solarToLunar(2027, 7, 24)
+        assertEquals(6, lunar2027.month)
+        assertEquals(21, lunar2027.day)
+    }
 }

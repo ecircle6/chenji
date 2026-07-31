@@ -123,12 +123,15 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
             "阳历 ${DateUtils.formatSolarDate(birthYear, birthMonth, birthDay)}"
         }
 
-        // 农历记录换算成今年的阳历；阳历记录反过来换算成农历
+        // 农历记录换算成下次事件的阳历；阳历记录反过来换算成农历。
+        // 注意：对应农历必须拿出生当天去换算，不能拿下次生日那天——
+        // 同一个阳历月日在不同年份对应的农历日期年年不同，
+        // 紧挨着“记录 阳历xxxx年x月x日”显示时读者默认是出生那天的农历
         val convertedDate = if (calendarType == "lunar") {
             "对应阳历 ${DateUtils.formatSolarDate(nextSolar.year, nextSolar.month, nextSolar.day)}"
         } else {
             runCatching {
-                val lunar = LunarCalendar.solarToLunar(nextSolar.year, nextSolar.month, nextSolar.day)
+                val lunar = LunarCalendar.solarToLunar(birthYear, birthMonth, birthDay)
                 val leapPrefix = if (lunar.isLeapMonth) "闰" else ""
                 "对应农历 $leapPrefix${LunarCalendar.formatLunarDate(lunar.month, lunar.day)}"
             }.getOrDefault("")
