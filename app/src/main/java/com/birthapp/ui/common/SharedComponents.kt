@@ -183,6 +183,44 @@ fun BirthdayCard(
 }
 
 @Composable
+fun EmptySearchResult(keyword: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = Teal500.copy(alpha = 0.1f),
+            modifier = Modifier.size(96.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(text = "\uD83D\uDD0D", fontSize = 42.sp)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "没有找到「$keyword」",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Text(
+            text = "可以试试姓名或备注里的关键字",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
 fun EmptyBirthdayList(onAddClick: () -> Unit) {
     Column(
         modifier = Modifier

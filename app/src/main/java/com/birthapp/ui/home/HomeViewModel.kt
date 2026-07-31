@@ -43,16 +43,39 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _selectedTab = MutableStateFlow("all")
     val selectedTab: StateFlow<String> = _selectedTab.asStateFlow()
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
     private val _birthdays = database.birthdayDao().getAllActive()
 
     val displayBirthdays: StateFlow<List<BirthdayDisplay>> =
-        combine(_birthdays, _selectedTab) { list, tab ->
-            val filtered = if (tab == "all") list else list.filter { it.relation == tab }
+        combine(_birthdays, _selectedTab, _searchQuery) { list, tab, query ->
+            val keyword = query.trim()
+            val filtered = if (keyword.isNotEmpty()) {
+                // 搜索时不再叠加关系标签：用户搜名字时，
+                // 不应该因为当前停在“同事”标签上而搜不到家人
+                list.filter {
+                    it.name.contains(keyword, ignoreCase = true) ||
+                            it.notes.contains(keyword, ignoreCase = true)
+                }
+            } else if (tab == "all") {
+                list
+            } else {
+                list.filter { it.relation == tab }
+            }
             filtered.map { it.toDisplay() }.sortedBy { it.countdown }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun selectTab(tab: String) {
         _selectedTab.value = tab
+    }
+
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun clearSearch() {
+        _searchQuery.value = ""
     }
 
     fun deleteBirthday(birthday: Birthday) {
