@@ -40,11 +40,17 @@ fun DetailScreen(
 
     LaunchedEffect(birthdayId) { viewModel.load(birthdayId) }
 
-    // 记录被删掉后这个页面已经没有内容可显示，直接退回列表
-    LaunchedEffect(deleted) { if (deleted) onBack() }
-
-    // 在编辑页里删掉记录会退回这里，此时记录已经不存在，同样要自动退出去
-    LaunchedEffect(state.notFound) { if (state.notFound) onBack() }
+    // 两个信号都会要求退出这个页面：自己点删除（deleted）、记录在别处
+    // 被删掉（notFound，比如在编辑页里删的）。但自己删除时两者几乎同时
+    // 变 true，各退一次会连列表页也弹掉、留下一屏空白——必须合并成
+    // 一个闸门，保证整个页面生命周期里只退一次
+    var backFired by remember { mutableStateOf(false) }
+    LaunchedEffect(deleted, state.notFound) {
+        if ((deleted || state.notFound) && !backFired) {
+            backFired = true
+            onBack()
+        }
+    }
 
     // 从编辑页改完名字/类型返回时，observeById 会自动把新值推过来，这里不需要手动刷新
 
@@ -199,7 +205,7 @@ fun DetailScreen(
                 if (state.convertedDate.isNotEmpty()) {
                     InfoRow(label = "换算", value = state.convertedDate)
                 }
-                // 不叫“下次生日”：忌日、纪念日类型也用这一行
+                // 不叫“下次生日”：缅怀、纪念日类型也用这一行
                 if (state.nextDate.isNotEmpty()) {
                     InfoRow(label = "下次", value = state.nextDate)
                 }
