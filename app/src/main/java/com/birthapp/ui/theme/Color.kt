@@ -26,7 +26,7 @@ val Violet500 = Color(0xFF7C6BFF)
 val Violet300 = Color(0xFFB5ACFF)
 val Violet700 = Color(0xFF5B4BC4)
 
-// 庄重类型（忌日）：用素净的灰蓝，不用暖调，避开庆祝感
+// 庄重类型（缅怀）：用素净的灰蓝，不用暖调，避开庆祝感
 val SlateInk = Color(0xFF5B6B7A)
 val SlateInkLight = Color(0xFF9FB0BF)
 val CardSlate = Color(0xFFEDF1F5)

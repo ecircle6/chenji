@@ -257,7 +257,7 @@ private fun countdownText(countdown: Int): String = when (countdown) {
 }
 
 private fun countdownColor(item: WidgetItem) = when {
-    // 忌日用素净的灰蓝，不跟着高亮成暖色
+    // 缅怀用素净的灰蓝，不跟着高亮成暖色
     item.isSolemn -> SolemnColor
     item.countdown == 0 -> AccentColor
     else -> NormalColor

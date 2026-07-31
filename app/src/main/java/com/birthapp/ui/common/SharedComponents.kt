@@ -36,7 +36,7 @@ fun BirthdayCard(
         // 暂停用中性灰，跟六种类型的配色都不冲突，一眼看出这条不工作
         if (darkTheme) CardPausedDark else CardPaused
     } else if (display.isSolemn) {
-        // 忌日不跟三色循环，也不用“今天”的暖黄，固定用素净的灰蓝
+        // 缅怀不跟三色循环，也不用“今天”的暖黄，固定用素净的灰蓝
         if (darkTheme) CardSlateDark else CardSlate
     } else if (display.isToday) {
         if (darkTheme) CardTodayDark else CardToday
@@ -57,7 +57,7 @@ fun BirthdayCard(
     // 头像圈：生日用姓名首字，其余类型用类型 emoji，一眼分辨
     val isBirthday = display.eventType == EventType.BIRTHDAY
     val avatarColor = if (isBirthday) tagColor else eventAccent(display.eventType)
-    // 忌日的倒计时数字不用亮青色，避免显得轻快
+    // 缅怀的倒计时数字不用亮青色，避免显得轻快
     val countdownColor = if (isPaused) {
         MaterialTheme.colorScheme.onSurfaceVariant
     } else if (display.isSolemn) {

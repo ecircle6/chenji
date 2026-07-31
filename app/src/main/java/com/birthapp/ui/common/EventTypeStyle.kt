@@ -19,7 +19,7 @@ fun eventAccent(type: String): Color = when (type) {
     else -> Coral500
 }
 
-/** 当天横幅的（底色, 文字色）。忌日用灰蓝，其余按类型给暖色 */
+/** 当天横幅的（底色, 文字色）。缅怀用灰蓝，其余按类型给暖色 */
 fun eventBannerColors(type: String, darkTheme: Boolean): Pair<Color, Color> = when (type) {
     EventType.MEMORIAL -> SlateInk.copy(alpha = if (darkTheme) 0.24f else 0.13f) to
             if (darkTheme) SlateInkLight else SlateInk

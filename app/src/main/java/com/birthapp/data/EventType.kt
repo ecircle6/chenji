@@ -25,7 +25,7 @@ object EventType {
         LOVE -> "情侣纪念"
         MARRIAGE -> "结婚纪念"
         BABY -> "宝宝生日"
-        MEMORIAL -> "忌日"
+        MEMORIAL -> "缅怀"
         OTHER -> "其他纪念"
         else -> "生日"
     }
@@ -39,11 +39,12 @@ object EventType {
         else -> "\uD83C\uDF82"
     }
 
-    /** 日期输入项在该类型下的叫法，例如忌日要叫“逝世日期”而不是“出生日期” */
+    /** 日期输入项在该类型下的叫法，例如缅怀要叫“离开的日子”而不是“出生日期”。
+     * 用户反馈“忌日”“逝世”这类字眼犯忌讳，展示文案全部改用“缅怀”“离开” */
     fun dateFieldLabel(type: String): String = when (type) {
         LOVE -> "纪念日期"
         MARRIAGE -> "结婚日期"
-        MEMORIAL -> "逝世日期"
+        MEMORIAL -> "离开的日子"
         OTHER -> "纪念日期"
         else -> "出生日期"
     }

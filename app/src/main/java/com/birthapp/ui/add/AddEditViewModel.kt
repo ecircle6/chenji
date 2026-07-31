@@ -130,7 +130,7 @@ class AddEditViewModel(application: Application) : AndroidViewModel(application)
                 reminderMinute = state.reminderMinute,
                 relation = state.relation,
                 // 必须显式带上：不传的话 Birthday 会用默认值 birthday，
-                // 编辑一条忌日记录再保存就会默默变回生日
+                // 编辑一条缅怀记录再保存就会默默变回生日
                 eventType = state.eventType,
                 notes = state.notes,
                 isActive = state.isActive,
