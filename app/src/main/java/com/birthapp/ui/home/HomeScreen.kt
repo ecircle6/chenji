@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.birthapp.data.EventType
 import com.birthapp.ui.common.BirthdayCard
 import com.birthapp.ui.common.EmptyBirthdayList
 import com.birthapp.ui.common.EmptySearchResult
@@ -55,6 +56,8 @@ fun HomeScreen(
 ) {
     val birthdays by viewModel.displayBirthdays.collectAsStateWithLifecycle()
     val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
+    val selectedType by viewModel.selectedType.collectAsStateWithLifecycle()
+    val availableTypes by viewModel.availableTypes.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val isSearching by viewModel.isSearching.collectAsStateWithLifecycle()
     var deleteTargetId by remember { mutableLongStateOf(-1L) }
@@ -190,11 +193,50 @@ fun HomeScreen(
                 }
             }
 
+            // 类型筛选胶囊：只在记录里出现了两种以上类型时才显示——
+            // 只记生日的用户看不到这一排，界面保持干净；与关系标签叠加生效
+            if (!isSearching && availableTypes.size >= 2) {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(bottom = 12.dp)
+                ) {
+                    items(listOf("all") + availableTypes) { type ->
+                        val isSelected = selectedType == type
+                        Surface(
+                            onClick = { viewModel.selectType(type) },
+                            shape = RoundedCornerShape(16.dp),
+                            // 用描边胶囊区分于上面实心的关系标签，避免两排长得一样分不清
+                            color = if (isSelected) Coral500.copy(alpha = 0.15f)
+                            else MaterialTheme.colorScheme.surface,
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                if (isSelected) Coral500
+                                else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                            )
+                        ) {
+                            Text(
+                                text = if (type == "all") "全部类型"
+                                else "${EventType.emoji(type)} ${EventType.label(type)}",
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                color = if (isSelected) Coral500
+                                else MaterialTheme.colorScheme.onSurface,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                }
+            }
+
             // List or empty state
             if (birthdays.isEmpty()) {
                 // 搜索无结果不能用“添加第一个记录”的空页，否则会让人以为数据没了
                 if (searchQuery.isNotBlank()) {
                     EmptySearchResult(keyword = searchQuery.trim())
+                } else if (selectedTab != "all" || selectedType != "all") {
+                    // 筛选到空同理：数据还在，只是这个组合下没有记录
+                    EmptyFilterResult()
                 } else {
                     EmptyBirthdayList(onAddClick = onAddClick)
                 }
@@ -268,6 +310,34 @@ fun HomeScreen(
                     Text("取消")
                 }
             }
+        )
+    }
+}
+
+// 筛选组合下没有记录时的空态。不能复用“添加第一个记录”那张空页，
+// 否则用户会以为数据丢了；这里只说明“这个筛选下没有”
+@Composable
+private fun EmptyFilterResult() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(text = "\uD83C\uDF43", fontSize = 42.sp)
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "这个筛选下没有记录",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "换个标签看看，或点“全部”回到完整列表",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

@@ -45,6 +45,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _selectedTab = MutableStateFlow("all")
     val selectedTab: StateFlow<String> = _selectedTab.asStateFlow()
 
+    // 类型筛选（生日/情侣/缅怀…），与关系标签叠加生效
+    private val _selectedType = MutableStateFlow("all")
+    val selectedType: StateFlow<String> = _selectedType.asStateFlow()
+
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
@@ -56,21 +60,24 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _birthdays = database.birthdayDao().getAll()
 
+    // 记录里实际出现过的类型，界面据此决定类型胶囊行是否显示（两种以上才显）
+    val availableTypes: StateFlow<List<String>> =
+        _birthdays.map { HomeFilter.availableTypes(it) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    init {
+        // 选中的类型被删光时自动回到“全部”：胶囊会随之隐藏，
+        // 不能让列表停在一个看不见、也取消不掉的筛选上
+        viewModelScope.launch {
+            combine(availableTypes, _selectedType) { types, type -> type != "all" && type !in types }
+                .collect { stale -> if (stale) _selectedType.value = "all" }
+        }
+    }
+
     val displayBirthdays: StateFlow<List<BirthdayDisplay>> =
-        combine(_birthdays, _selectedTab, _searchQuery) { list, tab, query ->
-            val keyword = query.trim()
-            val filtered = if (keyword.isNotEmpty()) {
-                // 搜索时不再叠加关系标签：用户搜名字时，
-                // 不应该因为当前停在“同事”标签上而搜不到家人
-                list.filter {
-                    it.name.contains(keyword, ignoreCase = true) ||
-                            it.notes.contains(keyword, ignoreCase = true)
-                }
-            } else if (tab == "all") {
-                list
-            } else {
-                list.filter { it.relation == tab }
-            }
+        combine(_birthdays, _selectedTab, _selectedType, _searchQuery) { list, tab, type, query ->
+            // 筛选规则全部在 HomeFilter 里（搜索跳出筛选、关系+类型叠加）
+            val filtered = HomeFilter.apply(list, tab, type, query)
             // 已暂停的一律沉到底部：它们不会提醒，不该跟正常记录抢“最近”的位置
             filtered.map { it.toDisplay() }
                 .sortedWith(compareBy({ if (it.isPaused) 1 else 0 }, { it.countdown }))
@@ -78,6 +85,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun selectTab(tab: String) {
         _selectedTab.value = tab
+    }
+
+    fun selectType(type: String) {
+        _selectedType.value = type
     }
 
     fun updateSearchQuery(query: String) {
