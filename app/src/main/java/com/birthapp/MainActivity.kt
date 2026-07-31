@@ -52,8 +52,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        requestNotificationPermission()
-        requestIgnoreBatteryOptimization()
+        // 只在首次创建时请求权限。切换系统深色模式、旋转屏幕都会重建 Activity，
+        // 此时 savedInstanceState 非空；若每次都请求，就会反复弹出电池优化设置页打扰用户
+        if (savedInstanceState == null) {
+            requestNotificationPermission()
+            requestIgnoreBatteryOptimization()
+        }
 
         setContent {
             // 读主题偏好：跟随系统时看系统深色，否则按用户选的强制浅/深
@@ -79,6 +83,11 @@ class MainActivity : ComponentActivity() {
     companion object {
         /** 小组件加号的跳转标记。用 action 而不是 extra，否则两个 PendingIntent 会被系统当成同一个 */
         const val ACTION_OPEN_ADD = "com.birthapp.action.OPEN_ADD"
+
+        /** 与 ThemeStore 共用同一份应用设置文件 */
+        private const val PREFS_NAME = "birthapp_settings"
+        /** 是否已经引导过电池优化豁免：只引导一次，之后不再自动弹出 */
+        private const val KEY_ASKED_BATTERY_OPT = "asked_ignore_battery_opt"
     }
 
     private fun requestNotificationPermission() {
@@ -92,8 +101,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // 请求忽略电池优化，避免系统省电机制杀掉后台闹钟导致提醒不触发
+    // 请求忽略电池优化，避免系统省电机制杀掉后台闹钟导致提醒不触发。
+    // 这个引导一辈子只做一次：无论用户当时是否同意，之后都不再自动弹，
+    // 否则每次打开 App 都会跳到系统的电池优化设置页，非常打扰
     private fun requestIgnoreBatteryOptimization() {
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        if (prefs.getBoolean(KEY_ASKED_BATTERY_OPT, false)) return
+
         val powerManager = getSystemService(PowerManager::class.java)
         if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
             try {
@@ -106,6 +120,8 @@ class MainActivity : ComponentActivity() {
                 // 部分机型不支持该请求页面，静默忽略
             }
         }
+        // 不论是否已豁免、是否成功弹出，都标记为「已问过」，下次不再自动弹
+        prefs.edit().putBoolean(KEY_ASKED_BATTERY_OPT, true).apply()
     }
 }
 
