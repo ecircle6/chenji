@@ -3,6 +3,8 @@ package com.birthapp.widget
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -49,6 +51,7 @@ import com.birthapp.ui.theme.TextOnDarkSecondary
 import com.birthapp.ui.theme.TextPrimary
 import com.birthapp.ui.theme.TextSecondary
 import com.birthapp.util.EventCalc
+import kotlinx.coroutines.flow.map
 
 /** 小组件上一行要显示的东西。桌面空间有限，只留最必要的几项 */
 data class WidgetItem(
@@ -70,15 +73,12 @@ class BirthWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Responsive(setOf(COMPACT, WIDE))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val items = loadItems(context)
-        provideContent { WidgetBody(items) }
-    }
-
-    private suspend fun loadItems(context: Context): List<WidgetItem> {
+        // 坐在 Flow 上订阅而不是进来时读一次快照：provideContent 之前的代码
+        // 只在会话重建时跑，App 里喊 refresh 不会重新执行它——之前就是因此
+        // 增删记录后桌面一直停在旧数据上。改成 Flow 后数据库一变自动重画
         val db = (context.applicationContext as BirthApp).database
-        // 只取未暂停的：暂停的记录根本不会提醒，摆在桌面上等于误导
-        return db.birthdayDao().getAllActiveOnce()
-            .map {
+        val itemsFlow = db.birthdayDao().getAllActive().map { list ->
+            list.map {
                 WidgetItem(
                     name = it.name,
                     emoji = EventType.emoji(it.eventType),
@@ -86,8 +86,13 @@ class BirthWidget : GlanceAppWidget() {
                     isSolemn = EventType.isSolemn(it.eventType)
                 )
             }
-            .sortedBy { it.countdown }
-            .take(MAX_VISIBLE_ROWS)
+                .sortedBy { it.countdown }
+                .take(MAX_VISIBLE_ROWS)
+        }
+        provideContent {
+            val items by itemsFlow.collectAsState(initial = emptyList())
+            WidgetBody(items)
+        }
     }
 
     companion object {
@@ -123,7 +128,9 @@ private fun WidgetBody(items: List<WidgetItem>) {
     ) {
         when {
             items.isEmpty() -> EmptyBody()
-            isWide -> WideBody(items)
+            // 只有一条时不摆列表：单行列表下面空一大片很难看，
+            // 改成居中放大的卡片排版，看起来是故意设计的
+            isWide && items.size > 1 -> WideBody(items)
             else -> CompactBody(items.first())
         }
     }
