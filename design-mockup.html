@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生日提醒 App · 改版方案渲染图</title>
+<style>
+  :root{
+    --coral500:#FF6B6B; --coral400:#FF8A8A; --coral300:#FFABAB; --coral700:#E05555;
+    --teal500:#00BFA5; --teal400:#26D9C0; --teal700:#009688;
+    --yellow:#FFD93D; --yellow700:#E6C235;
+    --peach:#FFF5EE; --mint:#F0F8F0; --lavender:#F5F0FF; --today:#FFFDE7;
+    --warmlight:#F8F7F4; --warmdark:#1A1A18; --surfacelight:#fff; --surfacedark:#2A2A28;
+    --t1:#2D2D2D; --t2:#8E8E8E; --tdark:#E8E8E6; --tdark2:#9E9E9C;
+    --peachdark:#3A2820; --mintdark:#1A3028; --lavdark:#2A2040; --todaydark:#3A3520;
+    --slate:#EDF1F5; --slatedark:#232A30; --slateink:#5B6B7A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:#eceae5;color:#2D2D2D;line-height:1.6;padding:32px 20px 80px}
+  .wrap{max-width:1280px;margin:0 auto}
+  h1{font-size:28px;font-weight:800;margin-bottom:6px}
+  .sub{color:#777;font-size:14px;margin-bottom:32px}
+  section{background:#fff;border-radius:20px;padding:26px 28px;margin-bottom:26px;box-shadow:0 2px 14px rgba(0,0,0,.06)}
+  h2{font-size:20px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:9px}
+  .tag{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--coral500);color:#fff;letter-spacing:.5px}
+  .tag.fix{background:#E05555}.tag.new{background:var(--teal500)}.tag.q{background:#7C6BFF}
+  h2 .no{width:28px;height:28px;border-radius:9px;background:var(--coral500);color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .desc{color:#666;font-size:14px;margin:10px 0 20px;max-width:900px}
+  .desc b{color:#2D2D2D}
+  .row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+  .col{display:flex;flex-direction:column;gap:10px}
+  .caption{font-size:13px;font-weight:700;color:#555;display:flex;align-items:center;gap:6px}
+  .caption .dot{width:9px;height:9px;border-radius:50%}
+  .bad .dot{background:#E05555}.good .dot{background:var(--teal500)}
+  .bad{color:#C0392B}.good{color:var(--teal700)}
+  .note{font-size:12px;color:#888;max-width:330px}
+
+  /* phone frame */
+  .phone{width:334px;border:8px solid #23231f;border-radius:34px;overflow:hidden;background:var(--warmlight);box-shadow:0 8px 26px rgba(0,0,0,.16)}
+  .phone.dark{background:var(--warmdark)}
+  .status{height:26px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:11px;color:var(--t2)}
+  .phone.dark .status{color:var(--tdark2)}
+  .appbar{padding:10px 18px 12px;font-size:22px;font-weight:800;color:var(--t1);display:flex;align-items:center;justify-content:space-between}
+  .phone.dark .appbar{color:var(--tdark)}
+  .appbar .icons{display:flex;gap:14px;font-size:17px;color:var(--t2)}
+  .tabs{display:flex;gap:8px;padding:0 14px 12px;overflow:hidden}
+  .pill{font-size:12px;padding:7px 15px;border-radius:20px;border:1px solid rgba(142,142,142,.3);color:var(--t1);white-space:nowrap;background:#fff}
+  .pill.on{background:var(--coral500);color:#fff;border-color:transparent;font-weight:600}
+  .phone.dark .pill{background:var(--surfacedark);color:var(--tdark);border-color:rgba(158,158,156,.3)}
+  .phone.dark .pill.on{background:var(--coral400);color:var(--warmdark)}
+  .body{padding:4px 0 16px}
+
+  /* birthday card */
+  .card{margin:6px 14px;border-radius:22px;padding:16px;background:var(--peach);box-shadow:0 3px 10px rgba(0,0,0,.05)}
+  .c-mint{background:var(--mint)}.c-lav{background:var(--lavender)}.c-today{background:var(--today)}
+  .c-slate{background:var(--slate)}
+  .r1{display:flex;align-items:center;justify-content:space-between}
+  .who{display:flex;align-items:center;gap:9px}
+  .ava{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px}
+  .nm{font-size:18px;font-weight:800;color:var(--t1)}
+  .rel{font-size:11px;font-weight:600;padding:3px 9px;border-radius:11px}
+  .r2{font-size:12.5px;color:var(--t2);margin-top:9px}
+  .r3{display:flex;align-items:flex-end;justify-content:space-between;margin-top:12px}
+  .cd{display:flex;align-items:flex-end;gap:4px}
+  .cd b{font-size:34px;font-weight:900;color:var(--teal500);line-height:1}
+  .cd span{font-size:13px;color:var(--t2);padding-bottom:3px}
+  .clock{font-size:11px;color:var(--teal700);background:rgba(0,191,165,.1);padding:4px 8px;border-radius:9px;white-space:nowrap}
+  .banner{margin-top:12px;background:rgba(255,217,61,.32);border-radius:11px;padding:9px 12px;font-size:15px;font-weight:800;color:var(--coral700)}
+  .banner.solemn{background:rgba(91,107,122,.13);color:var(--slateink);font-weight:700;font-size:14px}
+  /* dark card */
+  .phone.dark .card{background:var(--peachdark)}
+  .phone.dark .c-mint{background:var(--mintdark)}
+  .phone.dark .c-lav{background:var(--lavdark)}
+  .phone.dark .c-today{background:var(--todaydark)}
+  .phone.dark .c-slate{background:var(--slatedark)}
+  .phone.dark .nm{color:var(--tdark)}
+  .phone.dark .r2,.phone.dark .cd span{color:var(--tdark2)}
+  .phone.dark .cd b{color:var(--teal400)}
+  .phone.dark .banner{color:#FFC9C9}
+  .phone.dark .banner.solemn{color:#AFC0CE}
+  /* the BUG render: light card bg + light text */
+  .phone.dark .buggy{background:var(--peach)}
+  .phone.dark .buggy.c-mint{background:var(--mint)}
+  .phone.dark .buggy .nm{color:var(--tdark)}
+  .phone.dark .buggy .r2,.phone.dark .buggy .cd span{color:var(--tdark2)}
+
+  .paused{opacity:.5}
+  .pausetag{font-size:10px;font-weight:700;color:#8E8E8E;background:rgba(142,142,142,.16);padding:3px 8px;border-radius:9px;margin-left:6px}
+
+  /* notification */
+  .notif{width:334px;background:#E9E7F0;border-radius:22px;padding:14px 15px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 3px 12px rgba(0,0,0,.1)}
+  .nicon{width:26px;height:26px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff}
+  .nbody{flex:1}
+  .napp{font-size:11.5px;color:#5b5b6b;margin-bottom:2px}
+  .ntitle{font-size:15px;font-weight:700;color:#1b1b22}
+  .ntext{font-size:13px;color:#4a4a58}
+  .lockrow{display:flex;gap:26px;flex-wrap:wrap}
+
+  /* selector */
+  .selgrid{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px}
+  .sel{font-size:12.5px;padding:9px 13px;border-radius:14px;border:1.5px solid rgba(255,107,107,.45);color:var(--t1);background:#fff;white-space:nowrap}
+  .sel.on{background:var(--coral500);color:#fff;border-color:transparent;font-weight:700}
+  .sel.onteal{background:var(--teal500);color:#fff;border-color:transparent;font-weight:700}
+  .flabel{font-size:12px;font-weight:700;color:var(--coral700);padding:14px 16px 8px}
+  .field{margin:0 14px 10px;border:1.5px solid rgba(255,107,107,.45);border-radius:14px;padding:11px 13px;font-size:14px;color:var(--t1);background:#fff;display:flex;justify-content:space-between}
+  .field .ph{color:#bbb}
+  .field small{color:var(--coral700);font-weight:700}
+
+  /* widget */
+  .wall{background:linear-gradient(150deg,#2b3a4a,#4a3b52 60%,#6b4a44);padding:20px;border-radius:26px;width:334px}
+  .wg{background:rgba(255,255,255,.94);border-radius:22px;padding:14px 15px;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+  .wghead{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--t2);margin-bottom:9px}
+  .wgrow{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid rgba(0,0,0,.06)}
+  .wgrow:first-of-type{border-top:none}
+  .wgemo{font-size:17px;width:22px;text-align:center}
+  .wgnm{font-size:13.5px;font-weight:700;color:var(--t1);flex:1}
+  .wgsub{font-size:11px;color:var(--t2)}
+  .wgdays{font-size:17px;font-weight:900;color:var(--teal500)}
+  .wgdays.hot{color:var(--coral500)}
+  .wgbig{text-align:center;padding:4px 0}
+  .wgbig .n{font-size:40px;font-weight:900;color:var(--coral500);line-height:1.05}
+  .wgbig .l{font-size:13px;color:var(--t1);font-weight:700}
+  .wgbig .s{font-size:11px;color:var(--t2)}
+
+  /* detail page */
+  .hero{margin:8px 14px 0;border-radius:22px;padding:20px 18px;background:linear-gradient(140deg,#FFF5EE,#FFE9E9);text-align:center}
+  .hero .emo{font-size:34px}
+  .hero .nm2{font-size:21px;font-weight:800;color:var(--t1);margin-top:4px}
+  .hero .big{font-size:44px;font-weight:900;color:var(--coral500);line-height:1.1;margin-top:6px}
+  .hero .u{font-size:12px;color:var(--t2)}
+  .info{margin:12px 14px;background:#fff;border-radius:18px;overflow:hidden}
+  .irow{display:flex;justify-content:space-between;padding:11px 15px;font-size:13px;border-top:1px solid #f2f2f2}
+  .irow:first-child{border-top:none}
+  .irow .k{color:var(--t2)}.irow .v{color:var(--t1);font-weight:600}
+  .memo{margin:12px 14px;background:#FFFDF2;border:1px dashed rgba(230,194,53,.6);border-radius:16px;padding:12px 14px}
+  .memo .mk{font-size:11.5px;font-weight:700;color:var(--yellow700);margin-bottom:5px}
+  .memo .mv{font-size:13px;color:#5a5342}
+  .switchrow{margin:12px 14px;background:#fff;border-radius:16px;padding:13px 15px;display:flex;align-items:center;justify-content:space-between}
+  .sw{width:44px;height:25px;border-radius:20px;background:#d8d8d8;position:relative;flex:0 0 auto}
+  .sw i{position:absolute;width:19px;height:19px;border-radius:50%;background:#fff;top:3px;left:3px;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .sw.on{background:var(--teal500)} .sw.on i{left:22px}
+  .btns{display:flex;gap:10px;margin:14px}
+  .btn{flex:1;text-align:center;padding:12px;border-radius:15px;font-size:14px;font-weight:700}
+  .btn.p{background:var(--coral500);color:#fff}
+  .btn.o{border:1.5px solid rgba(142,142,142,.4);color:var(--t2)}
+
+  /* search */
+  .searchbar{margin:6px 14px 12px;background:#fff;border-radius:22px;padding:10px 15px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+  .searchbar .q{flex:1;font-size:14px;color:var(--t1)}
+  .searchbar .x{color:var(--t2);font-size:15px}
+  .hit{background:rgba(255,217,61,.5);border-radius:3px;padding:0 2px}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid #eee;vertical-align:top}
+  th{background:#faf9f7;font-weight:700;color:#555;font-size:12.5px}
+  td code{background:#f4f2ef;padding:1px 5px;border-radius:4px;font-size:12px}
+  .q-box{background:#F5F3FF;border:1px solid #ddd6fe;border-radius:14px;padding:16px 18px;margin-top:14px}
+  .q-box h4{font-size:14.5px;color:#5B4BC4;margin-bottom:8px}
+  .q-box ol{margin-left:18px;font-size:13.5px;color:#444}
+  .q-box li{margin-bottom:9px}
+  .q-box b{color:#5B4BC4}
+  .legend{font-size:12px;color:#999;margin-top:14px;padding-top:12px;border-top:1px dashed #e5e5e5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎂 生日提醒 App · 改版方案渲染图</h1>
+  <p class="sub">按你选定的范围：① 修 2 个缺陷 &nbsp;② 扩展到纪念日 &nbsp;③ 搜索 + 详情页 + 暂停开关 &nbsp;④ 桌面小组件。以下渲染图使用 App 真实配色（Coral #FF6B6B / Teal #00BFA5），实现后与真机基本一致。</p>
+
+  <!-- ============ 1 ============ -->
+  <section>
+    <h2><span class="no">1</span>缺陷修复 <span class="tag fix">BUG</span></h2>
+    <p class="desc"><b>1-A 深色模式卡片文字看不清。</b>深色配色方案早已写好，但首页调用卡片时漏传了 <code>darkTheme</code> 参数 → 卡片背景仍是浅色，文字却自动变浅色，浅底浅字几乎读不出来。修复只需把系统深色状态传给卡片（1 行）。</p>
+    <div class="row">
+      <div class="col">
+        <div class="caption bad"><span class="dot"></span>现在（深色模式下 · 有问题）</div>
+        <div class="phone dark">
+          <div class="status"><span>1:35</span><span>5G ▮</span></div>
+          <div class="appbar">生日提醒</div>
+          <div class="tabs"><span class="pill on">全部</span><span class="pill">家人</span><span class="pill">朋友</span><span class="pill">同事</span></div>
+          <div class="body">
+            <div class="card buggy">
+              <div class="r1"><div class="who"><div class="ava" style="background:rgba(0,191,165,.2);color:#00BFA5">S</div><div class="nm">SecTest</div></div><div class="rel" style="background:rgba(0,191,165,.15);color:#00BFA5">朋友</div></div>
+              <div class="r2">☀️ 12月25日 · 🐵属猴 · 34岁</div>
+              <div class="r3"><div class="cd"><b>147</b><span>天后</span></div><div class="clock">⏰ 09:00</div></div>
+            </div>
+            <div class="card buggy c-mint">
+              <div class="r1"><div class="who"><div class="ava" style="background:rgba(255,107,107,.2);color:#FF6B6B">妈</div><div class="nm">妈妈</div></div><div class="rel" style="background:rgba(255,107,107,.15);color:#FF6B6B">家人</div></div>
+              <div class="r2">🌙 农历八月十五 · 🐴属马 · 58岁</div>
+              <div class="r3"><div class="cd"><b>32</b><span>天后</span></div><div class="clock">⏰ 08:00</div></div>
+            </div>
+          </div>
+        </div>
+        <p class="note">⚠️ 浅粉/浅绿底 + 浅灰白字，实际观感比这里更糊。</p>
+      </div>
+      <div class="col">
+        <div class="caption good"><span class="dot"></span>修复后（深色模式 · 正常）</div>
+        <div class="phone dark">
+          <div class="status"><span>1:35</span><span>5G ▮</span></div>
+          <div class="appbar">生日提醒</div>
+          <div class="tabs"><span class="pill on">全部</span><span class="pill">家人</span><span class="pill">朋友</span><span class="pill">同事</span></div>
+          <div class="body">
+            <div class="card">
+              <div class="r1"><div class="who"><div class="ava" style="background:rgba(38,217,192,.25);color:#26D9C0">S</div><div class="nm">SecTest</div></div><div class="rel" style="background:rgba(38,217,192,.18);color:#26D9C0">朋友</div></div>
+              <div class="r2">☀️ 12月25日 · 🐵属猴 · 34岁</div>
+              <div class="r3"><div class="cd"><b>147</b><span>天后</span></div><div class="clock" style="color:#26D9C0;background:rgba(38,217,192,.14)">⏰ 09:00</div></div>
+            </div>
+            <div class="card c-mint">
+              <div class="r1"><div class="who"><div class="ava" style="background:rgba(255,138,138,.25);color:#FF8A8A">妈</div><div class="nm">妈妈</div></div><div class="rel" style="background:rgba(255,138,138,.18);color:#FF8A8A">家人</div></div>
+              <div class="r2">🌙 农历八月十五 · 🐴属马 · 58岁</div>
+              <div class="r3"><div class="cd"><b>32</b><span>天后</span></div><div class="clock" style="color:#26D9C0;background:rgba(38,217,192,.14)">⏰ 08:00</div></div>
+            </div>
+          </div>
+        </div>
+        <p class="note">✅ 深棕/深绿卡片底 + 浅色字，对比清晰。浅色模式完全不受影响。</p>
+      </div>
+    </div>
+
+    <p class="desc" style="margin-top:26px"><b>1-B 通知图标是安卓自带的蓝色 ⓘ。</b>现在用的是系统 <code>ic_dialog_info</code>，不是自家图标。将新建一个蛋糕剪影图标（安卓规范要求通知小图标为纯白剪影 + 透明底，系统会自动着色）。</p>
+    <div class="lockrow">
+      <div class="col">
+        <div class="caption bad"><span class="dot"></span>现在</div>
+        <div class="notif">
+          <div class="nicon" style="background:#4A6FE3">ⓘ</div>
+          <div class="nbody"><div class="napp">生日提醒 · now</div><div class="ntitle">今天是 妈妈 的58岁生日！</div><div class="ntext">农历八月十五 - 别忘了送上祝福！</div></div>
+        </div>
+        <p class="note">蓝色信息图标，像系统提示而不像自家 App。</p>
+      </div>
+      <div class="col">
+        <div class="caption good"><span class="dot"></span>修复后</div>
+        <div class="notif">
+          <div class="nicon" style="background:#FF6B6B">🎂</div>
+          <div class="nbody"><div class="napp">生日提醒 · now</div><div class="ntitle">今天是 妈妈 的58岁生日！</div><div class="ntext">农历八月十五 - 别忘了送上祝福！</div></div>
+        </div>
+        <p class="note">蛋糕剪影，一眼认出。另附赠：锁屏时只显示「生日提醒」不显示内容（上轮安全加固已做）。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2 ============ -->
+  <section>
+    <h2><span class="no">2</span>扩展到纪念日 <span class="tag new">新功能</span></h2>
+    <p class="desc">数据库加一个「类型」字段（<code>eventType</code>），并做版本迁移 <code>v1 → v2</code>：<b>你现有的记录会自动归为「生日」，一条都不会丢</b>。不同类型的文案、计算方式、配色各自适配。</p>
+
+    <h4 style="font-size:14.5px;margin:18px 0 8px">📋 6 种类型的差异化设计</h4>
+    <table>
+      <tr><th style="width:120px">类型</th><th style="width:150px">日期字段叫法</th><th>当天提醒文案</th><th style="width:150px">计算 / 显示</th></tr>
+      <tr><td>🎂 生日</td><td>出生日期</td><td>今天是 妈妈 的 58 岁生日！</td><td>年龄 + 属相</td></tr>
+      <tr><td>💍 结婚纪念</td><td>结婚日期</td><td>今天是结婚 10 周年纪念日！</td><td>周年（不显示属相）</td></tr>
+      <tr><td>👶 宝宝纪念</td><td>出生日期</td><td>宝宝今天 1 岁啦！</td><td>年龄 + 属相</td></tr>
+      <tr><td>❤️ 恋爱纪念</td><td>恋爱日期</td><td>恋爱 5 周年快乐！</td><td>周年</td></tr>
+      <tr><td>🕯️ 忌日</td><td>逝世日期</td><td>今天是 父亲 逝世 10 周年</td><td>周年 · <b>庄重处理</b></td></tr>
+      <tr><td>📌 其他纪念</td><td>纪念日期</td><td>今天是「入职纪念」第 3 周年</td><td>周年</td></tr>
+    </table>
+    <p class="desc" style="margin-top:14px"><b>忌日的特殊处理（这点很重要，做错会失礼）：</b>不用🎂蛋糕、不用暖黄「庆祝」高亮色，改为素净的灰蓝卡片；文案不出现「快乐」「祝福」等字样；通知也同步庄重化。</p>
+
+    <div class="row">
+      <div class="col">
+        <div class="caption good"><span class="dot"></span>添加页 · 新增「类型」选择器（放在最顶部）</div>
+        <div class="phone">
+          <div class="status"><span>1:35</span><span>5G ▮</span></div>
+          <div class="appbar" style="font-size:19px">← 添加记录</div>
+          <div class="flabel" style="padding-top:4px">类型</div>
+          <div class="selgrid">
+            <span class="sel on">🎂 生日</span><span class="sel">💍 结婚纪念</span><span class="sel">👶 宝宝纪念</span>
+            <span class="sel">❤️ 恋爱纪念</span><span class="sel">🕯️ 忌日</span><span class="sel">📌 其他纪念</span>
+          </div>
+          <div class="flabel">姓名</div>
+          <div class="field"><span>妈妈</span></div>
+          <div class="flabel">日期偏好（切换自动换算）</div>
+          <div class="selgrid"><span class="sel">☀️ 阳历</span><span class="sel onteal">🌙 农历</span></div>
+          <div class="flabel" style="display:flex;justify-content:space-between;align-items:center"><span>出生日期（农历）</span><small style="background:rgba(0,191,165,.12);padding:4px 9px;border-radius:11px;color:#009688">📅 日历选择</small></div>
+          <div class="field" style="border-color:rgba(0,191,165,.5)"><span>1968年 · 八月 · 十五</span><small style="color:#009688">▾</small></div>
+          <div style="height:14px"></div>
+        </div>
+        <p class="note">选择器随类型联动：选「💍结婚纪念」时，下方标题自动变成「结婚日期」，「姓名」变成「称呼/标题」。</p>
+      </div>
+      <div class="col">
+        <div class="caption good"><span class="dot"></span>首页 · 六种类型混合列表</div>
+        <div class="phone">
+          <div class="status"><span>1:35</span><span>5G ▮</span></div>
+          <div class="appbar">重要日子 <span class="icons">🔍</span></div>
+          <div class="tabs"><span class="pill on">全部</span><span class="pill">家人</span><span class="pill">朋友</span><span class="pill">同事</span></div>
+          <div class="body">
+            <div class="card c-today">
+              <div class="r1"><div class="who"><div class="ava" style="background:rgba(255,107,107,.2);color:#FF6B6B">妈</div><div class="nm">妈妈</div></div><div class="rel" style="background:rgba(255,107,107,.15);color:#FF6B6B">家人</div></div>
+              <div class="r2">🎂 生日 · 🌙 农历八月十五 · 🐴属马</div>
+              <div class="banner">🎂 今天 58 岁生日！</div>
+            </div>
+            <div class="card c-lav">
+              <div class="r1"><div class="who"><div class="ava" style="background:rgba(124,107,255,.2);color:#7C6BFF">💍</div><div class="nm">我们的结婚纪念</div></div><div class="rel" style="background:rgba(255,107,107,.15);color:#FF6B6B">家人</div></div>
+              <div class="r2">💍 结婚纪念 · ☀️ 5月20日 · 第 10 周年</div>
+              <div class="r3"><div class="cd"><b>12</b><span>天后</span></div><div class="clock">⏰ 09:00</div></div>
+            </div>
+            <div class="card c-mint">
+              <div class="r1"><div class="who"><div class="ava" style="background:rgba(0,191,165,.2);color:#00BFA5">👶</div><div class="nm">宝宝</div></div><div class="rel" style="background:rgba(255,107,107,.15);color:#FF6B6B">家人</div></div>
+              <div class="r2">👶 宝宝纪念 · ☀️ 3月8日 · 🐲属龙</div>
+              <div class="r3"><div class="cd"><b>45</b><span>天后</span></div><div class="clock">⏰ 08:00</div></div>
+            </div>
+            <div class="card c-slate">
+              <div class="r1"><div class="who"><div class="ava" style="background:rgba(91,107,122,.16);color:#5B6B7A">🕯️</div><div class="nm">父亲</div></div><div class="rel" style="background:rgba(91,107,122,.14);color:#5B6B7A">家人</div></div>
+              <div class="r2">🕯️ 忌日 · 🌙 农历三月初七 · 第 10 周年</div>
+              <div class="r3"><div class="cd"><b style="color:#5B6B7A">88</b><span>天后</span></div><div class="clock" style="color:#5B6B7A;background:rgba(91,107,122,.12)">⏰ 09:00</div></div>
+            </div>
+          </div>
+        </div>
+        <p class="note">忌日卡片用灰蓝素色，倒计时数字也不用亮色，与庆祝类明显区分。</p>
+      </div>
+      <div class="col">
+        <div class="caption good"><span class="dot"></span>当天提醒 · 庆祝 vs 庄重</div>
+        <div class="phone" style="padding-bottom:8px">
+          <div class="status"><span>9:00</span><span>5G ▮</span></div>
+          <div class="body" style="padding-top:10px">
+            <div class="card c-today"><div class="banner">🎂 今天 58 岁生日！</div></div>
+            <div class="card c-lav"><div class="banner" style="background:rgba(124,107,255,.16);color:#5B4BC4">💍 今天是结婚 10 周年纪念日！</div></div>
+            <div class="card c-mint"><div class="banner" style="background:rgba(0,191,165,.16);color:#00867A">👶 宝宝今天 1 岁啦！</div></div>
+            <div class="card c-slate"><div class="banner solemn">🕯️ 今天是父亲逝世 10 周年</div></div>
+          </div>
+        </div>
+        <div style="height:6px"></div>
+        <div class="notif">
+          <div class="nicon" style="background:#5B6B7A">🕯️</div>
+          <div class="nbody"><div class="napp">重要日子 · now</div><div class="ntitle">今天是 父亲 逝世 10 周年</div><div class="ntext">农历三月初七</div></div>
+        </div>
+        <p class="note">忌日通知不出现「祝福」「快乐」等字样，图标与配色一并庄重化。</p>
+      </div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

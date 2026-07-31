@@ -1,0 +1,28 @@
+# Gradle 构建缓存与产物
+.gradle/
+build/
+app/build/
+
+# 本地环境配置（包含本机 SDK 路径，不应共享）
+local.properties
+
+# IDE 配置（大部分是本机个人设置）
+.idea/
+*.iml
+.kotlin/
+
+# 本地工具与日志
+.tools/
+build_log.txt
+
+# 测试过程中的临时截图
+screenshot_*.png
+test_*.png
+
+# 其他
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab

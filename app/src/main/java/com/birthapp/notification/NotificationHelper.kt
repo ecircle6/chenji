@@ -1,0 +1,72 @@
+package com.birthapp.notification
+
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import androidx.core.app.NotificationCompat
+import com.birthapp.BirthApp
+import com.birthapp.MainActivity
+import com.birthapp.lunar.LunarCalendar
+import com.birthapp.util.ZodiacUtils
+import java.time.LocalDate
+
+class NotificationHelper(private val context: Context) {
+
+    fun showBirthdayNotification(
+        birthdayId: Long,
+        name: String,
+        advanceDays: Int,
+        calendarType: String,
+        birthMonth: Int,
+        birthDay: Int,
+        birthYear: Int = 0
+    ) {
+        val currentYear = LocalDate.now().year
+        val age = if (birthYear > 0) ZodiacUtils.getAge(birthYear, currentYear) else 0
+        val ageText = if (age > 0) "${age}岁" else ""
+
+        val dateInfo = if (calendarType == "lunar") {
+            "农历${LunarCalendar.formatLunarDate(birthMonth, birthDay)}"
+        } else {
+            "${birthMonth}月${birthDay}日"
+        }
+
+        val title: String
+        val text: String
+
+        if (advanceDays == 0) {
+            title = "今天是 $name 的${ageText}生日！"
+            text = "$dateInfo - 别忘了送上祝福！"
+        } else {
+            title = "$name 的生日快到了！"
+            text = "${ageText}生日还有 $advanceDays 天 - $dateInfo"
+        }
+
+        val tapIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("birthday_id", birthdayId)
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            birthdayId.toInt(),
+            tapIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, BirthApp.CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            // 锁屏只显示“有通知”，不暴露姓名和生日内容
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(birthdayId.toInt(), notification)
+    }
+}
