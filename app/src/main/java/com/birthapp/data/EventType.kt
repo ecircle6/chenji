@@ -13,13 +13,18 @@ object EventType {
     const val MEMORIAL = "memorial"
     const val OTHER = "other"
 
-    /** 类型选择器的展示顺序 */
-    val ALL = listOf(BIRTHDAY, MARRIAGE, BABY, LOVE, MEMORIAL, OTHER)
+    /**
+     * 类型选择器的展示顺序。
+     *
+     * MARRIAGE、BABY 不再放进选择器（宝宝生日与生日完全重复；结婚纪念并入情侣纪念），
+     * 但常量与下面的文案映射仍保留，以便老数据里的这两类记录继续正常显示。
+     */
+    val ALL = listOf(BIRTHDAY, LOVE, MEMORIAL, OTHER)
 
     fun label(type: String): String = when (type) {
+        LOVE -> "情侣纪念"
         MARRIAGE -> "结婚纪念"
         BABY -> "宝宝生日"
-        LOVE -> "恋爱纪念"
         MEMORIAL -> "忌日"
         OTHER -> "其他纪念"
         else -> "生日"
@@ -36,8 +41,8 @@ object EventType {
 
     /** 日期输入项在该类型下的叫法，例如忌日要叫“逝世日期”而不是“出生日期” */
     fun dateFieldLabel(type: String): String = when (type) {
+        LOVE -> "纪念日期"
         MARRIAGE -> "结婚日期"
-        LOVE -> "恋爱日期"
         MEMORIAL -> "逝世日期"
         OTHER -> "纪念日期"
         else -> "出生日期"

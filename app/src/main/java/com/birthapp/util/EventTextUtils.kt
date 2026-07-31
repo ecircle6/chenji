@@ -43,7 +43,7 @@ object EventTextUtils {
     fun cardBanner(eventType: String, name: String, years: Int): String = when (eventType) {
         EventType.BABY -> "\uD83D\uDC76 宝宝今天 $years 岁啦！"
         EventType.MARRIAGE -> "\uD83D\uDC8D 今天是结婚 $years 周年纪念日！"
-        EventType.LOVE -> "❤\uFE0F 恋爱 $years 周年快乐！"
+        EventType.LOVE -> "❤\uFE0F 在一起 $years 周年快乐！"
         EventType.MEMORIAL -> "\uD83D\uDD6F\uFE0F 今天是${name}逝世 $years 周年"
         EventType.OTHER -> "\uD83D\uDCCC 今天是「$name」第 $years 周年"
         else -> "\uD83C\uDF82 今天 $years 岁生日！"
@@ -53,7 +53,7 @@ object EventTextUtils {
     fun notificationTitleToday(eventType: String, name: String, years: Int): String = when (eventType) {
         EventType.BABY -> "$name 今天 $years 岁啦！"
         EventType.MARRIAGE -> "今天是结婚 $years 周年纪念日！"
-        EventType.LOVE -> "恋爱 $years 周年快乐！"
+        EventType.LOVE -> "在一起 $years 周年快乐！"
         EventType.MEMORIAL -> "今天是 $name 逝世 $years 周年"
         EventType.OTHER -> "今天是「$name」第 $years 周年"
         else -> if (years > 0) "今天是 $name 的 ${years}岁生日！" else "今天是 $name 的生日！"
@@ -62,7 +62,7 @@ object EventTextUtils {
     /** 提前提醒的通知标题 */
     fun notificationTitleAdvance(eventType: String, name: String, years: Int): String = when (eventType) {
         EventType.MARRIAGE -> "结婚 $years 周年纪念日快到了"
-        EventType.LOVE -> "恋爱 $years 周年快到了"
+        EventType.LOVE -> "在一起 $years 周年快到了"
         EventType.MEMORIAL -> "$name 逝世 $years 周年将至"
         EventType.OTHER -> "「$name」第 $years 周年快到了"
         else -> "$name 的生日快到了！"
