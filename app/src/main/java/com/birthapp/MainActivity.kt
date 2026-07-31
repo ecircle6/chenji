@@ -24,6 +24,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.birthapp.ui.add.AddEditScreen
+import com.birthapp.ui.detail.DetailScreen
 import com.birthapp.ui.home.HomeScreen
 import com.birthapp.ui.theme.BirthAppTheme
 import java.util.Locale
@@ -99,6 +100,20 @@ fun BirthAppNav() {
         composable("home") {
             HomeScreen(
                 onAddClick = { navController.navigate("add") },
+                // 点卡片先进只读详情页，避免一不小心在表单里改到数据
+                onItemClick = { id -> navController.navigate("detail/$id") }
+            )
+        }
+        composable(
+            route = "detail/{birthdayId}",
+            arguments = listOf(
+                navArgument("birthdayId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val birthdayId = backStackEntry.arguments?.getLong("birthdayId") ?: 0L
+            DetailScreen(
+                birthdayId = birthdayId,
+                onBack = { navController.popBackStack() },
                 onEditClick = { id -> navController.navigate("edit/$id") }
             )
         }

@@ -6,8 +6,15 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface BirthdayDao {
 
+    // 首页用这个：已暂停的记录仍要在列表里灰显出来，所以不过滤 isActive
+    @Query("SELECT * FROM birthdays ORDER BY name")
+    fun getAll(): Flow<List<Birthday>>
+
     @Query("SELECT * FROM birthdays WHERE isActive = 1 ORDER BY name")
     fun getAllActive(): Flow<List<Birthday>>
+
+    @Query("SELECT * FROM birthdays WHERE id = :id")
+    fun observeById(id: Long): Flow<Birthday?>
 
     @Query("SELECT * FROM birthdays WHERE isActive = 1 AND relation = :relation ORDER BY name")
     fun getByRelation(relation: String): Flow<List<Birthday>>
@@ -26,6 +33,9 @@ interface BirthdayDao {
 
     @Query("UPDATE birthdays SET nextReminderDate = :date WHERE id = :id")
     suspend fun updateNextReminderDate(id: Long, date: String?)
+
+    @Query("UPDATE birthdays SET isActive = :isActive, updatedAt = :updatedAt WHERE id = :id")
+    suspend fun setActive(id: Long, isActive: Boolean, updatedAt: Long)
 
     @Delete
     suspend fun delete(birthday: Birthday)

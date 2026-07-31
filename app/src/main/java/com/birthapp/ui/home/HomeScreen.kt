@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -47,29 +48,32 @@ private val TABS = listOf(
 @Composable
 fun HomeScreen(
     onAddClick: () -> Unit,
-    onEditClick: (Long) -> Unit,
+    onItemClick: (Long) -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
     val birthdays by viewModel.displayBirthdays.collectAsStateWithLifecycle()
     val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
-    var isSearching by remember { mutableStateOf(false) }
+    val isSearching by viewModel.isSearching.collectAsStateWithLifecycle()
     var deleteTargetId by remember { mutableLongStateOf(-1L) }
     // 卡片背景色必须跟随系统深色模式，否则深色下会变成浅底浅字看不清
     val isDark = isSystemInDarkTheme()
     val searchFocus = remember { FocusRequester() }
-
-    // 退出搜索态时顺手清空关键词，不然下次进搜索会看到上次的残留结果
-    fun exitSearch() {
-        isSearching = false
-        viewModel.clearSearch()
-    }
+    val listState = rememberLazyListState()
 
     // 搜索态下的返回键先退出搜索，而不是直接退出 App
-    BackHandler(enabled = isSearching) { exitSearch() }
+    BackHandler(enabled = isSearching) { viewModel.exitSearch() }
 
     LaunchedEffect(isSearching) {
-        if (isSearching) searchFocus.requestFocus()
+        // 只在刚进搜索（还没输关键词）时自动弹键盘；
+        // 从详情页返回时关键词还在，这时用户是要看结果，不该再被键盘挡住半屏
+        if (isSearching && searchQuery.isEmpty()) searchFocus.requestFocus()
+    }
+
+    // 搜索态或关键词一变，列表内容已经不是同一批了，
+    // 要回到顶部；不然退出搜索后会莫名停在半中间，看不到最近的那几条
+    LaunchedEffect(isSearching, searchQuery) {
+        listState.scrollToItem(0)
     }
 
     Scaffold(
@@ -110,11 +114,11 @@ fun HomeScreen(
                 },
                 actions = {
                     if (isSearching) {
-                        IconButton(onClick = { exitSearch() }) {
+                        IconButton(onClick = { viewModel.exitSearch() }) {
                             Icon(Icons.Default.Close, contentDescription = "退出搜索")
                         }
                     } else {
-                        IconButton(onClick = { isSearching = true }) {
+                        IconButton(onClick = { viewModel.enterSearch() }) {
                             Icon(Icons.Default.Search, contentDescription = "搜索")
                         }
                     }
@@ -191,6 +195,7 @@ fun HomeScreen(
                 }
             } else {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier
                         .fillMaxSize()
                         .animateContentSize(),
@@ -226,7 +231,7 @@ fun HomeScreen(
                             BirthdayCard(
                                 display = display,
                                 index = index,
-                                onClick = { onEditClick(display.birthday.id) },
+                                onClick = { onItemClick(display.birthday.id) },
                                 darkTheme = isDark
                             )
                         }

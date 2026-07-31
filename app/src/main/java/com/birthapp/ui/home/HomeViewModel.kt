@@ -27,6 +27,7 @@ data class BirthdayDisplay(
     val relationLabel: String,
     val relationEmoji: String,
     val isToday: Boolean,
+    val isPaused: Boolean,
     // 以下四项由 eventType 派生，统一在 EventTextUtils 里组装，避免各入口文案不一致
     val eventType: String,
     val typeEmoji: String,
@@ -46,7 +47,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    private val _birthdays = database.birthdayDao().getAllActive()
+    // 搜索态跟关键词必须放在同一层。之前它记在页面上，
+    // 点搜索结果进详情页再返回，页面状态被重置而关键词还留着，
+    // 于是出现“标签栏已经回来了、列表却还在按关键词过滤”的矛盾界面
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
+
+    private val _birthdays = database.birthdayDao().getAll()
 
     val displayBirthdays: StateFlow<List<BirthdayDisplay>> =
         combine(_birthdays, _selectedTab, _searchQuery) { list, tab, query ->
@@ -63,7 +70,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             } else {
                 list.filter { it.relation == tab }
             }
-            filtered.map { it.toDisplay() }.sortedBy { it.countdown }
+            // 已暂停的一律沉到底部：它们不会提醒，不该跟正常记录抢“最近”的位置
+            filtered.map { it.toDisplay() }
+                .sortedWith(compareBy({ if (it.isPaused) 1 else 0 }, { it.countdown }))
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun selectTab(tab: String) {
@@ -74,7 +83,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         _searchQuery.value = query
     }
 
-    fun clearSearch() {
+    fun enterSearch() {
+        _isSearching.value = true
+    }
+
+    // 退出搜索时顺手清空关键词，不然下次进搜索会看到上次的残留结果
+    fun exitSearch() {
+        _isSearching.value = false
         _searchQuery.value = ""
     }
 
@@ -130,6 +145,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             relationLabel = ZodiacUtils.getRelationLabel(relation),
             relationEmoji = ZodiacUtils.getRelationEmoji(relation),
             isToday = countdown == 0,
+            isPaused = !isActive,
             eventType = eventType,
             typeEmoji = EventType.emoji(eventType),
             isSolemn = EventType.isSolemn(eventType),

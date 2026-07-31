@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -27,7 +28,14 @@ fun BirthdayCard(
     modifier: Modifier = Modifier,
     darkTheme: Boolean = false
 ) {
-    val bgColor = if (display.isSolemn) {
+    val isPaused = display.isPaused
+    // 暂停的记录整体压暗，但「已暂停」标记本身不降透明度，不然标记也跟着看不清了
+    val contentAlpha = if (isPaused) 0.5f else 1f
+
+    val bgColor = if (isPaused) {
+        // 暂停用中性灰，跟六种类型的配色都不冲突，一眼看出这条不工作
+        if (darkTheme) CardPausedDark else CardPaused
+    } else if (display.isSolemn) {
         // 忌日不跟三色循环，也不用“今天”的暖黄，固定用素净的灰蓝
         if (darkTheme) CardSlateDark else CardSlate
     } else if (display.isToday) {
@@ -50,7 +58,9 @@ fun BirthdayCard(
     val isBirthday = display.eventType == EventType.BIRTHDAY
     val avatarColor = if (isBirthday) tagColor else eventAccent(display.eventType)
     // 忌日的倒计时数字不用亮青色，避免显得轻快
-    val countdownColor = if (display.isSolemn) {
+    val countdownColor = if (isPaused) {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    } else if (display.isSolemn) {
         if (darkTheme) SlateInkLight else SlateInk
     } else {
         MaterialTheme.colorScheme.secondary
@@ -62,7 +72,7 @@ fun BirthdayCard(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
             .shadow(
-                elevation = 4.dp,
+                elevation = if (isPaused) 0.dp else 4.dp,
                 shape = RoundedCornerShape(24.dp),
                 ambientColor = bgColor,
                 spotColor = bgColor
@@ -77,7 +87,10 @@ fun BirthdayCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.alpha(contentAlpha)
+                ) {
                     // Avatar circle
                     Surface(
                         shape = CircleShape,
@@ -102,18 +115,36 @@ fun BirthdayCard(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                // Relation tag pill
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = tagColor.copy(alpha = 0.15f)
-                ) {
-                    Text(
-                        text = display.relationLabel,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = tagColor
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (isPaused) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        ) {
+                            Text(
+                                text = "已暂停",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.surface
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    // Relation tag pill
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = tagColor.copy(alpha = 0.15f),
+                        modifier = Modifier.alpha(contentAlpha)
+                    ) {
+                        Text(
+                            text = display.relationLabel,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = tagColor
+                        )
+                    }
                 }
             }
 
@@ -123,7 +154,8 @@ fun BirthdayCard(
             Text(
                 text = display.infoLine,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.alpha(contentAlpha)
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -134,7 +166,9 @@ fun BirthdayCard(
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = bannerBg,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .alpha(contentAlpha)
                 ) {
                     Text(
                         text = "  ${display.todayBanner}",
@@ -146,7 +180,9 @@ fun BirthdayCard(
                 }
             } else {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .alpha(contentAlpha),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {

@@ -55,3 +55,7 @@ val CardPeachDark = Color(0xFF3A2820)
 val CardMintDark = Color(0xFF1A3028)
 val CardLavenderDark = Color(0xFF2A2040)
 val CardTodayDark = Color(0xFF3A3520)
+
+// 已暂停的卡片：纯中性灰，不能用 surfaceVariant（它被设成了暖棕）
+val CardPaused = Color(0xFFEBEBEB)
+val CardPausedDark = Color(0xFF262626)

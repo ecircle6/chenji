@@ -28,6 +28,8 @@ data class AddEditUiState(
     val relation: String = "family",
     val eventType: String = EventType.BIRTHDAY,
     val notes: String = "",
+    // 编辑一条已暂停的记录时要把这个状态带回去，不能静默恢复提醒
+    val isActive: Boolean = true,
     val isEditMode: Boolean = false,
     val saved: Boolean = false
 )
@@ -58,6 +60,7 @@ class AddEditViewModel(application: Application) : AndroidViewModel(application)
                 relation = b.relation,
                 eventType = b.eventType,
                 notes = b.notes,
+                isActive = b.isActive,
                 isEditMode = true
             )
         }
@@ -129,6 +132,7 @@ class AddEditViewModel(application: Application) : AndroidViewModel(application)
                 // 编辑一条忌日记录再保存就会默默变回生日
                 eventType = state.eventType,
                 notes = state.notes,
+                isActive = state.isActive,
                 updatedAt = System.currentTimeMillis()
             )
 
@@ -139,10 +143,14 @@ class AddEditViewModel(application: Application) : AndroidViewModel(application)
                 database.birthdayDao().insert(birthday)
             }
 
-            // 调度提醒
+            // 调度提醒：已暂停的记录不能因为保存一次就把闹钟重新排上
             val saved = database.birthdayDao().getById(savedId)
             if (saved != null) {
-                scheduler.scheduleBirthdayReminder(saved)
+                if (saved.isActive) {
+                    scheduler.scheduleBirthdayReminder(saved)
+                } else {
+                    scheduler.cancelBirthdayReminder(saved.id)
+                }
             }
 
             _uiState.value = _uiState.value.copy(saved = true)
