@@ -1,7 +1,6 @@
 package com.birthapp.ui.detail
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -37,7 +36,7 @@ fun DetailScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = LocalDarkTheme.current
 
     LaunchedEffect(birthdayId) { viewModel.load(birthdayId) }
 

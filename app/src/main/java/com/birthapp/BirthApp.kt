@@ -6,6 +6,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import com.birthapp.alarm.AlarmScheduler
 import com.birthapp.data.AppDatabase
+import com.birthapp.settings.ThemeStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -15,6 +16,8 @@ import kotlinx.coroutines.launch
 class BirthApp : Application() {
 
     val database: AppDatabase by lazy { AppDatabase.getInstance(this) }
+    // 主题偏好的全局单例，设置页改了之后首页/详情页跟着刷新
+    val themeStore: ThemeStore by lazy { ThemeStore(this) }
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onCreate() {

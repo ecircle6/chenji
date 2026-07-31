@@ -3,7 +3,6 @@ package com.birthapp.ui.home
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -18,6 +17,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,6 +35,7 @@ import com.birthapp.ui.common.BirthdayCard
 import com.birthapp.ui.common.EmptyBirthdayList
 import com.birthapp.ui.common.EmptySearchResult
 import com.birthapp.ui.theme.Coral500
+import com.birthapp.ui.theme.LocalDarkTheme
 
 private val TABS = listOf(
     "all" to "全部",
@@ -49,6 +50,7 @@ private val TABS = listOf(
 fun HomeScreen(
     onAddClick: () -> Unit,
     onItemClick: (Long) -> Unit,
+    onSettingsClick: () -> Unit = {},
     viewModel: HomeViewModel = viewModel()
 ) {
     val birthdays by viewModel.displayBirthdays.collectAsStateWithLifecycle()
@@ -56,8 +58,8 @@ fun HomeScreen(
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val isSearching by viewModel.isSearching.collectAsStateWithLifecycle()
     var deleteTargetId by remember { mutableLongStateOf(-1L) }
-    // 卡片背景色必须跟随系统深色模式，否则深色下会变成浅底浅字看不清
-    val isDark = isSystemInDarkTheme()
+    // 卡片背景色必须跟随当前主题深浅（含 App 内强制的浅/深），否则深色下会变成浅底浅字看不清
+    val isDark = LocalDarkTheme.current
     val searchFocus = remember { FocusRequester() }
     val listState = rememberLazyListState()
 
@@ -120,6 +122,9 @@ fun HomeScreen(
                     } else {
                         IconButton(onClick = { viewModel.enterSearch() }) {
                             Icon(Icons.Default.Search, contentDescription = "搜索")
+                        }
+                        IconButton(onClick = onSettingsClick) {
+                            Icon(Icons.Default.Settings, contentDescription = "设置")
                         }
                     }
                 },

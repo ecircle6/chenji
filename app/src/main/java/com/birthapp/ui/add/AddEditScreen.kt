@@ -27,7 +27,7 @@ import com.birthapp.ui.theme.*
 import java.time.YearMonth
 import java.util.Calendar
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddEditScreen(
     birthdayId: Long = 0,
@@ -239,9 +239,13 @@ fun AddEditScreen(
             val advanceOptions = listOf(0 to "当天", 1 to "1天", 3 to "3天", 5 to "5天", 7 to "7天")
             val presetDays = advanceOptions.map { it.first }
             val isCustomSelected = state.advanceDays !in presetDays
-            Row(
+            // 用 FlowRow 而不是 Row：6 个选项在窄屏一行放不下时会整体折到第二行，
+            // 每个 chip 按自身文字宽度排布，不会再把「自定义」挤成两行；
+            // 「自定义」选中后文案会变长（如「30天 ✏」），FlowRow 同样能容纳
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 advanceOptions.forEach { (days, label) ->
                     val isSelected = state.advanceDays == days
@@ -260,7 +264,9 @@ fun AddEditScreen(
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                             color = if (isSelected) MaterialTheme.colorScheme.onPrimary
                             else MaterialTheme.colorScheme.onSurface,
-                            fontSize = 13.sp
+                            fontSize = 13.sp,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
@@ -280,7 +286,9 @@ fun AddEditScreen(
                         fontWeight = if (isCustomSelected) FontWeight.SemiBold else FontWeight.Normal,
                         color = if (isCustomSelected) MaterialTheme.colorScheme.onPrimary
                         else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 13.sp
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }

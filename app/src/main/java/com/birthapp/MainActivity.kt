@@ -12,21 +12,26 @@ import android.os.PowerManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.birthapp.settings.ThemeMode
 import com.birthapp.ui.add.AddEditScreen
 import com.birthapp.ui.detail.DetailScreen
 import com.birthapp.ui.home.HomeScreen
+import com.birthapp.ui.settings.SettingsScreen
 import com.birthapp.ui.theme.BirthAppTheme
 import java.util.Locale
 
@@ -51,7 +56,15 @@ class MainActivity : ComponentActivity() {
         requestIgnoreBatteryOptimization()
 
         setContent {
-            BirthAppTheme {
+            // 读主题偏好：跟随系统时看系统深色，否则按用户选的强制浅/深
+            val themeMode by (application as BirthApp).themeStore.mode
+                .collectAsStateWithLifecycle()
+            val darkTheme = when (themeMode) {
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            }
+            BirthAppTheme(darkTheme = darkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -114,7 +127,13 @@ fun BirthAppNav(openAdd: Boolean = false) {
             HomeScreen(
                 onAddClick = { navController.navigate("add") },
                 // 点卡片先进只读详情页，避免一不小心在表单里改到数据
-                onItemClick = { id -> navController.navigate("detail/$id") }
+                onItemClick = { id -> navController.navigate("detail/$id") },
+                onSettingsClick = { navController.navigate("settings") }
+            )
+        }
+        composable("settings") {
+            SettingsScreen(
+                onBack = { navController.popBackStack() }
             )
         }
         composable(

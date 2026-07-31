@@ -4,7 +4,9 @@ import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -53,6 +55,12 @@ private val DarkColorScheme = darkColorScheme(
     outline = TextOnDarkSecondary
 )
 
+/**
+ * 当前是否处于深色。各屏幕（首页卡片、详情页配色）不再直接读系统深色，
+ * 改读这个值，才能跟随「设置」里选择的「跟随系统/始终浅色/始终深色」。
+ */
+val LocalDarkTheme = staticCompositionLocalOf { false }
+
 @Composable
 fun BirthAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -69,9 +77,11 @@ fun BirthAppTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = AppTypography,
-        content = content
-    )
+    CompositionLocalProvider(LocalDarkTheme provides darkTheme) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = AppTypography,
+            content = content
+        )
+    }
 }
