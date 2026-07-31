@@ -51,6 +51,7 @@ import com.birthapp.ui.theme.TextOnDarkSecondary
 import com.birthapp.ui.theme.TextPrimary
 import com.birthapp.ui.theme.TextSecondary
 import com.birthapp.util.EventCalc
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 /** 小组件上一行要显示的东西。桌面空间有限，只留最必要的几项 */
@@ -89,8 +90,13 @@ class BirthWidget : GlanceAppWidget() {
                 .sortedBy { it.countdown }
                 .take(MAX_VISIBLE_ROWS)
         }
+        // 开画之前先等到第一批真实数据，让第一帧就是对的。
+        // 若拿空列表当 initial，第一帧会先把「还没有记录」画上桌面，
+        // 真机（尤其省电激进的机型）很可能在第二帧画出来之前就把
+        // 小组件的后台会话掐掉，桌面从此定格在空状态上
+        val firstItems = itemsFlow.first()
         provideContent {
-            val items by itemsFlow.collectAsState(initial = emptyList())
+            val items by itemsFlow.collectAsState(initial = firstItems)
             WidgetBody(items)
         }
     }

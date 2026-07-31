@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,6 +37,10 @@ import com.birthapp.ui.theme.BirthAppTheme
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
+
+    // 小组件加号的跳转请求。用计数而不是布尔值：singleTask 下 App 活着时
+    // 再点加号走的是 onNewIntent，每次 +1 都能触发一次新的跳转
+    private val openAddRequests = mutableIntStateOf(0)
 
     // 强制应用使用中文环境，确保日历选择器等系统控件显示中文
     override fun attachBaseContext(newBase: Context) {
@@ -57,6 +62,9 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) {
             requestNotificationPermission()
             requestIgnoreBatteryOptimization()
+            // 冷启动就带着加号 action 进来（App 没活着时点小组件加号）。
+            // 旋转屏幕、切深色模式重建时 savedInstanceState 非空，不会重复跳
+            if (intent?.action == ACTION_OPEN_ADD) openAddRequests.intValue++
         }
 
         setContent {
@@ -74,10 +82,17 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     // 从小组件的加号进来时直接落到新增页
-                    BirthAppNav(openAdd = intent?.action == ACTION_OPEN_ADD)
+                    BirthAppNav(openAddRequest = openAddRequests.intValue)
                 }
             }
         }
+    }
+
+    // singleTask 下 App 已在运行时，点小组件不会重建界面而是走这里；
+    // 不处理的话，App 活着时点加号就只是把界面唤回来，不会跳到新增页
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.action == ACTION_OPEN_ADD) openAddRequests.intValue++
     }
 
     companion object {
@@ -126,13 +141,16 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun BirthAppNav(openAdd: Boolean = false) {
+fun BirthAppNav(openAddRequest: Int = 0) {
     val navController = rememberNavController()
 
     // 入口仍然是首页，只是多跳一步到新增页；
-    // 这样从小组件进来后按返回是回到列表，而不是直接退出 App
-    LaunchedEffect(Unit) {
-        if (openAdd) navController.navigate("add")
+    // 这样从小组件进来后按返回是回到列表，而不是直接退出 App。
+    // launchSingleTop：已经停在新增页时再点加号不会叠第二层
+    LaunchedEffect(openAddRequest) {
+        if (openAddRequest > 0) {
+            navController.navigate("add") { launchSingleTop = true }
+        }
     }
 
     NavHost(

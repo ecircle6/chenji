@@ -19,9 +19,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BirthApp">
 
+        <!-- singleTask：全局只允许一个主界面实例。否则从桌面小组件点进来会在
+             旧界面上又叠一层新的，退出时得按好几次返回才能真正退到桌面 -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.BirthApp">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.birthapp.BirthApp
+import com.birthapp.widget.WidgetRefresher
 import kotlinx.coroutines.launch
 
 /**
@@ -33,6 +34,9 @@ class BootReceiver : BroadcastReceiver() {
                 for (birthday in birthdays) {
                     scheduler.scheduleBirthdayReminder(birthday)
                 }
+                // 这几个场景下桌面小组件也是旧的：重启/覆盖安装后它还拿着
+                // 旧会话画的内容，改时间后倒计时也全变了，一并重画
+                WidgetRefresher.refresh(context)
             } finally {
                 pendingResult.finish()
             }
