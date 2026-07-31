@@ -1,0 +1,173 @@
+package com.birthapp.backup
+
+import com.birthapp.data.Birthday
+import com.birthapp.data.EventType
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
+import org.junit.Test
+
+/**
+ * 备份文件编解码测试。
+ *
+ * 核心保障：一台手机 encode 出来的文本，另一台手机 decode 回去后，
+ * 用户输入过的每个字段都原样保留（id、下次提醒日期这类运行时状态除外）。
+ */
+class BackupCodecTest {
+
+    private fun sample(
+        name: String = "张三",
+        calendarType: String = "solar",
+        eventType: String = EventType.BIRTHDAY,
+    ) = Birthday(
+        name = name,
+        birthYear = 1990,
+        birthMonth = 6,
+        birthDay = 15,
+        calendarType = calendarType,
+        eventType = eventType,
+    )
+
+    @Test
+    fun `编码再解码_用户字段原样保留`() {
+        val original = listOf(
+            // 覆盖各种边角：农历闰月、缅怀类型、已暂停、自定义提醒时间和备注
+            Birthday(
+                name = "王奶奶",
+                birthYear = 1944, birthMonth = 4, birthDay = 12,
+                calendarType = "lunar", isLeapMonth = true,
+                advanceDays = 3, reminderHour = 20, reminderMinute = 30,
+                relation = "family", eventType = EventType.MEMORIAL,
+                notes = "每年回老家", isActive = false,
+            ),
+            sample(name = "李四", eventType = EventType.LOVE),
+        )
+        val decoded = BackupCodec.decode(BackupCodec.encode(original))
+
+        assertEquals(original.size, decoded.size)
+        for (i in original.indices) {
+            val a = original[i]
+            val b = decoded[i]
+            assertEquals(a.name, b.name)
+            assertEquals(a.birthYear, b.birthYear)
+            assertEquals(a.birthMonth, b.birthMonth)
+            assertEquals(a.birthDay, b.birthDay)
+            assertEquals(a.calendarType, b.calendarType)
+            assertEquals(a.isLeapMonth, b.isLeapMonth)
+            assertEquals(a.advanceDays, b.advanceDays)
+            assertEquals(a.reminderHour, b.reminderHour)
+            assertEquals(a.reminderMinute, b.reminderMinute)
+            assertEquals(a.relation, b.relation)
+            assertEquals(a.eventType, b.eventType)
+            assertEquals(a.notes, b.notes)
+            assertEquals(a.isActive, b.isActive)
+            // 运行时状态不进备份：导入方数据库重新分配 id、重算提醒
+            assertEquals(0L, b.id)
+            assertEquals(null, b.nextReminderDate)
+        }
+    }
+
+    @Test
+    fun `空列表也能往返_records为空数组`() {
+        assertEquals(0, BackupCodec.decode(BackupCodec.encode(emptyList())).size)
+    }
+
+    @Test
+    fun `不是JSON_报不是有效的备份文件`() {
+        assertThrowsMessage("不是有效的备份文件") { BackupCodec.decode("随便一段文字") }
+    }
+
+    @Test
+    fun `别的App的JSON_报不是辰记的备份`() {
+        val alien = """{"app":"com.other.app","format":1,"records":[]}"""
+        assertThrowsMessage("不是辰记导出的备份文件") { BackupCodec.decode(alien) }
+    }
+
+    @Test
+    fun `缺app标记_同样拒绝`() {
+        assertThrowsMessage("不是辰记导出的备份文件") {
+            BackupCodec.decode("""{"format":1,"records":[]}""")
+        }
+    }
+
+    @Test
+    fun `未来版本号_报版本不支持`() {
+        val future = """{"app":"com.birthapp","format":99,"records":[]}"""
+        assertThrowsMessage("备份文件版本不支持") { BackupCodec.decode(future) }
+    }
+
+    @Test
+    fun `没有records字段_报没有记录数据`() {
+        assertThrowsMessage("备份文件里没有记录数据") {
+            BackupCodec.decode("""{"app":"com.birthapp","format":1}""")
+        }
+    }
+
+    @Test
+    fun `记录缺姓名或日期_指出第几条不完整`() {
+        val bad = """
+            {"app":"com.birthapp","format":1,"records":[
+              {"name":"好人","birthYear":1990,"birthMonth":1,"birthDay":1},
+              {"name":"","birthYear":1990,"birthMonth":1,"birthDay":1}
+            ]}
+        """.trimIndent()
+        assertThrowsMessage("第 2 条记录不完整") { BackupCodec.decode(bad) }
+    }
+
+    @Test
+    fun `月份日期越界_视为记录不完整`() {
+        val bad = """
+            {"app":"com.birthapp","format":1,"records":[
+              {"name":"甲","birthYear":1990,"birthMonth":13,"birthDay":1}
+            ]}
+        """.trimIndent()
+        assertThrowsMessage("第 1 条记录不完整") { BackupCodec.decode(bad) }
+    }
+
+    @Test
+    fun `可选字段缺失_用安全默认值兜底`() {
+        val minimal = """
+            {"app":"com.birthapp","format":1,"records":[
+              {"name":"甲","birthYear":1990,"birthMonth":6,"birthDay":15}
+            ]}
+        """.trimIndent()
+        val b = BackupCodec.decode(minimal).single()
+        assertEquals("solar", b.calendarType)
+        assertEquals(false, b.isLeapMonth)
+        assertEquals(0, b.advanceDays)
+        assertEquals(8, b.reminderHour)
+        assertEquals(0, b.reminderMinute)
+        assertEquals("family", b.relation)
+        assertEquals(EventType.BIRTHDAY, b.eventType)
+        assertEquals("", b.notes)
+        assertEquals(true, b.isActive)
+    }
+
+    @Test
+    fun `脏数据被拉回合法范围`() {
+        val dirty = """
+            {"app":"com.birthapp","format":1,"records":[
+              {"name":"甲","birthYear":1990,"birthMonth":6,"birthDay":15,
+               "calendarType":"weird","advanceDays":999,
+               "reminderHour":30,"reminderMinute":-5}
+            ]}
+        """.trimIndent()
+        val b = BackupCodec.decode(dirty).single()
+        assertEquals("solar", b.calendarType)   // 不认识的历法一律按公历
+        assertEquals(365, b.advanceDays)
+        assertEquals(23, b.reminderHour)
+        assertEquals(0, b.reminderMinute)
+    }
+
+    private fun assertThrowsMessage(expectedPart: String, block: () -> Unit) {
+        try {
+            block()
+            fail("应当抛出 IllegalArgumentException")
+        } catch (e: IllegalArgumentException) {
+            assertTrue(
+                "错误信息应包含「$expectedPart」，实际是：${e.message}",
+                e.message.orEmpty().contains(expectedPart)
+            )
+        }
+    }
+}

@@ -105,4 +105,7 @@ dependencies {
 
     // 单元测试：农历换算这种纯算法靠已知日期对照验证，不依赖模拟器
     testImplementation("junit:junit:4.13.2")
+    // 备份编解码用的 org.json 在本地单测里是空壳（Android 框架类），
+    // 补一份真实现只给测试用，不会打进安装包
+    testImplementation("org.json:json:20231013")
 }

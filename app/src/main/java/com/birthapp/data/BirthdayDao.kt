@@ -25,6 +25,10 @@ interface BirthdayDao {
     @Query("SELECT * FROM birthdays WHERE isActive = 1")
     suspend fun getAllActiveOnce(): List<Birthday>
 
+    // 备份导出/导入判重用：一次性取全部记录，已暂停的也要带上
+    @Query("SELECT * FROM birthdays")
+    suspend fun getAllOnce(): List<Birthday>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(birthday: Birthday): Long
 

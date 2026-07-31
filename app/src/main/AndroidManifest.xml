@@ -61,6 +61,18 @@
                 android:resource="@xml/birth_widget_info" />
         </receiver>
 
+        <!-- 分享备份文件用。grantUriPermissions：接收方（微信/QQ 等）只在本次分享
+             内拿到读权限，读不到白名单之外的任何文件 -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.birthapp.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
 
 </manifest>

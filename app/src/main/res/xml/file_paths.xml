@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FileProvider 可对外提供的目录白名单：只开放缓存下的 backup 子目录，
+     分享备份文件用。其他目录（数据库、设置等）一概不暴露 -->
+<paths>
+    <cache-path name="backup" path="backup/" />
+</paths>
