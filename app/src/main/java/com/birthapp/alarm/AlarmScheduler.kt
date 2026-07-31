@@ -83,10 +83,12 @@ class AlarmScheduler(private val context: Context, private val database: AppData
      */
     fun calculateNextTriggerTime(birthday: Birthday): Long? {
         val now = LocalDateTime.now()
-        var year = now.year
+        // 从去年起步：农历腊月/冬月对应的阳历日期落在下一个公历年，
+        // 公历 1-2 月时眼前这次属于“上一个农历年”，从今年找会直接错过这次提醒
+        var year = now.year - 1
 
-        // 从今年开始逐年尝试，直到找到一个严格在未来的触发时刻
-        repeat(3) {
+        // 逐年尝试，直到找到一个严格在未来的触发时刻
+        repeat(4) {
             val birthdaySolar = getNextBirthdaySolarDate(birthday, year)
             val reminderDate = birthdaySolar.toLocalDate().minusDays(birthday.advanceDays.toLong())
             val triggerDateTime = reminderDate.atTime(birthday.reminderHour, birthday.reminderMinute)

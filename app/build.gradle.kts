@@ -102,4 +102,7 @@ dependencies {
     // Glance：桌面小组件。写法与 Compose 同源，但运行在系统的 RemoteViews 里，
     // 所以只能用 Glance 自己的组件，不能直接搬 Compose UI 过去
     implementation("androidx.glance:glance-appwidget:1.1.1")
+
+    // 单元测试：农历换算这种纯算法靠已知日期对照验证，不依赖模拟器
+    testImplementation("junit:junit:4.13.2")
 }

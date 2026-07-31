@@ -87,15 +87,17 @@ class BirthWidget : GlanceAppWidget() {
                 )
             }
             .sortedBy { it.countdown }
-            .take(MAX_ROWS)
+            .take(MAX_VISIBLE_ROWS)
     }
 
     companion object {
         private val COMPACT = DpSize(120.dp, 120.dp)
         private val WIDE = DpSize(250.dp, 120.dp)
-        private const val MAX_ROWS = 3
     }
 }
+
+// WideBody 补空白行时也要用，而 companion 里的私有常量到不了顶层函数，单独抽一个
+private const val MAX_VISIBLE_ROWS = 3
 
 // 小组件不跟随 App 内的 Material 主题，得自己给日/夜两套颜色
 private val BgColor = ColorProvider(day = Color.White, night = SurfaceDark)
@@ -175,6 +177,11 @@ private fun WideBody(items: List<WidgetItem>) {
         // 所以得在这里算好再交给 WideRow
         items.forEach { item ->
             WideRow(item, GlanceModifier.fillMaxWidth().defaultWeight())
+        }
+        // 记录不足 3 条时用空白行补齐：否则仅有的几行会被平均拉高到整个卡片，
+        // 只有一条记录时它会孤零零地悬在卡片正中，上下各空一大段
+        repeat(MAX_VISIBLE_ROWS - items.size) {
+            Spacer(modifier = GlanceModifier.defaultWeight())
         }
     }
 }

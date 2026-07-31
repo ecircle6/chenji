@@ -24,17 +24,19 @@ object EventCalc {
         }
     }
 
-    /** 下一次事件发生的阳历日期：今年的已经过了就取明年 */
+    /** 下一次事件发生的阳历日期：从“上一个年份”开始找第一个不早于今天的 */
     fun nextSolarDate(birthday: Birthday, today: LocalDate = LocalDate.now()): SolarDate {
-        val thisYear = solarDateInYear(birthday, today.year)
-        return if (DateUtils.daysUntilDate(thisYear.toLocalDate()) < 0) {
-            solarDateInYear(birthday, today.year + 1)
-        } else {
-            thisYear
+        // 必须从 today.year - 1 起步：农历腊月/冬月对应的阳历日期落在下一个公历年，
+        // 公历 1-2 月时眼前这次事件属于“上一个农历年”，从今年找会漏掉它、多算出一整年
+        for (year in today.year - 1..today.year + 1) {
+            val candidate = solarDateInYear(birthday, year)
+            if (!candidate.toLocalDate().isBefore(today)) return candidate
         }
+        return solarDateInYear(birthday, today.year + 1)
     }
 
     /** 距下一次事件还有几天，0 表示就是今天 */
     fun countdown(birthday: Birthday, today: LocalDate = LocalDate.now()): Int =
-        DateUtils.daysUntilDate(nextSolarDate(birthday, today).toLocalDate())
+        java.time.temporal.ChronoUnit.DAYS
+            .between(today, nextSolarDate(birthday, today).toLocalDate()).toInt()
 }
