@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.birthapp.BirthApp
+import com.birthapp.data.EventType
 import com.birthapp.notification.NotificationHelper
 import kotlinx.coroutines.launch
 
@@ -19,6 +20,8 @@ class AlarmReceiver : BroadcastReceiver() {
         val birthMonth = intent.getIntExtra(AlarmScheduler.EXTRA_BIRTH_MONTH, 1)
         val birthDay = intent.getIntExtra(AlarmScheduler.EXTRA_BIRTH_DAY, 1)
         val birthYear = intent.getIntExtra(AlarmScheduler.EXTRA_BIRTH_YEAR, 0)
+        // 老闹钟（升级前排下的）没带类型，按生日处理
+        val eventType = intent.getStringExtra(AlarmScheduler.EXTRA_EVENT_TYPE) ?: EventType.BIRTHDAY
 
         // 发送通知
         val app = context.applicationContext as BirthApp
@@ -29,7 +32,8 @@ class AlarmReceiver : BroadcastReceiver() {
             calendarType = calendarType,
             birthMonth = birthMonth,
             birthDay = birthDay,
-            birthYear = birthYear
+            birthYear = birthYear,
+            eventType = eventType
         )
 
         // 链式调度下一年的提醒（goAsync 保证后台进程不会在调度完成前被杀）

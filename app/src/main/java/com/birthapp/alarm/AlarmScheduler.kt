@@ -31,6 +31,7 @@ class AlarmScheduler(private val context: Context, private val database: AppData
             putExtra(EXTRA_BIRTH_MONTH, birthday.birthMonth)
             putExtra(EXTRA_BIRTH_DAY, birthday.birthDay)
             putExtra(EXTRA_BIRTH_YEAR, birthday.birthYear)
+            putExtra(EXTRA_EVENT_TYPE, birthday.eventType)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -121,5 +122,6 @@ class AlarmScheduler(private val context: Context, private val database: AppData
         const val EXTRA_BIRTH_MONTH = "birth_month"
         const val EXTRA_BIRTH_DAY = "birth_day"
         const val EXTRA_BIRTH_YEAR = "birth_year"
+        const val EXTRA_EVENT_TYPE = "event_type"
     }
 }

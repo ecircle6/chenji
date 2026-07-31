@@ -8,7 +8,9 @@ import androidx.core.app.NotificationCompat
 import com.birthapp.BirthApp
 import com.birthapp.MainActivity
 import com.birthapp.R
+import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
+import com.birthapp.util.EventTextUtils
 import com.birthapp.util.ZodiacUtils
 import java.time.LocalDate
 
@@ -21,28 +23,25 @@ class NotificationHelper(private val context: Context) {
         calendarType: String,
         birthMonth: Int,
         birthDay: Int,
-        birthYear: Int = 0
+        birthYear: Int = 0,
+        eventType: String = EventType.BIRTHDAY
     ) {
         val currentYear = LocalDate.now().year
-        val age = if (birthYear > 0) ZodiacUtils.getAge(birthYear, currentYear) else 0
-        val ageText = if (age > 0) "${age}岁" else ""
-
+        // 生日类就是年龄，纪念日类就是第几周年，算法一致
+        val years = if (birthYear > 0) ZodiacUtils.getAge(birthYear, currentYear) else 0
+    
         val dateInfo = if (calendarType == "lunar") {
             "农历${LunarCalendar.formatLunarDate(birthMonth, birthDay)}"
         } else {
             "${birthMonth}月${birthDay}日"
         }
-
-        val title: String
-        val text: String
-
-        if (advanceDays == 0) {
-            title = "今天是 $name 的${ageText}生日！"
-            text = "$dateInfo - 别忘了送上祝福！"
+    
+        val title = if (advanceDays == 0) {
+            EventTextUtils.notificationTitleToday(eventType, name, years)
         } else {
-            title = "$name 的生日快到了！"
-            text = "${ageText}生日还有 $advanceDays 天 - $dateInfo"
+            EventTextUtils.notificationTitleAdvance(eventType, name, years)
         }
+        val text = EventTextUtils.notificationText(eventType, dateInfo, advanceDays)
 
         val tapIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

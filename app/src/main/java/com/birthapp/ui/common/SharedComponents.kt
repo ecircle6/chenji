@@ -11,6 +11,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.birthapp.data.EventType
 import com.birthapp.ui.home.BirthdayDisplay
 import com.birthapp.ui.theme.*
 
@@ -26,18 +27,33 @@ fun BirthdayCard(
     modifier: Modifier = Modifier,
     darkTheme: Boolean = false
 ) {
-    val bgColor = if (display.isToday) {
+    val bgColor = if (display.isSolemn) {
+        // 忌日不跟三色循环，也不用“今天”的暖黄，固定用素净的灰蓝
+        if (darkTheme) CardSlateDark else CardSlate
+    } else if (display.isToday) {
         if (darkTheme) CardTodayDark else CardToday
     } else {
         val palette = if (darkTheme) cardColorsDark else cardColors
         palette[index % palette.size]
     }
 
-    val tagColor = when (display.birthday.relation) {
+    val tagColor = if (display.isSolemn) {
+        SlateInk
+    } else when (display.birthday.relation) {
         "family" -> Coral500
         "friend" -> Teal500
         "colleague" -> SunnyYellow700
         else -> Coral400
+    }
+
+    // 头像圈：生日用姓名首字，其余类型用类型 emoji，一眼分辨
+    val isBirthday = display.eventType == EventType.BIRTHDAY
+    val avatarColor = if (isBirthday) tagColor else eventAccent(display.eventType)
+    // 忌日的倒计时数字不用亮青色，避免显得轻快
+    val countdownColor = if (display.isSolemn) {
+        if (darkTheme) SlateInkLight else SlateInk
+    } else {
+        MaterialTheme.colorScheme.secondary
     }
 
     Card(
@@ -65,15 +81,16 @@ fun BirthdayCard(
                     // Avatar circle
                     Surface(
                         shape = CircleShape,
-                        color = tagColor.copy(alpha = 0.2f),
+                        color = avatarColor.copy(alpha = 0.2f),
                         modifier = Modifier.size(36.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
-                                text = display.birthday.name.first().toString(),
+                                text = if (isBirthday) display.birthday.name.first().toString()
+                                else display.typeEmoji,
                                 fontWeight = FontWeight.Bold,
-                                color = tagColor,
-                                fontSize = 16.sp
+                                color = avatarColor,
+                                fontSize = if (isBirthday) 16.sp else 15.sp
                             )
                         }
                     }
@@ -102,9 +119,9 @@ fun BirthdayCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Row 2: Date + zodiac + age
+            // Row 2: 类型 + 日期 + 年龄或周年
             Text(
-                text = "${if (display.birthday.calendarType == "lunar") "\uD83C\uDF19" else "☀️"} ${display.dateLabel}  ·  ${display.zodiacEmoji}属${display.zodiac} · ${display.age}岁",
+                text = display.infoLine,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -113,18 +130,18 @@ fun BirthdayCard(
 
             // Row 3: Countdown or today highlight
             if (display.isToday) {
+                val (bannerBg, bannerFg) = eventBannerColors(display.eventType, darkTheme)
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = SunnyYellow.copy(alpha = if (darkTheme) 0.18f else 0.3f),
+                    color = bannerBg,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "  \uD83C\uDF82 今天 ${display.age} 岁生日！",
+                        text = "  ${display.todayBanner}",
                         modifier = Modifier.padding(vertical = 10.dp, horizontal = 12.dp),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        // 深色下用浅珊瑚色，否则深红字压在深橄榄底上看不清
-                        color = if (darkTheme) Coral300 else Coral700
+                        color = bannerFg
                     )
                 }
             } else {
@@ -138,7 +155,7 @@ fun BirthdayCard(
                             text = "${display.countdown}",
                             fontSize = 40.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.secondary,
+                            color = countdownColor,
                             lineHeight = 40.sp
                         )
                         Text(
@@ -150,13 +167,13 @@ fun BirthdayCard(
                     }
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = Teal500.copy(alpha = 0.1f)
+                        color = (if (display.isSolemn) SlateInk else Teal500).copy(alpha = 0.1f)
                     ) {
                         Text(
                             text = "  ⏰ ${String.format("%02d:%02d", display.birthday.reminderHour, display.birthday.reminderMinute)}  ",
                             modifier = Modifier.padding(vertical = 4.dp, horizontal = 6.dp),
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.secondary
+                            color = countdownColor
                         )
                     }
                 }
@@ -188,7 +205,7 @@ fun EmptyBirthdayList(onAddClick: () -> Unit) {
         Spacer(modifier = Modifier.height(28.dp))
 
         Text(
-            text = "还没有记录任何生日哦",
+            text = "还没有任何记录哦",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -197,7 +214,7 @@ fun EmptyBirthdayList(onAddClick: () -> Unit) {
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "点击下方按钮，添加家人朋友的生日\n让每一个重要的日子都不再被遗忘",
+            text = "点击下方按钮，添加生日或纪念日\n让每一个重要的日子都不再被遗忘",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -212,7 +229,7 @@ fun EmptyBirthdayList(onAddClick: () -> Unit) {
                 .fillMaxWidth(0.6f)
                 .height(48.dp)
         ) {
-            Text("添加第一个生日", fontWeight = FontWeight.SemiBold)
+            Text("添加第一个记录", fontWeight = FontWeight.SemiBold)
         }
     }
 }

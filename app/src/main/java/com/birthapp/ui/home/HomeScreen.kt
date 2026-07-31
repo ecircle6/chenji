@@ -68,7 +68,7 @@ fun HomeScreen(
             ) {
                 Icon(
                     Icons.Default.Add,
-                    contentDescription = "添加生日",
+                    contentDescription = "添加记录",
                     tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
@@ -169,7 +169,7 @@ fun HomeScreen(
         AlertDialog(
             onDismissRequest = { deleteTargetId = -1L },
             title = { Text("确认删除") },
-            text = { Text("确定要删除「${target?.birthday?.name}」的生日记录吗？\n删除后将不再提醒。") },
+            text = { Text("确定要删除「${target?.birthday?.name}」的记录吗？\n删除后将不再提醒。") },
             confirmButton = {
                 TextButton(
                     onClick = {

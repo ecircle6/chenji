@@ -7,6 +7,7 @@ import com.birthapp.BirthApp
 import com.birthapp.alarm.AlarmScheduler
 import com.birthapp.data.AppDatabase
 import com.birthapp.data.Birthday
+import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +26,7 @@ data class AddEditUiState(
     val reminderHour: Int = 8,
     val reminderMinute: Int = 0,
     val relation: String = "family",
+    val eventType: String = EventType.BIRTHDAY,
     val notes: String = "",
     val isEditMode: Boolean = false,
     val saved: Boolean = false
@@ -54,6 +56,7 @@ class AddEditViewModel(application: Application) : AndroidViewModel(application)
                 reminderHour = b.reminderHour,
                 reminderMinute = b.reminderMinute,
                 relation = b.relation,
+                eventType = b.eventType,
                 notes = b.notes,
                 isEditMode = true
             )
@@ -102,6 +105,7 @@ class AddEditViewModel(application: Application) : AndroidViewModel(application)
         )
     }
     fun updateRelation(relation: String) { _uiState.value = _uiState.value.copy(relation = relation) }
+    fun updateEventType(eventType: String) { _uiState.value = _uiState.value.copy(eventType = eventType) }
     fun updateNotes(notes: String) { _uiState.value = _uiState.value.copy(notes = notes.take(MAX_NOTES_LENGTH)) }
 
     fun save() {
@@ -121,6 +125,9 @@ class AddEditViewModel(application: Application) : AndroidViewModel(application)
                 reminderHour = state.reminderHour,
                 reminderMinute = state.reminderMinute,
                 relation = state.relation,
+                // 必须显式带上：不传的话 Birthday 会用默认值 birthday，
+                // 编辑一条忌日记录再保存就会默默变回生日
+                eventType = state.eventType,
                 notes = state.notes,
                 updatedAt = System.currentTimeMillis()
             )

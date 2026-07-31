@@ -43,6 +43,12 @@ object EventType {
         else -> "出生日期"
     }
 
+    /** 名称输入项的叫法。结婚/恋爱/其他记的不一定是人，叫“姓名”不合适 */
+    fun nameFieldLabel(type: String): String = when (type) {
+        MARRIAGE, LOVE, OTHER -> "称呼 / 标题"
+        else -> "姓名"
+    }
+
     /** true 表示按“年龄 + 属相”展示，false 表示按“第 N 周年”展示 */
     fun usesAge(type: String): Boolean = type == BIRTHDAY || type == BABY
 

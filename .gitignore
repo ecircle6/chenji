@@ -18,6 +18,7 @@ build_log.txt
 # 测试过程中的临时截图
 screenshot_*.png
 test_*.png
+review_*.png
 mockup_check.png
 
 # 其他

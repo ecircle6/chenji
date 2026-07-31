@@ -7,9 +7,11 @@ import com.birthapp.BirthApp
 import com.birthapp.alarm.AlarmScheduler
 import com.birthapp.data.AppDatabase
 import com.birthapp.data.Birthday
+import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
 import com.birthapp.lunar.SolarDate
 import com.birthapp.util.DateUtils
+import com.birthapp.util.EventTextUtils
 import com.birthapp.util.ZodiacUtils
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -24,7 +26,13 @@ data class BirthdayDisplay(
     val dateLabel: String,
     val relationLabel: String,
     val relationEmoji: String,
-    val isToday: Boolean
+    val isToday: Boolean,
+    // 以下四项由 eventType 派生，统一在 EventTextUtils 里组装，避免各入口文案不一致
+    val eventType: String,
+    val typeEmoji: String,
+    val isSolemn: Boolean,
+    val infoLine: String,
+    val todayBanner: String
 )
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
@@ -98,7 +106,19 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             dateLabel = dateLabel,
             relationLabel = ZodiacUtils.getRelationLabel(relation),
             relationEmoji = ZodiacUtils.getRelationEmoji(relation),
-            isToday = countdown == 0
+            isToday = countdown == 0,
+            eventType = eventType,
+            typeEmoji = EventType.emoji(eventType),
+            isSolemn = EventType.isSolemn(eventType),
+            infoLine = EventTextUtils.infoLine(
+                eventType = eventType,
+                calendarType = calendarType,
+                dateLabel = dateLabel,
+                zodiacEmoji = zodiacEmoji,
+                zodiac = zodiac,
+                age = age
+            ),
+            todayBanner = EventTextUtils.cardBanner(eventType, name, age)
         )
     }
 }

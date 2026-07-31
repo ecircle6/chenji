@@ -15,11 +15,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
+import com.birthapp.ui.common.eventAccent
 import com.birthapp.ui.theme.*
 import java.time.YearMonth
 import java.util.Calendar
@@ -51,7 +54,7 @@ fun AddEditScreen(
             TopAppBar(
                 title = {
                     Text(
-                        if (state.isEditMode) "编辑生日" else "添加生日",
+                        if (state.isEditMode) "编辑记录" else "添加记录",
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp
                     )
@@ -82,11 +85,51 @@ fun AddEditScreen(
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            // Event type selector
+            SectionLabel("类型")
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                EventType.ALL.chunked(3).forEach { rowTypes ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        rowTypes.forEach { type ->
+                            val isSelected = state.eventType == type
+                            val accent = eventAccent(type)
+                            Surface(
+                                onClick = { viewModel.updateEventType(type) },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isSelected) accent.copy(alpha = 0.15f)
+                                else MaterialTheme.colorScheme.surface,
+                                border = androidx.compose.foundation.BorderStroke(
+                                    if (isSelected) 1.5.dp else 1.dp,
+                                    if (isSelected) accent
+                                    else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                )
+                            ) {
+                                Text(
+                                    text = "${EventType.emoji(type)} ${EventType.label(type)}",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 10.dp, horizontal = 2.dp),
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 1,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    color = if (isSelected) accent else MaterialTheme.colorScheme.onSurface,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             // Name field
             OutlinedTextField(
                 value = state.name,
                 onValueChange = { viewModel.updateName(it) },
-                label = { Text("姓名") },
+                label = { Text(EventType.nameFieldLabel(state.eventType)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -97,9 +140,11 @@ fun AddEditScreen(
             )
 
             // Calendar type toggle
-            SectionLabel("生日偏好")
+            val isBirthdayLike = EventType.usesAge(state.eventType)
+            SectionLabel(if (isBirthdayLike) "生日偏好" else "日期偏好")
             Text(
-                "选择按哪种日历过生日，切换时日期自动换算",
+                if (isBirthdayLike) "选择按哪种日历过生日，切换时日期自动换算"
+                else "选择按哪种日历纪念，切换时日期自动换算",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
                 modifier = Modifier.padding(bottom = 4.dp)
@@ -132,6 +177,7 @@ fun AddEditScreen(
             // Date picker
             if (state.calendarType == "solar") {
                 SolarDatePickerSection(
+                    dateLabel = EventType.dateFieldLabel(state.eventType),
                     year = state.birthYear,
                     month = state.birthMonth,
                     day = state.birthDay,
@@ -142,6 +188,7 @@ fun AddEditScreen(
                 )
             } else {
                 LunarDatePickerSection(
+                    dateLabel = EventType.dateFieldLabel(state.eventType),
                     year = state.birthYear,
                     month = state.birthMonth,
                     day = state.birthDay,
@@ -301,7 +348,7 @@ fun AddEditScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Coral500)
             ) {
                 Text(
-                    "保存生日",
+                    "保存",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
@@ -426,7 +473,7 @@ fun AddEditScreen(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("确认删除", fontWeight = FontWeight.Bold) },
-            text = { Text("确定要删除「${state.name}」的生日记录吗？") },
+            text = { Text("确定要删除「${state.name}」的记录吗？") },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
@@ -457,6 +504,7 @@ private fun SectionLabel(text: String) {
 
 @Composable
 private fun SolarDatePickerSection(
+    dateLabel: String,
     year: Int, month: Int, day: Int,
     onYearChange: (Int) -> Unit,
     onMonthChange: (Int) -> Unit,
@@ -476,7 +524,7 @@ private fun SolarDatePickerSection(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        SectionLabel("出生日期（阳历）")
+        SectionLabel("$dateLabel（阳历）")
         Surface(
             onClick = onOpenCalendar,
             shape = RoundedCornerShape(10.dp),
@@ -539,6 +587,7 @@ private fun SolarDatePickerSection(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LunarDatePickerSection(
+    dateLabel: String,
     year: Int, month: Int, day: Int, isLeap: Boolean,
     onYearChange: (Int) -> Unit,
     onMonthChange: (Int) -> Unit,
@@ -562,7 +611,7 @@ private fun LunarDatePickerSection(
 
     val hasLeapMonth = try { LunarCalendar.leapMonth(year) != 0 } catch (_: Exception) { false }
 
-    SectionLabel("出生日期（农历）")
+    SectionLabel("$dateLabel（农历）")
 
     Row(
         modifier = Modifier.fillMaxWidth(),
