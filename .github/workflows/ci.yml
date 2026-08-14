@@ -29,6 +29,19 @@ jobs:
       - name: 修复 gradlew 可执行权限（Windows 入库的脚本可能无 exec 位）
         run: chmod +x gradlew
 
+      # 临时诊断：定位 KSP 插件解析失败是哪个仓库不可达（验证后移除）
+      - name: 诊断仓库可达性
+        run: |
+          for url in \
+            "https://maven.aliyun.com/repository/gradle-plugin/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/2.0.21-1.0.28/com.google.devtools.ksp.gradle.plugin-2.0.21-1.0.28.pom" \
+            "https://repo.maven.apache.org/maven2/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/2.0.21-1.0.28/com.google.devtools.ksp.gradle.plugin-2.0.21-1.0.28.pom" \
+            "https://dl.google.com/dl/android/maven2/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/2.0.21-1.0.28/com.google.devtools.ksp.gradle.plugin-2.0.21-1.0.28.pom" \
+            "https://plugins.gradle.org/m2/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/2.0.21-1.0.28/com.google.devtools.ksp.gradle.plugin-2.0.21-1.0.28.pom"; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$url" || echo "ERR")
+            echo "HTTP $code <- $url"
+          done
+          exit 0
+
       - name: 运行单元测试（农历/备份/筛选/事件计算，共 5 个测试类）
         run: ./gradlew testDebugUnitTest
 
