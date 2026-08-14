@@ -29,7 +29,7 @@ jobs:
       - name: 修复 gradlew 可执行权限（Windows 入库的脚本可能无 exec 位）
         run: chmod +x gradlew
 
-      - name: 运行单元测试（农历/备份/筛选/事件计算，共 5 个测试类）
+      - name: 运行单元测试（农历/备份/筛选/事件计算/闹钟调度，共 6 个测试类）
         run: ./gradlew testDebugUnitTest
 
       - name: 构建 Debug 包

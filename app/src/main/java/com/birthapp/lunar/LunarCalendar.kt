@@ -1,9 +1,18 @@
 package com.birthapp.lunar
 
+import java.time.DateTimeException
 import java.time.LocalDate
 
 data class SolarDate(val year: Int, val month: Int, val day: Int) {
-    fun toLocalDate(): LocalDate = LocalDate.of(year, month, day)
+    /**
+     * 转 LocalDate。阳历 2/29 在平年不存在，退到 2/28（闰日生日平年提前一天过），
+     * 不让 AlarmScheduler / EventCalc 等调用方崩
+     */
+    fun toLocalDate(): LocalDate = try {
+        LocalDate.of(year, month, day)
+    } catch (_: DateTimeException) {
+        LocalDate.of(year, month, day - 1)
+    }
 }
 
 data class LunarDate(val year: Int, val month: Int, val day: Int, val isLeapMonth: Boolean = false)

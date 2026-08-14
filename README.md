@@ -29,7 +29,7 @@
 
 ## 持续集成与发布
 
-- **CI**（`.github/workflows/ci.yml`）：每次 push/PR 自动运行全部单元测试（农历/备份/筛选/事件计算 5 个测试类）+ 构建 Debug 包
+- **CI**（`.github/workflows/ci.yml`）：每次 push/PR 自动运行全部单元测试（农历/备份/筛选/事件计算/闹钟调度 6 个测试类）+ 构建 Debug 包
 - **Release**（`.github/workflows/release.yml`）：打 `v*` tag 自动签名构建正式包并发布 GitHub Release：
 
 ```bash

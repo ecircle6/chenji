@@ -77,45 +77,6 @@ class AlarmScheduler(private val context: Context, private val database: AppData
         alarmManager.cancel(pendingIntent)
     }
 
-    /**
-     * 计算下次触发闹钟的时间戳（毫秒）
-     * 必须严格晚于当前时刻，否则闹钟会立即触发，导致提醒无限重复弹出
-     */
-    fun calculateNextTriggerTime(birthday: Birthday): Long? {
-        val now = LocalDateTime.now()
-        // 从去年起步：农历腊月/冬月对应的阳历日期落在下一个公历年，
-        // 公历 1-2 月时眼前这次属于“上一个农历年”，从今年找会直接错过这次提醒
-        var year = now.year - 1
-
-        // 逐年尝试，直到找到一个严格在未来的触发时刻
-        repeat(4) {
-            val birthdaySolar = getNextBirthdaySolarDate(birthday, year)
-            val reminderDate = birthdaySolar.toLocalDate().minusDays(birthday.advanceDays.toLong())
-            val triggerDateTime = reminderDate.atTime(birthday.reminderHour, birthday.reminderMinute)
-            if (triggerDateTime.isAfter(now)) {
-                return triggerDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-            }
-            year++
-        }
-        return null
-    }
-
-    /**
-     * 计算生日在指定年份对应的阳历日期
-     */
-    private fun getNextBirthdaySolarDate(birthday: Birthday, year: Int): SolarDate {
-        return if (birthday.calendarType == "lunar") {
-            LunarCalendar.getNextLunarBirthdayInSolar(
-                birthday.birthMonth,
-                birthday.birthDay,
-                birthday.isLeapMonth,
-                year
-            )
-        } else {
-            SolarDate(year, birthday.birthMonth, birthday.birthDay)
-        }
-    }
-
     companion object {
         const val EXTRA_BIRTHDAY_ID = "birthday_id"
         const val EXTRA_NAME = "name"
@@ -125,5 +86,48 @@ class AlarmScheduler(private val context: Context, private val database: AppData
         const val EXTRA_BIRTH_DAY = "birth_day"
         const val EXTRA_BIRTH_YEAR = "birth_year"
         const val EXTRA_EVENT_TYPE = "event_type"
+    }
+}
+
+/**
+ * 计算下次触发闹钟的时间戳（毫秒）。
+ * 顶层纯函数（`now` 可注入便于单测），AlarmScheduler 与 DetailViewModel 共用，
+ * 保证页面显示的"下次提醒"和真正会响的闹钟是同一个时间。
+ * 必须严格晚于当前时刻，否则闹钟会立即触发，导致提醒无限重复弹出
+ */
+fun calculateNextTriggerTime(
+    birthday: Birthday,
+    now: LocalDateTime = LocalDateTime.now()
+): Long? {
+    // 从去年起步：农历腊月/冬月对应的阳历日期落在下一个公历年，
+    // 公历 1-2 月时眼前这次属于"上一个农历年"，从今年找会直接错过这次提醒
+    var year = now.year - 1
+
+    // 逐年尝试，直到找到一个严格在未来的触发时刻
+    repeat(4) {
+        val birthdaySolar = getNextBirthdaySolarDate(birthday, year)
+        val reminderDate = birthdaySolar.toLocalDate().minusDays(birthday.advanceDays.toLong())
+        val triggerDateTime = reminderDate.atTime(birthday.reminderHour, birthday.reminderMinute)
+        if (triggerDateTime.isAfter(now)) {
+            return triggerDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        }
+        year++
+    }
+    return null
+}
+
+/**
+ * 计算生日在指定年份对应的阳历日期
+ */
+private fun getNextBirthdaySolarDate(birthday: Birthday, year: Int): SolarDate {
+    return if (birthday.calendarType == "lunar") {
+        LunarCalendar.getNextLunarBirthdayInSolar(
+            birthday.birthMonth,
+            birthday.birthDay,
+            birthday.isLeapMonth,
+            year
+        )
+    } else {
+        SolarDate(year, birthday.birthMonth, birthday.birthDay)
     }
 }

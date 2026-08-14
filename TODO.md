@@ -19,10 +19,11 @@
   - 配套：`NotificationHelper` 的 extra 键改用 `AlarmScheduler.EXTRA_BIRTHDAY_ID` 常量，消除字面量重复
   - 验收：✅ 冷启动/热启动点击通知均直达详情页；记录已删时安全回首页
 
-- [ ] **AlarmScheduler 单元测试**
-  - 问题：`alarm/AlarmScheduler.kt` 的 `calculateNextTriggerTime` 是最核心的纯逻辑，却零测试
-  - 覆盖点：提前天数、自定义提醒时刻、农历腊月/冬月跨公历年边界、闰月缺失年降级、`null` 分支
-  - 验收：新增测试类 `AlarmSchedulerTest.kt`，用例 ≥ 10
+- [x] **AlarmScheduler 单元测试**（2026-08-14 完成）
+  - 实现：`calculateNextTriggerTime` 提取为顶层纯函数（`now` 参数可注入时钟），DetailViewModel 改调同一函数
+  - 新增 `AlarmSchedulerTest.kt` 共 17 用例：当天/提前天数/自定义时刻（含 23:59、0:00 边界）/农历腊月冬月跨年/闰月缺失年降级/闰月年正常/提前 365 天窗口尾部/now 恰好等于触发点/确定性
+  - 测试驱动发现并修复缺陷：阳历 2/29 在平年 `LocalDate.of` 会抛异常，`SolarDate.toLocalDate()` 降级为 2/28（闰日生日平年提前一天过），AlarmScheduler 与 EventCalc 同源一并修复
+  - 验收：✅ 17 个用例全部通过，回归 5 个既有测试类无破坏
 
 - [ ] **开启 Room exportSchema 并补迁移测试**
   - 问题：`AppDatabase.kt` 中 `exportSchema = false`，schema 变更无自动化校验手段

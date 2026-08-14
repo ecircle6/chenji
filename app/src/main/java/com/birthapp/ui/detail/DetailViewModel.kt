@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.birthapp.BirthApp
 import com.birthapp.alarm.AlarmScheduler
+import com.birthapp.alarm.calculateNextTriggerTime
 import com.birthapp.data.AppDatabase
 import com.birthapp.data.Birthday
 import com.birthapp.data.EventType
@@ -154,7 +155,7 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
         val nextReminderText = if (!isActive) {
             "提醒已暂停"
         } else {
-            val triggerMillis = scheduler.calculateNextTriggerTime(this)
+            val triggerMillis = calculateNextTriggerTime(this)
             if (triggerMillis == null) {
                 "暂无提醒计划"
             } else {
