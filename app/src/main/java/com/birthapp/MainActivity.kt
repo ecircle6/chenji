@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -28,6 +29,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.birthapp.alarm.AlarmScheduler
 import com.birthapp.settings.ThemeMode
 import com.birthapp.ui.add.AddEditScreen
 import com.birthapp.ui.detail.DetailScreen
@@ -41,6 +43,10 @@ class MainActivity : ComponentActivity() {
     // 小组件加号的跳转请求。用计数而不是布尔值：singleTask 下 App 活着时
     // 再点加号走的是 onNewIntent，每次 +1 都能触发一次新的跳转
     private val openAddRequests = mutableIntStateOf(0)
+
+    // 通知点击的详情跳转请求。存记录 id 而不是布尔值：App 活着时点通知走
+    // onNewIntent，同一条通知被点两次需要能再次跳转，所以导航完成后要清空
+    private val pendingDetailId = mutableStateOf<Long?>(null)
 
     // 强制应用使用中文环境，确保日历选择器等系统控件显示中文
     override fun attachBaseContext(newBase: Context) {
@@ -65,6 +71,8 @@ class MainActivity : ComponentActivity() {
             // 冷启动就带着加号 action 进来（App 没活着时点小组件加号）。
             // 旋转屏幕、切深色模式重建时 savedInstanceState 非空，不会重复跳
             if (intent?.action == ACTION_OPEN_ADD) openAddRequests.intValue++
+            // 冷启动点通知进来：同样只在首次创建时处理，避免重建后重复跳详情
+            handleDetailIntent(intent)
         }
 
         setContent {
@@ -81,8 +89,12 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // 从小组件的加号进来时直接落到新增页
-                    BirthAppNav(openAddRequest = openAddRequests.intValue)
+                    // 从小组件的加号进来时直接落到新增页；点通知进来时直达详情页
+                    BirthAppNav(
+                        openAddRequest = openAddRequests.intValue,
+                        pendingDetailId = pendingDetailId.value,
+                        onDetailHandled = { pendingDetailId.value = null }
+                    )
                 }
             }
         }
@@ -93,6 +105,17 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent.action == ACTION_OPEN_ADD) openAddRequests.intValue++
+        handleDetailIntent(intent)
+    }
+
+    /**
+     * 读取通知点击的 extra，记录要直达的详情页 id。
+     * 通知点击与小组件加号共用 onNewIntent 通道，互不冲突：
+     * 通知带 EXTRA_BIRTHDAY_ID（可正可负），加号只带 action
+     */
+    private fun handleDetailIntent(intent: Intent?) {
+        val id = intent?.getLongExtra(AlarmScheduler.EXTRA_BIRTHDAY_ID, -1L) ?: -1L
+        if (id > 0) pendingDetailId.value = id
     }
 
     companion object {
@@ -141,7 +164,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun BirthAppNav(openAddRequest: Int = 0) {
+fun BirthAppNav(
+    openAddRequest: Int = 0,
+    pendingDetailId: Long? = null,
+    onDetailHandled: () -> Unit = {}
+) {
     val navController = rememberNavController()
 
     // 入口仍然是首页，只是多跳一步到新增页；
@@ -151,6 +178,14 @@ fun BirthAppNav(openAddRequest: Int = 0) {
         if (openAddRequest > 0) {
             navController.navigate("add") { launchSingleTop = true }
         }
+    }
+
+    // 通知点击直达详情页。导航后立刻清空状态，保证同一条通知再点一次还能跳；
+    // 记录已被删除时 DetailScreen 会自动返回首页，这里不用额外兜底
+    LaunchedEffect(pendingDetailId) {
+        val id = pendingDetailId ?: return@LaunchedEffect
+        navController.navigate("detail/$id") { launchSingleTop = true }
+        onDetailHandled()
     }
 
     NavHost(

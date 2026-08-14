@@ -8,6 +8,7 @@ import androidx.core.app.NotificationCompat
 import com.birthapp.BirthApp
 import com.birthapp.MainActivity
 import com.birthapp.R
+import com.birthapp.alarm.AlarmScheduler
 import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
 import com.birthapp.util.EventTextUtils
@@ -45,7 +46,8 @@ class NotificationHelper(private val context: Context) {
 
         val tapIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            putExtra("birthday_id", birthdayId)
+            // 用 AlarmScheduler 的常量而不是字面量，避免和闹钟 Intent 的键不一致
+            putExtra(AlarmScheduler.EXTRA_BIRTHDAY_ID, birthdayId)
         }
         val pendingIntent = PendingIntent.getActivity(
             context,

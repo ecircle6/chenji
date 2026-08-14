@@ -14,10 +14,10 @@
 
 ## P0 — 缺陷修复（优先做，改动小、收益直接）
 
-- [ ] **通知点击跳转详情页**
-  - 问题：`NotificationHelper.kt` 已把 `birthday_id` 放进 Intent，但 `MainActivity.kt` 只处理 `ACTION_OPEN_ADD`，点通知永远只回首页列表
-  - 方案：MainActivity 解析 `birthday_id` extra → 深链到对应记录详情页（复用现有 singleTask 返回机制）
-  - 验收：点击通知直达对应详情页；通知不可见时（记录已删）安全回首页
+- [x] **通知点击跳转详情页**（2026-08-14 完成）
+  - 实现：`MainActivity` 新增 `pendingDetailId` 状态，`onCreate`（冷启动）与 `onNewIntent`（热启动）解析 `birthday_id` extra → 导航到现成的 `detail/{id}` 路由；导航完成即清空状态，同一条通知可重复跳转；记录已删时详情页自动返回首页
+  - 配套：`NotificationHelper` 的 extra 键改用 `AlarmScheduler.EXTRA_BIRTHDAY_ID` 常量，消除字面量重复
+  - 验收：✅ 冷启动/热启动点击通知均直达详情页；记录已删时安全回首页
 
 - [ ] **AlarmScheduler 单元测试**
   - 问题：`alarm/AlarmScheduler.kt` 的 `calculateNextTriggerTime` 是最核心的纯逻辑，却零测试
