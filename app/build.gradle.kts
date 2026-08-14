@@ -5,6 +5,14 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
+    id("androidx.room")
+}
+
+// Room schema 产物目录：与实体编译结果做一致性校验（checkSchema），产物入库。
+// 放 src/test/assets 根下（MigrationTestHelper 从 assets 读 <类名>/<版本>.json，
+// 路径不带 schemas/ 前缀），Robolectric 单测直接能读到
+room {
+    schemaDirectory("$projectDir/src/test/assets")
 }
 
 // 签名凭据放在 keystore.properties（已在 .gitignore 里忽略，不进版本库）。
@@ -76,6 +84,13 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // Robolectric 单测需要 Android 资源环境（迁移测试要读 assets 里的 schema）
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -119,4 +134,10 @@ dependencies {
     // 备份编解码用的 org.json 在本地单测里是空壳（Android 框架类），
     // 补一份真实现只给测试用，不会打进安装包
     testImplementation("org.json:json:20231013")
+
+    // 迁移测试：Robolectric 在 JVM 上提供 SQLite，MigrationTestHelper 校验迁移正确性
+    testImplementation("androidx.room:room-testing:2.6.1")
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("androidx.test:core:1.6.1")
+    testImplementation("androidx.test:monitor:1.7.1")
 }

@@ -3,4 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android") version "2.0.21" apply false
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.21" apply false
     id("com.google.devtools.ksp") version "2.0.21-1.0.28" apply false
+    // Room Gradle 插件：提供 schemaDirectory DSL 与 checkSchema 任务，
+    // 校验已入库的 schema 与当前实体一致
+    id("androidx.room") version "2.6.1" apply false
 }

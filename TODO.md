@@ -25,10 +25,11 @@
   - 测试驱动发现并修复缺陷：阳历 2/29 在平年 `LocalDate.of` 会抛异常，`SolarDate.toLocalDate()` 降级为 2/28（闰日生日平年提前一天过），AlarmScheduler 与 EventCalc 同源一并修复
   - 验收：✅ 17 个用例全部通过，回归 5 个既有测试类无破坏
 
-- [ ] **开启 Room exportSchema 并补迁移测试**
-  - 问题：`AppDatabase.kt` 中 `exportSchema = false`，schema 变更无自动化校验手段
-  - 方案：打开导出，把 schema 产物纳入版本库；为 v1→v2 迁移补测试（Room MigrationTestHelper）
-  - 验收：`assembleDebug` 产物含 schema JSON；迁移测试通过
+- [x] **开启 Room exportSchema 并补迁移测试**（2026-08-14 完成）
+  - 实现：`AppDatabase` 开 `exportSchema = true`，schema 产物（1.json/2.json）入库到 `app/src/test/assets/`；根构建加 `androidx.room` 插件，`room.schemaDirectory` 指向同目录，schema 随 KSP 编译自动生成
+  - 新增 `MigrationTest.kt`（Robolectric + 真实 SQLite）：从 1.json 建表 SQL 建 v1 库并插入老数据 → `Room.databaseBuilder` 打开触发 `MIGRATION_1_2` → Room 运行时校验表结构与实体一致、老数据完整、eventType 默认 'birthday'。改实体漏写迁移/漏升版本时该测试直接失败
+  - 坑记录：① Room schema JSON 的 createSql 里表名是 `${TABLE_NAME}` 占位符，测试需替换为真实表名；② Robolectric 不合并测试源集 assets，`MigrationTestHelper` 读不到 schema → 改用 Room 自身运行时校验（RoomOpenHelper.validateMigration），不依赖 helper；③ Room 2.6.1 的 Gradle 插件没有 `checkSchema` 任务，schema 漂移靠迁移测试兜底（升级 Room 后可补）
+  - 验收：✅ `assembleDebug` 产物含 schema JSON；迁移测试通过（2 用例）
 
 ---
 
