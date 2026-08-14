@@ -5,14 +5,15 @@
 #       修改本文件后重新运行 bash tools/install-hooks.sh
 # =============================================================================
 
-HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+# 钩子实际位于 .git/hooks/，仓库根目录要再往上两级
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
 # 有变更要推送才检查（git push 不带 refs 时 stdin 为空，跳过）
 if [ -p /dev/stdin ]; then
-    if [ -f "$HOOK_DIR/tools/check-docs-sync.sh" ]; then
-        bash "$HOOK_DIR/tools/check-docs-sync.sh"
+    if [ -f "$REPO_ROOT/tools/check-docs-sync.sh" ]; then
+        bash "$REPO_ROOT/tools/check-docs-sync.sh"
     else
-        echo "⚠ 文档同步检测脚本缺失：$HOOK_DIR/tools/check-docs-sync.sh（可重新 clone 或 git pull 后运行 bash tools/install-hooks.sh）"
+        echo "⚠ 文档同步检测脚本缺失：$REPO_ROOT/tools/check-docs-sync.sh（可重新 clone 或 git pull 后运行 bash tools/install-hooks.sh）"
     fi
 fi
 
