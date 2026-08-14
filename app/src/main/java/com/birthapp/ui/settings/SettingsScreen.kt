@@ -1,6 +1,7 @@
 package com.birthapp.ui.settings
 
 import android.content.Intent
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -38,6 +39,7 @@ fun SettingsScreen(
     // 主题偏好直接读 Application 上的全局单例，改动会即时反映到全 App
     val themeStore = (LocalContext.current.applicationContext as BirthApp).themeStore
     val currentMode by themeStore.mode.collectAsStateWithLifecycle()
+    val dynamicColor by themeStore.dynamicColor.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     // 导出：系统文件选择器让用户自己挑保存位置，不需要存储权限
@@ -112,6 +114,33 @@ fun SettingsScreen(
                             HorizontalDivider(
                                 modifier = Modifier.padding(start = 20.dp),
                                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+                            )
+                        }
+                    }
+                    // 动态取色只有 Android 12+ 有壁纸取色能力，低版本直接不显示
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(start = 20.dp),
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { themeStore.setDynamicColor(!dynamicColor) }
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("动态取色", fontWeight = FontWeight.Medium, fontSize = 15.sp)
+                                Text(
+                                    "跟随系统壁纸配色（Material You）",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                                )
+                            }
+                            Switch(
+                                checked = dynamicColor,
+                                onCheckedChange = { themeStore.setDynamicColor(it) }
                             )
                         }
                     }

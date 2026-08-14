@@ -28,6 +28,10 @@ class ThemeStore(context: Context) {
     private val _mode = MutableStateFlow(load())
     val mode: StateFlow<ThemeMode> = _mode.asStateFlow()
 
+    private val _dynamicColor = MutableStateFlow(prefs.getBoolean(KEY_DYNAMIC_COLOR, false))
+    /** Material You 动态取色：跟随系统壁纸配色（仅 Android 12+ 生效） */
+    val dynamicColor: StateFlow<Boolean> = _dynamicColor.asStateFlow()
+
     private fun load(): ThemeMode {
         val saved = prefs.getString(KEY_THEME_MODE, ThemeMode.SYSTEM.name)
         // valueOf 对脏数据会抛异常，兜底回跟随系统
@@ -39,8 +43,14 @@ class ThemeStore(context: Context) {
         _mode.value = mode
     }
 
+    fun setDynamicColor(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_DYNAMIC_COLOR, enabled).apply()
+        _dynamicColor.value = enabled
+    }
+
     companion object {
         private const val PREFS_NAME = "birthapp_settings"
         private const val KEY_THEME_MODE = "theme_mode"
+        private const val KEY_DYNAMIC_COLOR = "dynamic_color"
     }
 }

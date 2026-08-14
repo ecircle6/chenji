@@ -74,10 +74,9 @@
   - 方案：文案迁入 `strings.xml`（中/英双语），移除强设中文逻辑
   - 参照：MemoD 中英双语跟随系统
 
-- [ ] **edge-to-edge + Material You 动态取色**
-  - 问题：`Theme.kt:73-77` 手动 `statusBarColor` 在 Android 15 已废弃/失效
-  - 方案：适配系统栏 insets；深色档支持 `dynamicLightColorScheme`/`dynamicDarkColorScheme` 动态取色（可设开关）
-  - 验收：Android 15 真机状态栏与内容衔接正确
+- [x] **edge-to-edge + Material You 动态取色**（2026-08-14 完成）
+  - 实现：`MainActivity` 调 `enableEdgeToEdge()`（targetSdk 35 下 Android 15 强制），`Theme.kt` 删除已废弃的 `statusBarColor` 手动涂色（保留图标明暗控制）；`ThemeStore` 加 `dynamicColor` 开关（prefs 持久化，默认关保持品牌 Coral/Teal 配色），`BirthAppTheme` 在 Android 12+ 且开启时用 `dynamicLightColorScheme/dynamicDarkColorScheme`；设置页深夜模式卡片加"动态取色"Switch（SDK<31 隐藏）
+  - 验收：✅ 模拟器（Android 15）状态栏与内容衔接正常、无遮挡；开关写入 prefs 即时生效、无崩溃
 
 - [ ] **@Preview 与 Compose UI 测试**
   - 问题：38 个主源码文件零 @Preview，UI 迭代全靠真机

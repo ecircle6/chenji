@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.os.PowerManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
@@ -63,6 +64,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // targetSdk 35 下 Android 15 强制 edge-to-edge：内容延伸到状态栏/导航栏后面，
+        // 系统按浅/深色自动绘状态栏背景，App 内不再手动涂色
+        enableEdgeToEdge()
         // 只在首次创建时请求权限。切换系统深色模式、旋转屏幕都会重建 Activity，
         // 此时 savedInstanceState 非空；若每次都请求，就会反复弹出电池优化设置页打扰用户
         if (savedInstanceState == null) {
@@ -79,12 +83,14 @@ class MainActivity : ComponentActivity() {
             // 读主题偏好：跟随系统时看系统深色，否则按用户选的强制浅/深
             val themeMode by (application as BirthApp).themeStore.mode
                 .collectAsStateWithLifecycle()
+            val dynamicColor by (application as BirthApp).themeStore.dynamicColor
+                .collectAsStateWithLifecycle()
             val darkTheme = when (themeMode) {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
             }
-            BirthAppTheme(darkTheme = darkTheme) {
+            BirthAppTheme(darkTheme = darkTheme, dynamicColor = dynamicColor) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
