@@ -3,6 +3,7 @@ package com.birthapp.util
 import com.birthapp.data.Birthday
 import com.birthapp.lunar.LunarCalendar
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
 
@@ -82,5 +83,42 @@ class EventCalcTest {
         )
         assertEquals(11, EventCalc.countdown(b, LocalDate.of(2026, 7, 30)))
         assertEquals(0, EventCalc.countdown(b, LocalDate.of(2026, 8, 10)))
+    }
+
+    // ==================== 月历落点 ====================
+
+    private fun solarBirthday(name: String, month: Int, day: Int) = Birthday(
+        name = name, birthYear = 1990, birthMonth = month, birthDay = day,
+        calendarType = "solar"
+    )
+
+    @Test
+    fun `月历落点_阳历生日标在当月对应日期`() {
+        val b = solarBirthday("小明", 8, 14)
+        val map = EventCalc.eventsInMonth(listOf(b), java.time.YearMonth.of(2026, 8))
+        assertEquals(listOf("小明"), map[14]?.map { it.name })
+    }
+
+    @Test
+    fun `月历落点_生日不在当月则不出现`() {
+        val b = solarBirthday("小明", 8, 14)
+        val map = EventCalc.eventsInMonth(listOf(b), java.time.YearMonth.of(2026, 9))
+        assertTrue(map.isEmpty())
+    }
+
+    @Test
+    fun `月历落点_农历腊月生日跨公历年_标在次年一月`() {
+        // 农历 2026 腊月十五 = 阳历 2027-01-22
+        val b = lunarBirthday(12, 15)
+        val map = EventCalc.eventsInMonth(listOf(b), java.time.YearMonth.of(2027, 1))
+        assertEquals(listOf("测试"), map[22]?.map { it.name })
+    }
+
+    @Test
+    fun `月历落点_同日多人生日_合并到同一天`() {
+        val b1 = solarBirthday("小明", 8, 14)
+        val b2 = solarBirthday("小红", 8, 14)
+        val map = EventCalc.eventsInMonth(listOf(b1, b2), java.time.YearMonth.of(2026, 8))
+        assertEquals(listOf("小明", "小红"), map[14]?.map { it.name })
     }
 }

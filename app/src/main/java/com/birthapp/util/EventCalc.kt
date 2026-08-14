@@ -39,4 +39,19 @@ object EventCalc {
     fun countdown(birthday: Birthday, today: LocalDate = LocalDate.now()): Int =
         java.time.temporal.ChronoUnit.DAYS
             .between(today, nextSolarDate(birthday, today).toLocalDate()).toInt()
+
+    /**
+     * 某个月份内每个日期对应的事件（按下一次事件落点分组）。
+     * 从月初前一天往后找下一次事件，天然正确处理农历跨公历年：
+     * 查 2027 年 1 月时，2026 腊月的生日（阳历落在 2027-01）会被算进来
+     */
+    fun eventsInMonth(birthdays: List<Birthday>, month: java.time.YearMonth): Map<Int, List<Birthday>> {
+        val start = month.atDay(1).minusDays(1)
+        return birthdays
+            .mapNotNull { b ->
+                val next = nextSolarDate(b, start)
+                if (next.year == month.year && next.month == month.monthValue) next.day to b else null
+            }
+            .groupBy({ it.first }, { it.second })
+    }
 }

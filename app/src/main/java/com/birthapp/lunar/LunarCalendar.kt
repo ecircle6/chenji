@@ -134,6 +134,9 @@ object LunarCalendar {
         return "$m$d"
     }
 
+    /** 农历日子名（初一、十五、廿三…），月历单元格小字标注用，不带月份 */
+    fun lunarDayName(day: Int): String = if (day in 1..30) CHINESE_DAYS[day] else "${day}日"
+
     // ==================== 内部工具 ====================
 
     private fun daysSinceBase(year: Int, month: Int, day: Int): Int {

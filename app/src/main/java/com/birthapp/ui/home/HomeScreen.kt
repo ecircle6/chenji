@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -61,6 +62,8 @@ fun HomeScreen(
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val isSearching by viewModel.isSearching.collectAsStateWithLifecycle()
     var deleteTargetId by remember { mutableLongStateOf(-1L) }
+    // 列表/月历视图切换（页面级状态，旋转屏幕后保持）
+    var showCalendar by rememberSaveable { mutableStateOf(false) }
     // 卡片背景色必须跟随当前主题深浅（含 App 内强制的浅/深），否则深色下会变成浅底浅字看不清
     val isDark = LocalDarkTheme.current
     val searchFocus = remember { FocusRequester() }
@@ -157,6 +160,31 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // 列表 / 月历切换（搜索态是全局查找，只保留列表）
+            if (!isSearching) {
+                SingleChoiceSegmentedButtonRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                ) {
+                    SegmentedButton(
+                        selected = !showCalendar,
+                        onClick = { showCalendar = false },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                    ) {
+                        Text("列表", fontSize = 13.sp)
+                    }
+                    SegmentedButton(
+                        selected = showCalendar,
+                        onClick = { showCalendar = true },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                    ) {
+                        Text("月历", fontSize = 13.sp)
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+
             // Pill-style tabs（搜索是跳出关系筛选的全局查找，所以搜索态不显示标签）
             if (!isSearching) {
                 LazyRow(
@@ -229,8 +257,13 @@ fun HomeScreen(
                 }
             }
 
-            // List or empty state
-            if (birthdays.isEmpty()) {
+            // 月历视图（复用同一份筛选结果；搜索态强制列表）
+            if (showCalendar && !isSearching) {
+                CalendarScreen(
+                    birthdays = birthdays,
+                    onItemClick = onItemClick
+                )
+            } else if (birthdays.isEmpty()) {
                 // 搜索无结果不能用“添加第一个记录”的空页，否则会让人以为数据没了
                 if (searchQuery.isNotBlank()) {
                     EmptySearchResult(keyword = searchQuery.trim())
