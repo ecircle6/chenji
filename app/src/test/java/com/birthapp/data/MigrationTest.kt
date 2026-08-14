@@ -15,9 +15,9 @@ import org.robolectric.annotation.Config
 import java.io.File
 
 /**
- * Room 迁移测试：用真实 SQLite（Robolectric 在 JVM 上提供）从 1.json 的建表 SQL
- * 建 v1 库并插入老数据，然后通过 Room.databaseBuilder 打开（version 2）——
- * Room 会执行 MIGRATION_1_2 并在打开时校验 schema 与当前实体一致，不一致直接抛异常。
+ * Room 迁移测试：用真实 SQLite（Robolectric 在 JVM 上提供）从历史版本的
+ * schema JSON 建库并插入老数据，然后通过 Room.databaseBuilder 打开（当前版本 3）——
+ * Room 会执行迁移链并在打开时校验 schema 与当前实体一致，不一致直接抛异常。
  * 这套校验路径和生产环境完全一致（RoomOpenHelper.validateMigration）。
  *
  * 不用 MigrationTestHelper：Robolectric 不合并测试源集 assets，而 schema JSON
@@ -30,8 +30,8 @@ class MigrationTest {
     private val context = RuntimeEnvironment.getApplication()
 
     @Test
-    fun v1迁移到v2_老数据完整保留且eventType默认birthday() {
-        createV1Database("migration-test.db") { db ->
+    fun v1迁移到v3_老数据完整且eventType默认birthday() {
+        createDatabase("migration-v1.db", 1) { db ->
             db.execSQL(
                 "INSERT INTO birthdays (name, birthYear, birthMonth, birthDay, calendarType," +
                     " isLeapMonth, advanceDays, reminderHour, reminderMinute, relation," +
@@ -41,9 +41,8 @@ class MigrationTest {
             )
         }
 
-        // 打开即触发 MIGRATION_1_2 + schema 校验；迁移写错这里会直接抛异常
-        val roomDb = Room.databaseBuilder(context, AppDatabase::class.java, "migration-test.db")
-            .addMigrations(AppDatabase.MIGRATION_1_2)
+        val roomDb = Room.databaseBuilder(context, AppDatabase::class.java, "migration-v1.db")
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
             .build()
 
         roomDb.openHelper.writableDatabase.query("SELECT * FROM birthdays").use { cursor ->
@@ -51,20 +50,50 @@ class MigrationTest {
             assertEquals(1, cursor.count)
             assertEquals("爷爷", cursor.getString(cursor.getColumnIndexOrThrow("name")))
             assertEquals("lunar", cursor.getString(cursor.getColumnIndexOrThrow("calendarType")))
-            assertEquals(3, cursor.getInt(cursor.getColumnIndexOrThrow("advanceDays")))
             assertEquals("2026-02-02", cursor.getString(cursor.getColumnIndexOrThrow("nextReminderDate")))
-            // 新增列按迁移脚本默认值填充
+            // v1 -> v2 新增列按迁移脚本默认值填充
             assertEquals("birthday", cursor.getString(cursor.getColumnIndexOrThrow("eventType")))
+            // v2 -> v3：INTEGER 单值 3 转成 TEXT 多级列表 "3"，语义不变
+            assertEquals("3", cursor.getString(cursor.getColumnIndexOrThrow("advanceDays")))
+            // v3 新增置顶列默认 0
+            assertEquals(0, cursor.getInt(cursor.getColumnIndexOrThrow("pinned")))
         }
         roomDb.close()
     }
 
     @Test
-    fun v1空库迁移到v2_表结构校验通过() {
-        createV1Database("migration-empty.db")
+    fun v2迁移到v3_老数据完整且pinned默认0() {
+        createDatabase("migration-v2.db", 2) { db ->
+            db.execSQL(
+                "INSERT INTO birthdays (name, birthYear, birthMonth, birthDay, calendarType," +
+                    " isLeapMonth, advanceDays, reminderHour, reminderMinute, relation, eventType," +
+                    " notes, isActive, nextReminderDate, createdAt, updatedAt)" +
+                    " VALUES ('小明', 1998, 8, 14, 'solar', 0, 3, 8, 0, 'friend', 'birthday'," +
+                    " '多级迁移验证', 1, NULL, 1000, 1000)"
+            )
+        }
 
+        val roomDb = Room.databaseBuilder(context, AppDatabase::class.java, "migration-v2.db")
+            .addMigrations(AppDatabase.MIGRATION_2_3)
+            .build()
+
+        roomDb.openHelper.writableDatabase.query("SELECT * FROM birthdays").use { cursor ->
+            assertTrue("迁移后应有 1 条记录", cursor.moveToFirst())
+            assertEquals("小明", cursor.getString(cursor.getColumnIndexOrThrow("name")))
+            assertEquals("birthday", cursor.getString(cursor.getColumnIndexOrThrow("eventType")))
+            assertEquals("多级迁移验证", cursor.getString(cursor.getColumnIndexOrThrow("notes")))
+            // 旧单值 3 原样转成 TEXT "3"（多级列表 [3] 的存储形态）
+            assertEquals("3", cursor.getString(cursor.getColumnIndexOrThrow("advanceDays")))
+            assertEquals(0, cursor.getInt(cursor.getColumnIndexOrThrow("pinned")))
+        }
+        roomDb.close()
+    }
+
+    @Test
+    fun v1空库迁移到v3_表结构校验通过() {
+        createDatabase("migration-empty.db", 1)
         val roomDb = Room.databaseBuilder(context, AppDatabase::class.java, "migration-empty.db")
-            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
             .build()
         roomDb.openHelper.writableDatabase.query("SELECT COUNT(*) FROM birthdays").use { cursor ->
             assertTrue(cursor.moveToFirst())
@@ -74,13 +103,15 @@ class MigrationTest {
     }
 
     /**
-     * 按 1.json 里的建表 SQL 创建 v1 数据库（每次全新，避免残留旧库影响校验）
+     * 按指定版本 schema JSON 里的建表 SQL 建库（每次全新，避免残留旧库影响校验）
      */
-    private fun createV1Database(name: String, insert: (SupportSQLiteDatabase) -> Unit = {}) {
+    private fun createDatabase(name: String, version: Int, insert: (SupportSQLiteDatabase) -> Unit = {}) {
         context.getDatabasePath(name).delete()
 
         // Room schema 的 createSql 里表名是 ${TABLE_NAME} 占位符，替换成真实表名
-        val createSql = JSONObject(File("src/test/assets/com.birthapp.data.AppDatabase/1.json").readText())
+        val createSql = JSONObject(
+            File("src/test/assets/com.birthapp.data.AppDatabase/$version.json").readText()
+        )
             .getJSONObject("database")
             .getJSONArray("entities")
             .getJSONObject(0)
@@ -90,8 +121,8 @@ class MigrationTest {
         val openHelper = FrameworkSQLiteOpenHelperFactory().create(
             SupportSQLiteOpenHelper.Configuration.builder(context)
                 .name(name)
-                // 版本由 Callback(1) 携带
-                .callback(object : SupportSQLiteOpenHelper.Callback(1) {
+                // 版本由 Callback(version) 携带
+                .callback(object : SupportSQLiteOpenHelper.Callback(version) {
                     override fun onCreate(db: SupportSQLiteDatabase) {
                         db.execSQL(createSql)
                         insert(db)

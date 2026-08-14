@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.birthapp.BirthApp
 import com.birthapp.alarm.AlarmScheduler
+import com.birthapp.alarm.normalizeAdvanceLevels
 import com.birthapp.data.AppDatabase
 import com.birthapp.data.Birthday
 import com.birthapp.data.EventType
@@ -23,7 +24,8 @@ data class AddEditUiState(
     val birthDay: Int = 1,
     val calendarType: String = "solar",
     val isLeapMonth: Boolean = false,
-    val advanceDays: Int = 0,
+    /** 多级提前提醒：0=当天，升序去重，保存时再 normalize 一遍 */
+    val advanceDays: List<Int> = listOf(0),
     val reminderHour: Int = 8,
     val reminderMinute: Int = 0,
     val relation: String = "family",
@@ -101,7 +103,27 @@ class AddEditViewModel(application: Application) : AndroidViewModel(application)
         _uiState.value = converted
     }
     fun updateLeapMonth(isLeap: Boolean) { _uiState.value = _uiState.value.copy(isLeapMonth = isLeap) }
-    fun updateAdvanceDays(days: Int) { _uiState.value = _uiState.value.copy(advanceDays = days.coerceIn(0, 365)) }
+
+    /**
+     * 多选切换一个提前级别（预设 chips 与自定义值共用）。
+     * 再点一次已选中的级别 = 移除；移除到空列表时退化为 [0]（当天）
+     */
+    fun toggleAdvanceDay(day: Int) {
+        val state = _uiState.value
+        val current = state.advanceDays
+        val updated = if (day in current) current - day else current + day
+        _uiState.value = state.copy(advanceDays = normalizeAdvanceLevels(updated))
+    }
+
+    /** 自定义 dialog 添加一个级别（0..365，normalize 内会去重、限 10 个） */
+    fun addCustomAdvanceDay(day: Int) {
+        if (day !in 0..365) return
+        val state = _uiState.value
+        _uiState.value = state.copy(advanceDays = normalizeAdvanceLevels(state.advanceDays + day))
+    }
+
+    /** 自定义 dialog 移除一个级别 */
+    fun removeAdvanceDay(day: Int) = toggleAdvanceDay(day)
     fun updateReminderTime(hour: Int, minute: Int) {
         _uiState.value = _uiState.value.copy(
             reminderHour = hour.coerceIn(0, 23),
@@ -125,7 +147,7 @@ class AddEditViewModel(application: Application) : AndroidViewModel(application)
                 birthDay = state.birthDay,
                 calendarType = state.calendarType,
                 isLeapMonth = state.isLeapMonth,
-                advanceDays = state.advanceDays,
+                advanceDays = normalizeAdvanceLevels(state.advanceDays),
                 reminderHour = state.reminderHour,
                 reminderMinute = state.reminderMinute,
                 relation = state.relation,
@@ -150,7 +172,7 @@ class AddEditViewModel(application: Application) : AndroidViewModel(application)
                 if (saved.isActive) {
                     scheduler.scheduleBirthdayReminder(saved)
                 } else {
-                    scheduler.cancelBirthdayReminder(saved.id)
+                    scheduler.cancelBirthdayReminder(saved)
                 }
             }
 
@@ -163,7 +185,7 @@ class AddEditViewModel(application: Application) : AndroidViewModel(application)
         val state = _uiState.value
         if (state.id <= 0) return
         viewModelScope.launch {
-            scheduler.cancelBirthdayReminder(state.id)
+            database.birthdayDao().getById(state.id)?.let { scheduler.cancelBirthdayReminder(it) }
             database.birthdayDao().deleteById(state.id)
             _uiState.value = _uiState.value.copy(saved = true)
             WidgetRefresher.refresh(getApplication())

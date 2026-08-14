@@ -10,6 +10,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -68,6 +70,17 @@ fun DetailScreen(
                     }
                 },
                 actions = {
+                    // 置顶：固定在首页列表顶部。选中态用主题色，未选中用灰
+                    IconButton(
+                        onClick = { viewModel.togglePinned() },
+                        enabled = state.id > 0
+                    ) {
+                        Icon(
+                            if (state.isPinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
+                            contentDescription = if (state.isPinned) "取消置顶" else "置顶",
+                            tint = if (state.isPinned) Coral500 else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     IconButton(onClick = { onEditClick(state.id) }, enabled = state.id > 0) {
                         Icon(Icons.Default.Edit, contentDescription = "编辑")
                     }

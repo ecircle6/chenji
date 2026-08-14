@@ -16,8 +16,11 @@ import org.json.JSONObject
  */
 object BackupCodec {
 
-    /** 格式版本。字段增删时 +1，decode 里按版本做兼容 */
-    const val FORMAT_VERSION = 1
+    /**
+     * 格式版本。字段增删时 +1，decode 里按版本做兼容：
+     * v1 的 advanceDays 是单个整数，v2 起是多级数组 + 新增 pinned
+     */
+    const val FORMAT_VERSION = 2
 
     /** 门牌标记，认文件用，跟包名保持一致 */
     private const val APP_MARK = "com.birthapp"
@@ -35,13 +38,14 @@ object BackupCodec {
                 put("birthDay", b.birthDay)
                 put("calendarType", b.calendarType)
                 put("isLeapMonth", b.isLeapMonth)
-                put("advanceDays", b.advanceDays)
+                put("advanceDays", JSONArray(b.advanceDays))
                 put("reminderHour", b.reminderHour)
                 put("reminderMinute", b.reminderMinute)
                 put("relation", b.relation)
                 put("eventType", b.eventType)
                 put("notes", b.notes)
                 put("isActive", b.isActive)
+                put("pinned", b.pinned)
             })
         }
         val root = JSONObject().apply {
@@ -88,16 +92,29 @@ object BackupCodec {
                     birthDay = day,
                     calendarType = if (o.optString("calendarType") == "lunar") "lunar" else "solar",
                     isLeapMonth = o.optBoolean("isLeapMonth", false),
-                    advanceDays = o.optInt("advanceDays", 0).coerceIn(0, 365),
+                    advanceDays = decodeAdvanceDays(o),
                     reminderHour = o.optInt("reminderHour", 8).coerceIn(0, 23),
                     reminderMinute = o.optInt("reminderMinute", 0).coerceIn(0, 59),
                     relation = o.optString("relation").ifEmpty { "family" },
                     eventType = o.optString("eventType").ifEmpty { EventType.BIRTHDAY },
                     notes = o.optString("notes"),
-                    isActive = o.optBoolean("isActive", true)
+                    isActive = o.optBoolean("isActive", true),
+                    pinned = o.optBoolean("pinned", false)
                 )
             )
         }
         return result
+    }
+
+    /**
+     * 提前提醒级别解码：v1 是单个整数（3 = 提前 3 天），v2 起是数组。
+     * 两种都接受，非法值丢给调用方的 normalize 兜底
+     */
+    private fun decodeAdvanceDays(o: JSONObject): List<Int> = when (val v = o.opt("advanceDays")) {
+        is JSONArray -> (0 until v.length())
+            .mapNotNull { v.optInt(it, -1) }
+            .filter { it in 0..365 }
+            .ifEmpty { listOf(0) }
+        else -> listOf(o.optInt("advanceDays", 0).coerceIn(0, 365))
     }
 }

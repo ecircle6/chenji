@@ -116,6 +116,22 @@ fun BirthdayCard(
                     )
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (display.isPinned) {
+                        // 置顶徽标：固定在列表顶部，主题色描边区分
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Coral500.copy(alpha = 0.15f)
+                        ) {
+                            Text(
+                                text = "📌 置顶",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Coral500
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
                     if (isPaused) {
                         Surface(
                             shape = RoundedCornerShape(12.dp),

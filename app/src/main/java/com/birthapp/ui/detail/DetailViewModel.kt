@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.birthapp.BirthApp
 import com.birthapp.alarm.AlarmScheduler
 import com.birthapp.alarm.calculateNextTriggerTime
+import com.birthapp.alarm.normalizeAdvanceLevels
 import com.birthapp.data.AppDatabase
 import com.birthapp.data.Birthday
 import com.birthapp.data.EventType
@@ -47,7 +48,8 @@ data class DetailUiState(
     val advanceText: String = "",
     val reminderTime: String = "",
     val notes: String = "",
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    val isPinned: Boolean = false
 )
 
 class DetailViewModel(application: Application) : AndroidViewModel(application) {
@@ -91,7 +93,7 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
             if (active) {
                 scheduler.scheduleBirthdayReminder(b)
             } else {
-                scheduler.cancelBirthdayReminder(id)
+                scheduler.cancelBirthdayReminder(b)
                 // 顺手清掉缓存的下次提醒日期，避免详情页显示一个不会到来的日子
                 database.birthdayDao().updateNextReminderDate(id, null)
             }
@@ -104,10 +106,22 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
         val id = _id.value
         if (id <= 0) return
         viewModelScope.launch {
-            scheduler.cancelBirthdayReminder(id)
+            database.birthdayDao().getById(id)?.let { scheduler.cancelBirthdayReminder(it) }
             database.birthdayDao().deleteById(id)
             _deleted.value = true
             WidgetRefresher.refresh(getApplication())
+        }
+    }
+
+    /** 切换置顶：固定在首页列表顶部，跨重启保持（存在数据库里） */
+    fun togglePinned() {
+        val id = _id.value
+        if (id <= 0) return
+        viewModelScope.launch {
+            val b = database.birthdayDao().getById(id) ?: return@launch
+            database.birthdayDao().update(
+                b.copy(pinned = !b.pinned, updatedAt = System.currentTimeMillis())
+            )
         }
     }
 
@@ -151,11 +165,14 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
             "第 $age 周年"
         }
 
-        // 用闹钟自己算的时刻，保证页面显示的和真正会响的是同一个时间
+        // 用闹钟自己算的时刻，保证页面显示的和真正会响的是同一个时间；
+        // 多级提醒时取所有级别里最早触发的那个
         val nextReminderText = if (!isActive) {
             "提醒已暂停"
         } else {
-            val triggerMillis = calculateNextTriggerTime(this)
+            val triggerMillis = advanceDays
+                .mapNotNull { calculateNextTriggerTime(this, it) }
+                .minOrNull()
             if (triggerMillis == null) {
                 "暂无提醒计划"
             } else {
@@ -189,10 +206,21 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
             countdown = countdown,
             isToday = countdown == 0,
             nextReminderText = nextReminderText,
-            advanceText = if (advanceDays == 0) "当天提醒" else "提前 $advanceDays 天提醒",
+            advanceText = advanceText(advanceDays),
             reminderTime = DateUtils.formatReminderTime(reminderHour, reminderMinute),
             notes = notes,
-            isActive = isActive
+            isActive = isActive,
+            isPinned = pinned
         )
+    }
+
+    /** 多级提前提醒文案：单级显示"提前 N 天提醒 / 当天提醒"，多级用 · 连接 */
+    private fun advanceText(levels: List<Int>): String {
+        val normalized = normalizeAdvanceLevels(levels)
+        return if (normalized.size == 1 && normalized.first() == 0) {
+            "当天提醒"
+        } else {
+            normalized.joinToString(" · ") { if (it == 0) "当天" else "提前${it}天" } + "提醒"
+        }
     }
 }

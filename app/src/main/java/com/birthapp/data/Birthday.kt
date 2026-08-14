@@ -13,7 +13,12 @@ data class Birthday(
     val birthDay: Int,
     val calendarType: String,   // "lunar" | "solar"
     val isLeapMonth: Boolean = false,
-    val advanceDays: Int = 0,
+    /**
+     * 提前提醒天数列表（v3 起）。0=当天，升序去重，逗号分隔存 TEXT。
+     * v2 及以前是单个 Int（3 = 提前 3 天），迁移时原样转成单元素列表，
+     * 语义不变；0 还是 [0]（当天）
+     */
+    val advanceDays: List<Int> = listOf(0),
     val reminderHour: Int = 8,
     val reminderMinute: Int = 0,
     val relation: String = "family",  // "family"|"friend"|"colleague"|"other"
@@ -22,6 +27,8 @@ data class Birthday(
     val eventType: String = EventType.BIRTHDAY,  // 见 EventType
     val notes: String = "",
     val isActive: Boolean = true,
+    // v3 新增：置顶记录固定在首页列表顶部（暂停的置顶记录仍置顶，只是灰显）
+    val pinned: Boolean = false,
     val nextReminderDate: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()

@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.birthapp.alarm.AlarmScheduler
 import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
 import com.birthapp.ui.common.eventAccent
@@ -236,9 +237,9 @@ fun AddEditScreen(
 
             // Advance days
             SectionLabel("提前提醒")
-            val advanceOptions = listOf(0 to "当天", 1 to "1天", 3 to "3天", 5 to "5天", 7 to "7天")
-            val presetDays = advanceOptions.map { it.first }
-            val isCustomSelected = state.advanceDays !in presetDays
+            val advanceOptions = PRESET_ADVANCE_DAYS.map { it to if (it == 0) "当天" else "${it}天" }
+            val presetDays = PRESET_ADVANCE_DAYS
+            val isCustomSelected = state.advanceDays.any { it !in presetDays }
             // 用 FlowRow 而不是 Row：6 个选项在窄屏一行放不下时会整体折到第二行，
             // 每个 chip 按自身文字宽度排布，不会再把「自定义」挤成两行；
             // 「自定义」选中后文案会变长（如「30天 ✏」），FlowRow 同样能容纳
@@ -247,10 +248,11 @@ fun AddEditScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // 预设项可多选（多级提前提醒）：再点一次取消，0（当天）可与其它级别共存
                 advanceOptions.forEach { (days, label) ->
-                    val isSelected = state.advanceDays == days
+                    val isSelected = days in state.advanceDays
                     Surface(
-                        onClick = { viewModel.updateAdvanceDays(days) },
+                        onClick = { viewModel.toggleAdvanceDay(days) },
                         shape = RoundedCornerShape(12.dp),
                         color = if (isSelected) Teal500 else MaterialTheme.colorScheme.surface,
                         border = if (isSelected) null
@@ -281,7 +283,7 @@ fun AddEditScreen(
                     )
                 ) {
                     Text(
-                        text = if (isCustomSelected) "${state.advanceDays}天 ✏" else "自定义",
+                        text = if (isCustomSelected) "自定义 ×${state.advanceDays.count { it !in presetDays }}" else "自定义",
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                         fontWeight = if (isCustomSelected) FontWeight.SemiBold else FontWeight.Normal,
                         color = if (isCustomSelected) MaterialTheme.colorScheme.onPrimary
@@ -421,53 +423,98 @@ fun AddEditScreen(
         }
     }
 
-    // Custom advance days dialog
+    // Custom advance days dialog：可连续添加多个级别，已添加的能逐个移除
     if (showCustomDaysDialog) {
-        var customDaysInput by remember {
-            mutableStateOf(if (state.advanceDays > 0) state.advanceDays.toString() else "")
-        }
+        var customDaysInput by remember { mutableStateOf("") }
         val inputDays = customDaysInput.toIntOrNull()
-        val isValid = inputDays != null && inputDays in 0..365
+        val inputValid = inputDays != null && inputDays in 0..365
+        val alreadyAdded = inputDays != null && inputDays in state.advanceDays
+        val atLimit = state.advanceDays.size >= AlarmScheduler.MAX_ADVANCE_LEVELS
+        val customLevels = state.advanceDays.filter { it !in PRESET_ADVANCE_DAYS }
         AlertDialog(
             onDismissRequest = { showCustomDaysDialog = false },
             title = { Text("自定义提前天数", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = customDaysInput,
-                        onValueChange = { input ->
-                            if (input.length <= 3 && input.all { it.isDigit() }) {
-                                customDaysInput = input
-                            }
-                        },
-                        label = { Text("提前天数") },
-                        suffix = { Text("天") },
-                        singleLine = true,
-                        isError = customDaysInput.isNotEmpty() && !isValid,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Teal500,
-                            focusedLabelColor = Teal500
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = customDaysInput,
+                            onValueChange = { input ->
+                                if (input.length <= 3 && input.all { it.isDigit() }) {
+                                    customDaysInput = input
+                                }
+                            },
+                            label = { Text("提前天数") },
+                            suffix = { Text("天") },
+                            singleLine = true,
+                            isError = customDaysInput.isNotEmpty() && (!inputValid || alreadyAdded),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Teal500,
+                                focusedLabelColor = Teal500
+                            ),
+                            modifier = Modifier.weight(1f)
                         )
-                    )
+                        TextButton(
+                            enabled = inputValid && !alreadyAdded && !atLimit,
+                            onClick = {
+                                viewModel.addCustomAdvanceDay(inputDays!!)
+                                customDaysInput = ""
+                            }
+                        ) { Text("添加", color = Teal500, fontWeight = FontWeight.SemiBold) }
+                    }
                     Text(
-                        if (customDaysInput.isNotEmpty() && !isValid) "请输入 0~365 之间的天数"
-                        else "可输入 0~365，例如 15 表示提前 15 天提醒",
+                        when {
+                            customDaysInput.isNotEmpty() && !inputValid -> "请输入 0~365 之间的天数"
+                            alreadyAdded -> "该天数已在列表中"
+                            atLimit -> "最多 ${AlarmScheduler.MAX_ADVANCE_LEVELS} 个提前级别"
+                            else -> "可输入 0~365，例如 15 表示提前 15 天提醒"
+                        },
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (customDaysInput.isNotEmpty() && !isValid) Coral500
-                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                        color = if (customDaysInput.isNotEmpty() && !inputValid || alreadyAdded || atLimit)
+                            Coral500 else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
                     )
+                    if (customLevels.isNotEmpty()) {
+                        HorizontalDivider()
+                        Text(
+                            "已添加（点击移除）",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                        )
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            customLevels.forEach { day ->
+                                Surface(
+                                    onClick = { viewModel.removeAdvanceDay(day) },
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Teal500,
+                                    border = null
+                                ) {
+                                    Text(
+                                        text = "${day}天 ✕",
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        fontSize = 13.sp,
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             },
             confirmButton = {
-                TextButton(
-                    enabled = isValid,
-                    onClick = {
-                        viewModel.updateAdvanceDays(inputDays!!)
-                        showCustomDaysDialog = false
-                    }
-                ) { Text("确定", color = if (isValid) Coral500 else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f), fontWeight = FontWeight.SemiBold) }
+                TextButton(onClick = { showCustomDaysDialog = false }) {
+                    Text("完成", color = Coral500, fontWeight = FontWeight.SemiBold)
+                }
             },
             dismissButton = {
                 TextButton(onClick = { showCustomDaysDialog = false }) { Text("取消") }
@@ -497,6 +544,9 @@ fun AddEditScreen(
 }
 
 // ==================== Section Label ====================
+
+/** 预设提前提醒级别（chips 与自定义 dialog 共用，0 = 当天） */
+private val PRESET_ADVANCE_DAYS = listOf(0, 1, 3, 5, 7)
 
 @Composable
 private fun SectionLabel(text: String) {

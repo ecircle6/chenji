@@ -29,6 +29,7 @@ data class BirthdayDisplay(
     val relationEmoji: String,
     val isToday: Boolean,
     val isPaused: Boolean,
+    val isPinned: Boolean,
     // 以下四项由 eventType 派生，统一在 EventTextUtils 里组装，避免各入口文案不一致
     val eventType: String,
     val typeEmoji: String,
@@ -80,7 +81,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val filtered = HomeFilter.apply(list, tab, type, query)
             // 已暂停的一律沉到底部：它们不会提醒，不该跟正常记录抢“最近”的位置
             filtered.map { it.toDisplay() }
-                .sortedWith(compareBy({ if (it.isPaused) 1 else 0 }, { it.countdown }))
+                // 排序：置顶固定在最上面（暂停的置顶记录仍置顶，只是灰显）→ 已暂停沉底 → 按倒计时
+                .sortedWith(
+                    compareBy(
+                        { if (it.isPinned) 0 else 1 },
+                        { if (it.isPaused) 1 else 0 },
+                        { it.countdown }
+                    )
+                )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun selectTab(tab: String) {
@@ -107,7 +115,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun deleteBirthday(birthday: Birthday) {
         viewModelScope.launch {
-            scheduler.cancelBirthdayReminder(birthday.id)
+            scheduler.cancelBirthdayReminder(birthday)
             database.birthdayDao().delete(birthday)
             WidgetRefresher.refresh(getApplication())
         }
@@ -140,6 +148,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             relationEmoji = ZodiacUtils.getRelationEmoji(relation),
             isToday = countdown == 0,
             isPaused = !isActive,
+            isPinned = pinned,
             eventType = eventType,
             typeEmoji = EventType.emoji(eventType),
             isSolemn = EventType.isSolemn(eventType),

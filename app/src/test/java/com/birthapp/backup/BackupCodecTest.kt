@@ -31,14 +31,14 @@ class BackupCodecTest {
     @Test
     fun `编码再解码_用户字段原样保留`() {
         val original = listOf(
-            // 覆盖各种边角：农历闰月、缅怀类型、已暂停、自定义提醒时间和备注
+            // 覆盖各种边角：农历闰月、缅怀类型、已暂停、自定义提醒时间、多级提醒、置顶和备注
             Birthday(
                 name = "王奶奶",
                 birthYear = 1944, birthMonth = 4, birthDay = 12,
                 calendarType = "lunar", isLeapMonth = true,
-                advanceDays = 3, reminderHour = 20, reminderMinute = 30,
+                advanceDays = listOf(0, 3), reminderHour = 20, reminderMinute = 30,
                 relation = "family", eventType = EventType.MEMORIAL,
-                notes = "每年回老家", isActive = false,
+                notes = "每年回老家", isActive = false, pinned = true,
             ),
             sample(name = "李四", eventType = EventType.LOVE),
         )
@@ -61,6 +61,7 @@ class BackupCodecTest {
             assertEquals(a.eventType, b.eventType)
             assertEquals(a.notes, b.notes)
             assertEquals(a.isActive, b.isActive)
+            assertEquals(a.pinned, b.pinned)
             // 运行时状态不进备份：导入方数据库重新分配 id、重算提醒
             assertEquals(0L, b.id)
             assertEquals(null, b.nextReminderDate)
@@ -134,13 +135,14 @@ class BackupCodecTest {
         val b = BackupCodec.decode(minimal).single()
         assertEquals("solar", b.calendarType)
         assertEquals(false, b.isLeapMonth)
-        assertEquals(0, b.advanceDays)
+        assertEquals(listOf(0), b.advanceDays)
         assertEquals(8, b.reminderHour)
         assertEquals(0, b.reminderMinute)
         assertEquals("family", b.relation)
         assertEquals(EventType.BIRTHDAY, b.eventType)
         assertEquals("", b.notes)
         assertEquals(true, b.isActive)
+        assertEquals(false, b.pinned)
     }
 
     @Test
@@ -154,9 +156,45 @@ class BackupCodecTest {
         """.trimIndent()
         val b = BackupCodec.decode(dirty).single()
         assertEquals("solar", b.calendarType)   // 不认识的历法一律按公历
-        assertEquals(365, b.advanceDays)
+        assertEquals(listOf(365), b.advanceDays)
         assertEquals(23, b.reminderHour)
         assertEquals(0, b.reminderMinute)
+    }
+
+    @Test
+    fun `v1旧格式_单值提前天数兼容解码`() {
+        // v1 备份里 advanceDays 是单个整数（3 = 提前 3 天），新版本必须能读
+        val v1 = """
+            {"app":"com.birthapp","format":1,"records":[
+              {"name":"老张","birthYear":1990,"birthMonth":6,"birthDay":15,
+               "advanceDays":3,"isActive":true}
+            ]}
+        """.trimIndent()
+        val b = BackupCodec.decode(v1).single()
+        assertEquals(listOf(3), b.advanceDays)
+        assertEquals(false, b.pinned)
+    }
+
+    @Test
+    fun `v2格式_多级数组与置顶往返`() {
+        val original = Birthday(
+            name = "多级", birthYear = 1990, birthMonth = 6, birthDay = 15,
+            calendarType = "solar", advanceDays = listOf(0, 7, 30),
+            pinned = true,
+        )
+        val decoded = BackupCodec.decode(BackupCodec.encode(listOf(original))).single()
+        assertEquals(listOf(0, 7, 30), decoded.advanceDays)
+        assertEquals(true, decoded.pinned)
+    }
+
+    @Test
+    fun `v2格式_提前级别数组为空时退化为当天`() {
+        val empty = """
+            {"app":"com.birthapp","format":2,"records":[
+              {"name":"甲","birthYear":1990,"birthMonth":6,"birthDay":15,"advanceDays":[]}
+            ]}
+        """.trimIndent()
+        assertEquals(listOf(0), BackupCodec.decode(empty).single().advanceDays)
     }
 
     private fun assertThrowsMessage(expectedPart: String, block: () -> Unit) {
