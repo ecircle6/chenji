@@ -1,5 +1,6 @@
 package com.birthapp.widget
 
+import android.content.Context
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 
@@ -10,4 +11,10 @@ import androidx.glance.appwidget.GlanceAppWidgetReceiver
  */
 class BirthWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = BirthWidget()
+
+    /** 小组件被移除时清掉它的配置，避免残留无用的选择项 */
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        super.onDeleted(context, appWidgetIds)
+        appWidgetIds.forEach { WidgetConfigStore.clear(context, it) }
+    }
 }

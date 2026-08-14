@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  一个 provider 覆盖两种尺寸：默认摆成 4×2，用户可以缩到 2×2（会自动切成大字单条）。
+  一个 provider 覆盖三种尺寸：默认摆成 4×2，可以缩到 2×2（自动切大字单条），
+  拉大到 4×4 显示最近 6 条。首次添加会打开配置页（android:configure），
+  可选"自动展示最近记录"或指定某一条。
 
   minWidth 必须按 4 格给足（桌面网格换算 4 格 ≈ 250dp）。写成 110dp 时
   launcher 会按 2 格落地，targetCellWidth 只是 Android 12+ 的建议值，压不过 minWidth。
@@ -8,9 +10,10 @@
   updatePeriodMillis 设 6 小时：倒计时是按天变的，刷太勤只是白耗电。
 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="com.birthapp.widget.WidgetConfigureActivity"
     android:description="@string/widget_description"
     android:initialLayout="@layout/glance_default_loading_layout"
-    android:maxResizeHeight="250dp"
+    android:maxResizeHeight="400dp"
     android:maxResizeWidth="400dp"
     android:minHeight="110dp"
     android:minResizeHeight="110dp"

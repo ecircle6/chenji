@@ -15,6 +15,7 @@ import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
+import androidx.glance.appwidget.AppWidgetId
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
 // Intent 版的 actionStartActivity 只在 glance-appwidget 里，跟上面那个同名，所以起个别名区分
@@ -65,21 +66,31 @@ data class WidgetItem(
 /**
  * 桌面小组件。
  *
- * 一个 provider 用 SizeMode.Responsive 同时支持两种尺寸：
- * 宽的（4×2）列出最近 3 条，方的（2×2）只放最近 1 条但字更大。
- * 这样在桌面上拖拽缩放就能切换，不必在小组件列表里看到两个「辰记」不知道该选哪个。
+ * 一个 provider 用 SizeMode.Responsive 同时支持三种尺寸：
+ * 宽的（4×2）列出最近 3 条，方的（2×2）只放最近 1 条但字更大，
+ * 4×4 大尺寸列出最近 6 条。在桌面上拖拽缩放即可切换。
+ * 首次添加会打开配置页（android:configure），可指定只展示某一条记录。
  */
 class BirthWidget : GlanceAppWidget() {
 
-    override val sizeMode = SizeMode.Responsive(setOf(COMPACT, WIDE))
+    override val sizeMode = SizeMode.Responsive(setOf(COMPACT, WIDE, LARGE))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         // 坐在 Flow 上订阅而不是进来时读一次快照：provideContent 之前的代码
         // 只在会话重建时跑，App 里喊 refresh 不会重新执行它——之前就是因此
         // 增删记录后桌面一直停在旧数据上。改成 Flow 后数据库一变自动重画
         val db = (context.applicationContext as BirthApp).database
+        // 配置页选择：auto 或指定记录 id（指定记录被删后自动退回空态，不崩）
+        val appWidgetId = (id as? AppWidgetId)?.appWidgetId ?: -1
+        val selection = if (appWidgetId > 0) {
+            WidgetConfigStore.get(context, appWidgetId)
+        } else {
+            WidgetConfigStore.AUTO
+        }
+        val selectedId = selection.toLongOrNull()
         val itemsFlow = db.birthdayDao().getAllActive().map { list ->
-            list.map {
+            val filtered = if (selectedId != null) list.filter { it.id == selectedId } else list
+            filtered.map {
                 WidgetItem(
                     name = it.name,
                     emoji = EventType.emoji(it.eventType),
@@ -88,7 +99,7 @@ class BirthWidget : GlanceAppWidget() {
                 )
             }
                 .sortedBy { it.countdown }
-                .take(MAX_VISIBLE_ROWS)
+                .take(MAX_ITEMS)
         }
         // 开画之前先等到第一批真实数据，让第一帧就是对的。
         // 若拿空列表当 initial，第一帧会先把「还没有记录」画上桌面，
@@ -104,11 +115,12 @@ class BirthWidget : GlanceAppWidget() {
     companion object {
         private val COMPACT = DpSize(120.dp, 120.dp)
         private val WIDE = DpSize(250.dp, 120.dp)
+        private val LARGE = DpSize(250.dp, 250.dp)
     }
 }
 
-// WideBody 补空白行时也要用，而 companion 里的私有常量到不了顶层函数，单独抽一个
-private const val MAX_VISIBLE_ROWS = 3
+// 取数上限：4×4 大尺寸显示 6 行，窄尺寸在 WidgetBody 里再截断
+private const val MAX_ITEMS = 6
 
 // 小组件不跟随 App 内的 Material 主题，得自己给日/夜两套颜色
 private val BgColor = ColorProvider(day = Color.White, night = SurfaceDark)
@@ -132,12 +144,15 @@ private fun WidgetBody(items: List<WidgetItem>) {
             // 点空白处进 App
             .clickable(actionStartActivity<MainActivity>())
     ) {
+        // 4×4 大尺寸多放几行（6 条），窄尺寸只放 3 条
+        val isLarge = LocalSize.current.height >= 210.dp
+        val visibleItems = if (isLarge) items else items.take(3)
         when {
             items.isEmpty() -> EmptyBody()
             // 只有一条时不摆列表：单行列表下面空一大片很难看，
             // 改成居中放大的卡片排版，看起来是故意设计的
-            isWide && items.size > 1 -> WideBody(items)
-            else -> CompactBody(items.first())
+            isWide && visibleItems.size > 1 -> WideBody(visibleItems, if (isLarge) MAX_ITEMS else 3)
+            else -> CompactBody(visibleItems.first())
         }
     }
 }
@@ -156,7 +171,7 @@ private fun EmptyBody() {
 }
 
 @Composable
-private fun WideBody(items: List<WidgetItem>) {
+private fun WideBody(items: List<WidgetItem>, maxRows: Int) {
     Column(modifier = GlanceModifier.fillMaxSize()) {
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
@@ -191,9 +206,9 @@ private fun WideBody(items: List<WidgetItem>) {
         items.forEach { item ->
             WideRow(item, GlanceModifier.fillMaxWidth().defaultWeight())
         }
-        // 记录不足 3 条时用空白行补齐：否则仅有的几行会被平均拉高到整个卡片，
+        // 记录不足上限时用空白行补齐：否则仅有的几行会被平均拉高到整个卡片，
         // 只有一条记录时它会孤零零地悬在卡片正中，上下各空一大段
-        repeat(MAX_VISIBLE_ROWS - items.size) {
+        repeat(maxRows - items.size) {
             Spacer(modifier = GlanceModifier.defaultWeight())
         }
     }

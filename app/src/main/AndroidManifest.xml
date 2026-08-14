@@ -61,6 +61,19 @@
                 android:resource="@xml/birth_widget_info" />
         </receiver>
 
+        <!-- 小组件配置页：首次把小组件拖到桌面时系统自动打开（birth_widget_info 的
+             android:configure）。exported=true 是 configure 机制的硬性要求；
+             excludeFromRecents 防止它出现在最近任务里（它是个一次性配置页） -->
+        <activity
+            android:name=".widget.WidgetConfigureActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:theme="@style/Theme.BirthApp">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <!-- 分享备份文件用。grantUriPermissions：接收方（微信/QQ 等）只在本次分享
              内拿到读权限，读不到白名单之外的任何文件 -->
         <provider

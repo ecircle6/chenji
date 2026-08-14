@@ -46,10 +46,11 @@
   - 实现：`Birthday` 加 `pinned` 字段（v2→v3 迁移新增列 DEFAULT 0，与多级提醒共享）；首页排序第一维度（置顶 → 暂停 → 倒计时）；卡片 📌 徽标；详情页 TopAppBar 置顶开关；备份 v2 格式含 pinned（判重 key 不变）
   - 验收：✅ 模拟器验证置顶记录跨重启保持在列表顶部（真机升级 v2→v3 后数据完整）
 
-- [ ] **小组件配置页**
-  - 现状：小组件只能自动展示最近记录，不能指定某人
-  - 方案：`birth_widget_info.xml` 加 `configure` 属性 → 配置页选择展示哪条记录；同步补 4×4 尺寸
-  - 参照：MemoD 支持 2×2/4×2/4×4 且可指定展示条目
+- [x] **小组件配置页**（2026-08-14 完成）
+  - 实现：`birth_widget_info.xml` 加 `android:configure` → 新增 `WidgetConfigureActivity`（首次拖到桌面自动打开）：默认"自动（最近记录）"或指定某条记录，按 appWidgetId 存 SharedPreferences（`WidgetConfigStore`），选择即保存并刷新小组件；`BirthWidgetReceiver.onDeleted` 清理配置
+  - 尺寸：新增 4×4 大尺寸（LARGE 250×250，显示 6 行），2×2/4×2 保持（3 行/单条大字）；xml `maxResizeHeight` 提到 400dp
+  - 测试：`WidgetConfigStoreTest` 3 用例（默认 auto、按实例隔离、清除回默认）；模拟器验证配置页 UI 与存储（选"小明"→ prefs `widget_selection=2`）；小组件实际渲染需真机桌面拖拽确认（模拟器 launcher 无法自动化拖拽）
+  - 验收：✅ 配置页选择 → 存储 → 自动关闭；4×4 尺寸声明生效
 
 - [x] **月历视图**（2026-08-14 完成）
   - 实现：首页「列表/月历」SegmentedButton 切换（搜索态强制列表）；自绘月历（周一起始、每天农历标注、今天高亮、事件圆点 ≤3+「+N」、上/下月切换、标题带农历月名）；点日期弹窗列出当日事件可进详情
