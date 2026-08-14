@@ -57,10 +57,11 @@
 
 ## P2 — 工程与体验现代化
 
-- [ ] **GitHub Actions CI**
-  - 方案：push/PR 自动跑全部单测 + `assembleRelease`；打 `v*` tag 自动签名并发布 Release APK（签名密钥走 repo Secrets）
-  - 参照：JeffGu98 的完整流水线（测试→签名→Release）
-  - 验收：仓库 Actions 面板绿；Release 页面出现可下载 APK
+- [x] **GitHub Actions CI**（2026-08-14 完成）
+  - `.github/workflows/ci.yml`：push/PR 自动跑全部单测 + 构建 Debug 包（含 APK 产物上传）
+  - `.github/workflows/release.yml`：打 `v*` tag 自动签名构建正式包并发布 GitHub Release（签名密钥走 repo Secrets：KEYSTORE_BASE64/STORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD）
+  - 配套：`gradlew`/`gradlew.bat`/`gradle-wrapper.jar` 入库（原仓库缺失）
+  - 注意：wrapper 默认官方下载地址，国内网络慢时可改 gradle-wrapper.properties 为腾讯镜像
 
 - [ ] **i18n 字符串抽取（中/英）**
   - 现状：全部文案硬编码中文，`strings.xml` 仅 4 条；`attachBaseContext` 强设中文屏蔽了 Android 13+ 按应用语言设置

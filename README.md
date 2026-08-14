@@ -2,6 +2,8 @@
 
 记录生日与纪念日的 Android 提醒应用。支持农历生日换算、到日提醒通知、桌面小组件与一键数据备份，帮助你不忘每一个重要的日子。
 
+![CI](https://github.com/ecircle6/chenji/actions/workflows/ci.yml/badge.svg)
+
 ## 功能
 
 - **多类型记录**：生日 / 缅怀 / 纪念日，支持农历与阳历
@@ -24,6 +26,17 @@
 # 需要 JDK 17+ 与 Android SDK
 ./gradlew assembleDebug
 ```
+
+## 持续集成与发布
+
+- **CI**（`.github/workflows/ci.yml`）：每次 push/PR 自动运行全部单元测试（农历/备份/筛选/事件计算 5 个测试类）+ 构建 Debug 包
+- **Release**（`.github/workflows/release.yml`）：打 `v*` tag 自动签名构建正式包并发布 GitHub Release：
+
+```bash
+git tag v2.2.0 && git push origin v2.2.0   # 版本号与 app/build.gradle.kts 中的 versionName 一致
+```
+
+- 签名密钥通过仓库 Secrets 注入（`KEYSTORE_BASE64` / `STORE_PASSWORD` / `KEY_ALIAS` / `KEY_PASSWORD`），不入版本库
 
 > 签名密钥（`*.jks` / `keystore.properties`）不入版本库，换机开发时请单独备份，否则无法对已安装的 App 做覆盖升级。
 
