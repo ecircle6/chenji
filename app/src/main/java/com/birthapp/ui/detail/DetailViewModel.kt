@@ -18,6 +18,7 @@ import com.birthapp.widget.WidgetRefresher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -61,6 +62,10 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted.asStateFlow()
+
+    /** 分享卡片的一次性事件：文件 uri 交给界面拉起分享面板 */
+    private val _shareEvent = MutableSharedFlow<android.net.Uri>()
+    val shareEvent: SharedFlow<android.net.Uri> = _shareEvent.asSharedFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<DetailUiState> = _id
@@ -122,6 +127,27 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
             database.birthdayDao().update(
                 b.copy(pinned = !b.pinned, updatedAt = System.currentTimeMillis())
             )
+        }
+    }
+
+    /** 生成分享卡片（Canvas 直绘 PNG）并交给界面拉起分享面板 */
+    fun shareCard() {
+        val id = _id.value
+        if (id <= 0) return
+        viewModelScope.launch {
+            val result = runCatching {
+                val b = database.birthdayDao().getById(id)
+                    ?: throw IllegalArgumentException("记录不存在")
+                val file = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    com.birthapp.ui.share.ShareCardGenerator.generate(getApplication(), b)
+                }
+                androidx.core.content.FileProvider.getUriForFile(
+                    getApplication(), "com.birthapp.fileprovider", file
+                )
+            }
+            result
+                .onSuccess { _shareEvent.emit(it) }
+                .onFailure { _shareEvent.emit(android.net.Uri.EMPTY) }
         }
     }
 

@@ -83,9 +83,11 @@
   - 方案：为首页/详情/设置核心界面补 @Preview；用 Robolectric + in-memory Room 补 DAO/ViewModel 测试
   - 验收：关键界面都有 @Preview；ViewModel 核心状态变换有测试
 
-- [ ] **分享卡片**
-  - 方案：一键生成带农历文案与倒计时的图片分享卡片（缅怀类沿用庄重文案体系）
-  - 参照：MemoD 带背景图分享卡
+- [x] **分享卡片**（2026-08-14 完成）
+  - 实现：`ShareCardGenerator` Canvas 直绘 1080×1080 PNG（渐变背景按事件类型配色、缅怀灰蓝素净、头像圈、姓名、复用 `EventTextUtils.infoLine` 信息行、大号倒计时/「就是今天」横幅、辰记水印），详情页 TopAppBar 分享图标 → FileProvider（file_paths 白名单补 share 目录）→ 系统分享面板
+  - 选 Canvas 而非 Compose 截图（依赖真机渲染不可单测）或第三方卡片库（零依赖铁律）
+  - 测试：`ShareCardGeneratorTest` 4 用例（文件生成/缅怀/各类型绘制/目录位置）
+  - 验收：✅ 模拟器详情页分享 → 「Sharing image」面板弹出，PNG（55KB）生成成功
 
 ---
 

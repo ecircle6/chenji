@@ -1,5 +1,7 @@
 package com.birthapp.ui.detail
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,12 +13,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,6 +58,21 @@ fun DetailScreen(
         }
     }
 
+    // 分享卡片：生成 PNG 后拉起系统分享面板
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        viewModel.shareEvent.collect { uri ->
+            if (uri != Uri.EMPTY) {
+                val send = Intent(Intent.ACTION_SEND).apply {
+                    type = "image/png"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(Intent.createChooser(send, "分享这张卡片"))
+            }
+        }
+    }
+
     // 从编辑页改完名字/类型返回时，observeById 会自动把新值推过来，这里不需要手动刷新
 
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -80,6 +99,10 @@ fun DetailScreen(
                             contentDescription = if (state.isPinned) "取消置顶" else "置顶",
                             tint = if (state.isPinned) Coral500 else MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                    // 分享卡片：生成一张带倒计时的图片发到微信/朋友圈
+                    IconButton(onClick = { viewModel.shareCard() }, enabled = state.id > 0) {
+                        Icon(Icons.Default.Share, contentDescription = "分享卡片")
                     }
                     IconButton(onClick = { onEditClick(state.id) }, enabled = state.id > 0) {
                         Icon(Icons.Default.Edit, contentDescription = "编辑")
