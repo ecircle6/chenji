@@ -155,38 +155,53 @@ object ShareCardGenerator {
             }
         )
 
-        // 4c. 卡片内信息（标签 / 标题 / 日期 / 倒计时）
+        // 4c. 卡片内信息（标签 / 标题 / 日期 / 倒计时），按设计稿间距精确排版：
+        //     padding 56/48 → 标签(26) +24 → 标题(52) +16 → 日期(26) +40 → 倒计时垂直居中剩余空间
         val innerLeft = glassRect.left + 48f
         val innerTop = glassRect.top + 56f
+        val innerBottom = glassRect.bottom - 56f
         val (tagText, tagColor) = tagFor(b.eventType)
-        drawText(
-            canvas, tagText, innerLeft, innerTop,
-            Paint().apply { color = tagColor; textSize = 26f; typeface = Typeface.DEFAULT_BOLD }
-        )
-        drawText(
-            canvas, b.name, innerLeft, innerTop + 84f,
-            Paint().apply { color = COLOR_WHITE; textSize = 54f; typeface = Typeface.DEFAULT_BOLD }
-        )
-        drawText(
-            canvas, dateLine(b), innerLeft, innerTop + 150f,
-            Paint().apply { color = COLOR_MUTED; textSize = 26f }
-        )
-        // 倒计时（垂直居中于卡片剩余空间）
-        val countY = glassRect.bottom - 120f
+
+        // 标签：文字顶对齐 innerTop
+        val tagPaint = Paint().apply { color = tagColor; textSize = 26f; typeface = Typeface.DEFAULT_BOLD }
+        var cursor = innerTop - tagPaint.fontMetrics.top
+        canvas.drawText(tagText, innerLeft, cursor, tagPaint)
+        cursor += 26f + 24f
+
+        // 标题
+        val titlePaint = Paint().apply { color = COLOR_WHITE; textSize = 54f; typeface = Typeface.DEFAULT_BOLD }
+        cursor = cursor - titlePaint.fontMetrics.top
+        canvas.drawText(b.name, innerLeft, cursor, titlePaint)
+        cursor += 54f + 16f
+
+        // 日期行
+        val datePaint = Paint().apply { color = COLOR_MUTED; textSize = 26f }
+        cursor = cursor - datePaint.fontMetrics.top
+        canvas.drawText(dateLine(b), innerLeft, cursor, datePaint)
+        cursor += 26f + 40f
+
+        // 倒计时：数字块垂直居中于「日期之后到卡片底部」的剩余空间
         val countdown = EventCalc.countdown(b)
         if (countdown == 0) {
-            drawText(
-                canvas, "🎉 就是今天", innerLeft, countY,
-                Paint().apply { color = COLOR_WHITE; textSize = 52f; typeface = Typeface.DEFAULT_BOLD }
+            val todayPaint = Paint().apply { color = COLOR_WHITE; textSize = 52f; typeface = Typeface.DEFAULT_BOLD }
+            val blockH = 52f
+            val countTop = cursor + (innerBottom - cursor - blockH) / 2f
+            canvas.drawText(
+                "🎉 就是今天", innerLeft, countTop - todayPaint.fontMetrics.top, todayPaint
             )
         } else {
-            drawText(
-                canvas, "$countdown", innerLeft, countY,
-                Paint().apply { color = COLOR_WHITE; textSize = 96f; typeface = Typeface.DEFAULT_BOLD }
-            )
-            drawText(
-                canvas, "天后", innerLeft + measureWidth("$countdown", 96f) + 18f, countY + 12f,
-                Paint().apply { color = COLOR_MUTED; textSize = 28f }
+            val numPaint = Paint().apply { color = COLOR_WHITE; textSize = 96f; typeface = Typeface.DEFAULT_BOLD }
+            val blockH = 96f
+            val countTop = cursor + (innerBottom - cursor - blockH) / 2f
+            val numBaseline = countTop - numPaint.fontMetrics.top
+            canvas.drawText("$countdown", innerLeft, numBaseline, numPaint)
+            // 「天后」与数字基线对齐
+            val unitPaint = Paint().apply { color = COLOR_MUTED; textSize = 28f }
+            canvas.drawText(
+                "天后",
+                innerLeft + measureWidth("$countdown", 96f) + 18f,
+                numBaseline + 14f,
+                unitPaint
             )
         }
 
