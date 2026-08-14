@@ -6,6 +6,14 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
+ * 备份文件里附带的应用设置（v3 起）。换机恢复时连设置一起带过去
+ */
+data class BackupSettings(
+    val themeMode: String?,
+    val dynamicColor: Boolean?
+)
+
+/**
  * 备份文件的编解码。
  *
  * 格式是带标记头的 JSON 文本：`app` 字段用来认门牌（防止用户误选了
@@ -18,9 +26,10 @@ object BackupCodec {
 
     /**
      * 格式版本。字段增删时 +1，decode 里按版本做兼容：
-     * v1 的 advanceDays 是单个整数，v2 起是多级数组 + 新增 pinned
+     * v1 的 advanceDays 是单个整数；v2 起是多级数组 + pinned；
+     * v3 起附带 settings（主题设置）
      */
-    const val FORMAT_VERSION = 2
+    const val FORMAT_VERSION = 3
 
     /** 门牌标记，认文件用，跟包名保持一致 */
     private const val APP_MARK = "com.birthapp"
@@ -28,7 +37,7 @@ object BackupCodec {
     /** 单个文件最多允许的记录数，防止喂进来一个超大文件把内存撑爆 */
     private const val MAX_RECORDS = 5000
 
-    fun encode(records: List<Birthday>): String {
+    fun encode(records: List<Birthday>, themeMode: String? = null, dynamicColor: Boolean? = null): String {
         val arr = JSONArray()
         for (b in records) {
             arr.put(JSONObject().apply {
@@ -53,9 +62,27 @@ object BackupCodec {
             put("format", FORMAT_VERSION)
             put("exportedAt", System.currentTimeMillis())
             put("records", arr)
+            if (themeMode != null || dynamicColor != null) {
+                put("settings", JSONObject().apply {
+                    themeMode?.let { put("themeMode", it) }
+                    dynamicColor?.let { put("dynamicColor", it) }
+                })
+            }
         }
         // 缩进输出：备份文件用户可能会自己打开看，排好版比压成一行友好
         return root.toString(2)
+    }
+
+    /**
+     * 备份里的主题设置。老版本文件没有 settings 块时返回 null
+     */
+    fun decodeSettings(text: String): BackupSettings? {
+        val root = runCatching { JSONObject(text) }.getOrNull() ?: return null
+        val s = root.optJSONObject("settings") ?: return null
+        return BackupSettings(
+            themeMode = s.optString("themeMode").takeIf { it.isNotEmpty() },
+            dynamicColor = if (s.has("dynamicColor")) s.optBoolean("dynamicColor") else null
+        )
     }
 
     /**

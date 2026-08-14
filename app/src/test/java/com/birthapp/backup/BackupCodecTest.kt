@@ -197,6 +197,38 @@ class BackupCodecTest {
         assertEquals(listOf(0), BackupCodec.decode(empty).single().advanceDays)
     }
 
+    // ==================== settings（备份含主题设置，v3）====================
+
+    @Test
+    fun `v3格式_主题设置随备份编码并解析`() {
+        val text = BackupCodec.encode(
+            listOf(sample()),
+            themeMode = "DARK",
+            dynamicColor = true
+        )
+        val settings = BackupCodec.decodeSettings(text)
+        assertEquals("DARK", settings?.themeMode)
+        assertEquals(true, settings?.dynamicColor)
+        // 记录部分不受 settings 影响
+        assertEquals(1, BackupCodec.decode(text).size)
+    }
+
+    @Test
+    fun `老版本备份_没有settings块时解析为null`() {
+        val old = """
+            {"app":"com.birthapp","format":2,"records":[
+              {"name":"甲","birthYear":1990,"birthMonth":6,"birthDay":15}
+            ]}
+        """.trimIndent()
+        assertEquals(null, BackupCodec.decodeSettings(old))
+    }
+
+    @Test
+    fun `v3编码_未提供设置时不写settings块`() {
+        val text = BackupCodec.encode(listOf(sample()))
+        assertEquals(null, BackupCodec.decodeSettings(text))
+    }
+
     private fun assertThrowsMessage(expectedPart: String, block: () -> Unit) {
         try {
             block()

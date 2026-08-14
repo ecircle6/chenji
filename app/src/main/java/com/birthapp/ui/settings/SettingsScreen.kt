@@ -32,6 +32,7 @@ import com.birthapp.BirthApp
 import com.birthapp.settings.ReminderSettings
 import com.birthapp.settings.ThemeMode
 import com.birthapp.ui.theme.Coral500
+import com.birthapp.ui.theme.Teal500
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +52,9 @@ fun SettingsScreen(
     var defaultHour by remember { mutableIntStateOf(reminderSettings.defaultHour) }
     var defaultMinute by remember { mutableIntStateOf(reminderSettings.defaultMinute) }
     var showTimePicker by remember { mutableStateOf(false) }
+
+    // 导入预览：解析完备份文件后弹逐条三选对话框
+    var importPreview by remember { mutableStateOf<SettingsEvent.ImportPreview?>(null) }
 
     // 默认提醒时间的 TimePicker
     if (showTimePicker) {
@@ -102,6 +106,7 @@ fun SettingsScreen(
                     }
                     context.startActivity(Intent.createChooser(send, "把备份发给另一台手机"))
                 }
+                is SettingsEvent.ImportPreview -> importPreview = event
             }
         }
     }
@@ -314,6 +319,114 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+
+    // 导入预览对话框：逐条三选（跳过/覆盖/导入），重复的默认跳过
+    importPreview?.let { preview ->
+        var choices by remember(preview.items) {
+            mutableStateOf(
+                preview.items.map { if (it.isDuplicate) ImportAction.SKIP else ImportAction.INSERT }
+            )
+        }
+        var restoreSettings by remember { mutableStateOf(false) }
+        val duplicateCount = preview.items.count { it.isDuplicate }
+
+        AlertDialog(
+            onDismissRequest = { importPreview = null },
+            title = { Text("导入预览（${preview.items.size} 条）", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (duplicateCount > 0) {
+                        Text(
+                            "发现 $duplicateCount 条与现有记录重复，默认跳过",
+                            fontSize = 13.sp,
+                            color = Coral500
+                        )
+                    }
+                    preview.items.forEachIndexed { index, item ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(item.record.name, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                                Text(
+                                    importItemSubtitle(item.record),
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                )
+                            }
+                            ImportChoicePill("跳过", choices[index] == ImportAction.SKIP) {
+                                choices = choices.toMutableList().also { it[index] = ImportAction.SKIP }
+                            }
+                            ImportChoicePill("覆盖", choices[index] == ImportAction.OVERWRITE) {
+                                choices = choices.toMutableList().also { it[index] = ImportAction.OVERWRITE }
+                            }
+                            ImportChoicePill("导入", choices[index] == ImportAction.INSERT) {
+                                choices = choices.toMutableList().also { it[index] = ImportAction.INSERT }
+                            }
+                        }
+                    }
+                    if (preview.settings != null) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { restoreSettings = !restoreSettings },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = restoreSettings,
+                                onCheckedChange = { restoreSettings = it }
+                            )
+                            Text("同时恢复备份中的主题设置", fontSize = 13.sp)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.applyImport(choices, restoreSettings)
+                    importPreview = null
+                }) { Text("导入", color = Coral500, fontWeight = FontWeight.SemiBold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { importPreview = null }) { Text("取消") }
+            },
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+}
+
+/** 导入条目副标题：类型 + 日期（与首页信息行同一口径） */
+private fun importItemSubtitle(b: com.birthapp.data.Birthday): String {
+    val dateLabel = if (b.calendarType == "lunar") {
+        "农历${com.birthapp.lunar.LunarCalendar.formatLunarDate(b.birthMonth, b.birthDay)}"
+    } else {
+        "${b.birthMonth}月${b.birthDay}日"
+    }
+    return "${com.birthapp.data.EventType.label(b.eventType)} · $dateLabel"
+}
+
+@Composable
+private fun ImportChoicePill(label: String, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(8.dp),
+        color = if (selected) Teal500 else MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (selected) Teal500 else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+        )
+    ) {
+        Text(
+            label,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            fontSize = 11.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (selected) MaterialTheme.colorScheme.onPrimary
+            else MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 

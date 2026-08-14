@@ -80,4 +80,31 @@ class BackupMergeTest {
         val incoming = listOf(person("张三"), person("李四"))
         assertEquals(2, BackupMerge.filterNew(emptyList(), incoming).size)
     }
+
+    // ==================== classify（导入预览标记）====================
+
+    @Test
+    fun `classify_与已有重复的记录标记为重复`() {
+        val existing = listOf(person("张三"))
+        val incoming = listOf(person("张三"), person("李四"))
+        val items = BackupMerge.classify(existing, incoming)
+        assertEquals(2, items.size)
+        assertTrue(items[0].isDuplicate)
+        assertTrue(!items[1].isDuplicate)
+    }
+
+    @Test
+    fun `classify_文件内自重复只保留首次为不重复`() {
+        val items = BackupMerge.classify(emptyList(), listOf(person("张三"), person("张三")))
+        assertEquals(2, items.size)
+        assertTrue(!items[0].isDuplicate)
+        assertTrue(items[1].isDuplicate)
+    }
+
+    @Test
+    fun `classify_提醒时间不同仍算重复`() {
+        val existing = listOf(person("张三", reminderHour = 8))
+        val incoming = listOf(person("张三", reminderHour = 21))
+        assertTrue(BackupMerge.classify(existing, incoming).single().isDuplicate)
+    }
 }

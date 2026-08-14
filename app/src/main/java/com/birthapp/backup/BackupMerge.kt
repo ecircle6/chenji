@@ -11,7 +11,7 @@ import com.birthapp.data.Birthday
  */
 object BackupMerge {
 
-    private fun dedupKey(b: Birthday): String =
+    internal fun dedupKey(b: Birthday): String =
         listOf(
             b.name, b.calendarType, b.birthYear, b.birthMonth, b.birthDay,
             b.isLeapMonth, b.eventType
@@ -25,4 +25,18 @@ object BackupMerge {
         val seen = existing.mapTo(HashSet()) { dedupKey(it) }
         return incoming.filter { seen.add(dedupKey(it)) }
     }
+
+    /**
+     * 逐条标记导入记录是否与现有记录重复（含文件内自身重复，只保留首次出现为不重复），
+     * 供导入预览对话框做「跳过/覆盖/导入」三选
+     */
+    fun classify(existing: List<Birthday>, incoming: List<Birthday>): List<ImportItem> {
+        val seen = existing.mapTo(HashSet()) { dedupKey(it) }
+        return incoming.map { record ->
+            ImportItem(record = record, isDuplicate = !seen.add(dedupKey(record)))
+        }
+    }
 }
+
+/** 导入预览里的一条记录：是否与现有数据重复（重复的默认跳过） */
+data class ImportItem(val record: Birthday, val isDuplicate: Boolean)

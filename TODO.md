@@ -103,7 +103,11 @@
   - 验收：✅ 模拟器验证：默认时间 08→07 生效于新增页；总开关关闭后 `dumpsys alarm` 清空、重开恢复；系统通知设置页跳转成功
 - [ ] **version catalog 重构**——版本号收敛到 `libs.versions.toml`
 - [ ] **依赖升级**——Room 2.6.1（2023）→ 最新稳定版，与 Compose BOM 2024.12 对齐
-- [ ] **备份增强**——导入逐条预览/冲突解决 UI（参照 JeffGu98 覆盖/改名/跳过）；备份包含主题设置
+- [x] **备份增强**（2026-08-14 完成）
+  - 导入预览：`BackupMerge.classify` 逐条标记重复 → 导入前弹「逐条三选（跳过/覆盖/导入）」对话框（重复默认跳过、新记录默认导入；覆盖按判重 key 保留原 id 更新），不再无提示直接导入
+  - 备份含主题设置：FORMAT_VERSION 3，encode 附 `settings` 块（themeMode/dynamicColor），导入时可勾选「同时恢复备份中的主题设置」；decodeSettings 兼容老版本（无 settings 返回 null）
+  - 参照 JeffGu98 三选；「改名」需内嵌键盘编辑、交互复杂收益低，未做
+  - 验收：✅ 28 个备份单测（classify 3 + settings 编解码 3）；模拟器全流程：分享备份→删除记录→导入预览→三选生效（小明恢复/重复跳过）→勾选恢复主题设置（dynamic_color 复原）
 
 ---
 
