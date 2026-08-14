@@ -15,7 +15,7 @@ import java.io.File
 
 /**
  * 分享卡片生成测试：Canvas 直绘是纯本地的（不依赖真机渲染），
- * 保证生成不崩、产物文件与位图尺寸正确
+ * 保证生成不崩、产物文件与位图尺寸正确、两种风格（极光毛玻璃/深夜烛火）都覆盖
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -27,15 +27,16 @@ class ShareCardGeneratorTest {
         name: String = "小明",
         eventType: String = EventType.BIRTHDAY,
         calendarType: String = "solar",
-        month: Int = 8, day: Int = 14
+        month: Int = 8, day: Int = 14,
+        year: Int = 1998
     ) = Birthday(
-        name = name, birthYear = 1998, birthMonth = month, birthDay = day,
+        name = name, birthYear = year, birthMonth = month, birthDay = day,
         calendarType = calendarType, eventType = eventType,
         notes = "", isActive = true
     )
 
     @Test
-    fun `生成卡片_生日类型_文件存在且为PNG`() {
+    fun `生成卡片_生日类型_竖版文件存在且为PNG`() {
         val file = ShareCardGenerator.generate(context, birthday())
         assertTrue(file.exists())
         assertTrue(file.length() > 0)
@@ -43,25 +44,34 @@ class ShareCardGeneratorTest {
     }
 
     @Test
-    fun `生成卡片_缅怀类型_同样正常`() {
+    fun `生成卡片_缅怀类型_走深夜烛火风格同样正常`() {
         val file = ShareCardGenerator.generate(
             context,
-            birthday(name = "王奶奶", eventType = EventType.MEMORIAL, calendarType = "lunar")
+            birthday(name = "爷爷", eventType = EventType.MEMORIAL, calendarType = "lunar")
         )
         assertTrue(file.exists())
+        assertTrue(file.length() > 0)
+    }
+
+    @Test
+    fun `位图尺寸_1080乘1920竖版`() {
+        val bitmap = Bitmap.createBitmap(1080, 1920, Bitmap.Config.ARGB_8888)
+        ShareCardGenerator.draw(Canvas(bitmap), birthday())
+        assertTrue(!bitmap.isRecycled)
+        assertEquals(1080, bitmap.width)
+        assertEquals(1920, bitmap.height)
     }
 
     @Test
     fun `绘制过程_各种类型都不抛异常`() {
-        val bitmap = Bitmap.createBitmap(1080, 1080, Bitmap.Config.ARGB_8888)
+        val bitmap = Bitmap.createBitmap(1080, 1920, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
+        // 普通类型（极光毛玻璃）+ 缅怀（深夜烛火）都要覆盖
         for (type in EventType.ALL) {
             ShareCardGenerator.draw(canvas, birthday(eventType = type))
         }
-        // 画过之后位图可用且尺寸正确
+        ShareCardGenerator.draw(canvas, birthday(eventType = EventType.MEMORIAL))
         assertTrue(!bitmap.isRecycled)
-        assertEquals(1080, bitmap.width)
-        assertEquals(1080, bitmap.height)
     }
 
     @Test
