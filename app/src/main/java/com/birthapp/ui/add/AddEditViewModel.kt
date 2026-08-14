@@ -10,6 +10,7 @@ import com.birthapp.data.AppDatabase
 import com.birthapp.data.Birthday
 import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
+import com.birthapp.settings.ReminderSettings
 import com.birthapp.widget.WidgetRefresher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -44,6 +45,16 @@ class AddEditViewModel(application: Application) : AndroidViewModel(application)
 
     private val _uiState = MutableStateFlow(AddEditUiState())
     val uiState: StateFlow<AddEditUiState> = _uiState.asStateFlow()
+
+    init {
+        // 新记录的默认提醒时间取设置里的默认值（编辑已有记录不受影响，
+        // loadBirthday 会用自己的时间覆盖）
+        val reminder = ReminderSettings(getApplication())
+        _uiState.value = AddEditUiState(
+            reminderHour = reminder.defaultHour,
+            reminderMinute = reminder.defaultMinute
+        )
+    }
 
     fun loadBirthday(id: Long) {
         if (id <= 0) return

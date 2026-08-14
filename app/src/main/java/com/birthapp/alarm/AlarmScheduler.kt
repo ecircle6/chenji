@@ -8,6 +8,7 @@ import com.birthapp.data.AppDatabase
 import com.birthapp.data.Birthday
 import com.birthapp.lunar.LunarCalendar
 import com.birthapp.lunar.SolarDate
+import com.birthapp.settings.ReminderSettings
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -22,6 +23,11 @@ class AlarmScheduler(private val context: Context, private val database: AppData
      * requestCode 用 id*32+级别索引 区分，不同记录之间不会互相覆盖
      */
     suspend fun scheduleBirthdayReminder(birthday: Birthday) {
+        // 提醒总开关关闭时：不排新闹钟，并清掉这条记录已排的（重排场景下自然收敛）
+        if (!ReminderSettings(context).remindersEnabled.value) {
+            cancelBirthdayReminder(birthday)
+            return
+        }
         val levels = normalizeAdvanceLevels(birthday.advanceDays)
         val triggerTimes = levels.mapIndexedNotNull { index, level ->
             val triggerTime = calculateNextTriggerTime(birthday, level) ?: return@mapIndexedNotNull null

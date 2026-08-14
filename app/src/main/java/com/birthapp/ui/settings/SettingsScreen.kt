@@ -2,6 +2,7 @@ package com.birthapp.ui.settings
 
 import android.content.Intent
 import android.os.Build
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,7 +29,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.birthapp.BirthApp
+import com.birthapp.settings.ReminderSettings
 import com.birthapp.settings.ThemeMode
+import com.birthapp.ui.theme.Coral500
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,6 +44,39 @@ fun SettingsScreen(
     val currentMode by themeStore.mode.collectAsStateWithLifecycle()
     val dynamicColor by themeStore.dynamicColor.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    // 通知偏好：默认提醒时间 + 提醒总开关
+    val reminderSettings = ReminderSettings(context)
+    val remindersEnabled by reminderSettings.remindersEnabled.collectAsStateWithLifecycle()
+    var defaultHour by remember { mutableIntStateOf(reminderSettings.defaultHour) }
+    var defaultMinute by remember { mutableIntStateOf(reminderSettings.defaultMinute) }
+    var showTimePicker by remember { mutableStateOf(false) }
+
+    // 默认提醒时间的 TimePicker
+    if (showTimePicker) {
+        val timePickerState = rememberTimePickerState(
+            initialHour = reminderSettings.defaultHour,
+            initialMinute = reminderSettings.defaultMinute,
+            is24Hour = true
+        )
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            title = { Text("默认提醒时间", fontWeight = FontWeight.Bold) },
+            text = { TimePicker(state = timePickerState) },
+            confirmButton = {
+                TextButton(onClick = {
+                    reminderSettings.setDefaultTime(timePickerState.hour, timePickerState.minute)
+                    defaultHour = timePickerState.hour
+                    defaultMinute = timePickerState.minute
+                    showTimePicker = false
+                }) { Text("确定", color = Coral500, fontWeight = FontWeight.SemiBold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) { Text("取消") }
+            },
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
 
     // 导出：系统文件选择器让用户自己挑保存位置，不需要存储权限
     val exportLauncher = rememberLauncherForActivityResult(
@@ -143,6 +179,101 @@ fun SettingsScreen(
                                 onCheckedChange = { themeStore.setDynamicColor(it) }
                             )
                         }
+                    }
+                }
+            }
+
+            SettingsSectionLabel("通知")
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                )
+            ) {
+                Column {
+                    // 默认提醒时间：新建记录默认在几点提醒
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showTimePicker = true }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("默认提醒时间", fontWeight = FontWeight.Medium, fontSize = 15.sp)
+                            Text(
+                                "新建记录默认在几点提醒",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                            )
+                        }
+                        Text(
+                            String.format("%02d:%02d", defaultHour, defaultMinute),
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 20.dp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+                    )
+                    // 提醒总开关：关闭后不再调度任何闹钟
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("提醒", fontWeight = FontWeight.Medium, fontSize = 15.sp)
+                            Text(
+                                "关闭后不再提醒任何记录",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                            )
+                        }
+                        Switch(
+                            checked = remindersEnabled,
+                            onCheckedChange = { enabled ->
+                                reminderSettings.setRemindersEnabled(enabled)
+                                // 重排一次：关闭时清掉已排闹钟，重开时恢复
+                                (context.applicationContext as BirthApp).rescheduleAllAlarms()
+                            }
+                        )
+                    }
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 20.dp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+                    )
+                    // 系统通知设置：声音/震动/锁屏显示只能由用户在系统里改
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                context.startActivity(
+                                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                        .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                )
+                            }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("系统通知设置", fontWeight = FontWeight.Medium, fontSize = 15.sp)
+                            Text(
+                                "声音、震动、锁屏显示等",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                            )
+                        }
+                        Text(
+                            "›",
+                            fontSize = 20.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                        )
                     }
                 }
             }
