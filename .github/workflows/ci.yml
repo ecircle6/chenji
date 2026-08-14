@@ -29,12 +29,6 @@ jobs:
       - name: 修复 gradlew 可执行权限（Windows 入库的脚本可能无 exec 位）
         run: chmod +x gradlew
 
-      # 临时诊断：用 Gradle --info 日志定位 KSP 插件解析失败的真实原因（验证后移除）
-      - name: 诊断 KSP 插件解析
-        run: |
-          ./gradlew help --info 2>&1 | grep -iE "ksp|Could not|HTTP/|403|404|500|503|repository|Resolving" | head -60
-          exit 0
-
       - name: 运行单元测试（农历/备份/筛选/事件计算，共 5 个测试类）
         run: ./gradlew testDebugUnitTest
 
