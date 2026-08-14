@@ -61,6 +61,7 @@
   - `.github/workflows/ci.yml`：push/PR 自动跑全部单测 + 构建 Debug 包（含 APK 产物上传）
   - `.github/workflows/release.yml`：打 `v*` tag 自动签名构建正式包并发布 GitHub Release（签名密钥走 repo Secrets：KEYSTORE_BASE64/STORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD）
   - 配套：`gradlew`/`gradlew.bat`/`gradle-wrapper.jar` 入库（原仓库缺失）
+  - 坑记录：阿里云镜像在海外网络返回 502 导致 CI 解析失败 → `settings.gradle.kts` 按环境分流（CI=`true` 走官方源 / 本地走阿里云镜像加速）
   - 注意：wrapper 默认官方下载地址，国内网络慢时可改 gradle-wrapper.properties 为腾讯镜像
 
 - [ ] **i18n 字符串抽取（中/英）**
