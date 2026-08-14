@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# =============================================================================
+# pre-push 钩子：推送前检测「功能代码变更但 README/TODO 未同步」并提醒
+# 注意：不要直接编辑 .git/hooks/pre-push（会被 install-hooks.sh 覆盖），
+#       修改本文件后重新运行 bash tools/install-hooks.sh
+# =============================================================================
+
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# 有变更要推送才检查（git push 不带 refs 时 stdin 为空，跳过）
+if [ -p /dev/stdin ]; then
+    if [ -f "$HOOK_DIR/tools/check-docs-sync.sh" ]; then
+        bash "$HOOK_DIR/tools/check-docs-sync.sh"
+    else
+        echo "⚠ 文档同步检测脚本缺失：$HOOK_DIR/tools/check-docs-sync.sh（可重新 clone 或 git pull 后运行 bash tools/install-hooks.sh）"
+    fi
+fi
+
+exit 0

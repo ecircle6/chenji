@@ -1,0 +1,52 @@
+# =============================================================================
+# 文档同步检测：功能代码变更时检查 README.md / TODO.md 是否同步更新
+# 触发时机：push 到 main、或创建/更新 PR
+# 行为：只提醒（输出到 Actions 摘要与日志），不阻断 CI —— 与本地 pre-push 钩子一致
+# =============================================================================
+name: Docs Sync Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check-docs-sync:
+    name: README/TODO 同步检测
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码（含完整历史，用于 diff）
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 运行文档同步检测
+        id: docs-check
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            BASE="$BASE_SHA"
+          else
+            BASE="$BEFORE_SHA"
+          fi
+          echo "检测范围：$BASE..$HEAD_SHA"
+          OUTPUT="$(bash tools/check-docs-sync.sh "$BASE" "$HEAD_SHA")"
+          echo "$OUTPUT"
+          if echo "$OUTPUT" | grep -q "文档同步提醒"; then
+            {
+              echo "### ⚠ 文档同步提醒"
+              echo ""
+              echo "本次变更包含功能代码，但 **README.md / TODO.md 均未同步更新**。"
+              echo "请确认："
+              echo "- README.md —— 功能列表/技术栈是否过时"
+              echo "- TODO.md   —— 完成项是否勾选、新需求是否补充"
+              echo ""
+              echo "> 仅供提醒，不阻断本次 CI。"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "✅ 文档同步状态正常"
+          fi

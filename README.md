@@ -39,3 +39,15 @@ app/src/main/java/com/birthapp/
 ├── lunar/       农历换算
 └── util/        日期计算与文案工具
 ```
+
+## 文档同步检测
+
+每次提交功能代码（`app/src/main/` 等）时，自动检测 **README.md / TODO.md** 是否同步更新，防止文档过时。**只提醒，不阻断**。
+
+- **本地钩子**（推送前即时提醒）：每台电脑首次克隆后运行一次 `bash tools/install-hooks.sh`
+- **云端 CI**（push/PR 自动检测，任何电脑推送都生效）：见 `.github/workflows/docs-sync-check.yml`，提醒显示在 Actions 摘要页
+- 共享逻辑：`tools/check-docs-sync.sh`（本地与 CI 同一份判定规则）
+
+## 开发待办
+
+完善路线图见 [TODO.md](TODO.md)（P0 缺陷修复 → P1 功能补齐 → P2 工程现代化 → P3 远期）。

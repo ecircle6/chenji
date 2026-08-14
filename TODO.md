@@ -85,6 +85,9 @@
 
 ## P3 — 远期可选（做前先确认定位与需求）
 
+- [x] **文档同步检测机制**（2026-08-14 完成）
+  - 本地 pre-push 钩子 + GitHub Actions 云端检测，功能代码变更而 README/TODO 未同步时提醒（不阻断）
+  - 脚本入库：`tools/check-docs-sync.sh`（共享判定逻辑）、`tools/install-hooks.sh`（一键安装钩子）
 - [ ] **云同步**（WebDAV 自托管）——与「数据仅存本机」隐私定位冲突，需用户确认
 - [ ] **私密事件密码保护**——参照 CountdownDay 模糊遮盖
 - [ ] **自动更新检查**——参照 JeffGu98（GitHub Releases + SHA-256 校验 + Wi-Fi 下自动下载）
@@ -100,3 +103,4 @@
 - 完成一项 → 勾选 checkbox 并提交，commit message 注明「TODO: xxx」
 - 新发现的缺陷直接补充到对应优先级，不另开会话
 - 优先级可随时根据真实使用反馈调整
+- **功能代码变更后**：本地 pre-push 钩子与 GitHub Actions（`.github/workflows/docs-sync-check.yml`）会自动检测 README.md / TODO.md 是否同步，未同步时提醒但不阻断；新电脑首次克隆后运行 `bash tools/install-hooks.sh` 安装本地钩子
