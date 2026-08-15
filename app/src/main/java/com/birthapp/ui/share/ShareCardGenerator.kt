@@ -28,7 +28,8 @@ import java.time.DayOfWeek
  *   （标签/名字/日期 + 剩余空间垂直居中的大号倒计时）→ 底部三栏（月份/日期/星期）。
  * B · 深夜烛火（缅怀）：纯黑底 #0f0f12 + 顶部居中烛光晕；居中紧凑竖排：🕯️ → IN MEMORY →
  *   纪念文案 → 翻页数字 → 分隔线 + 斜体诗句 → 日期 → 贴底品牌。
- * 两种风格圆角 24（此处 81px）外区域透明。
+ * 两种风格圆角 24（此处 81px）外的角部铺中性深色底（设计稿页面底色），不再透明：
+ * 深色背景观感不变，浅色背景/相册预览也不会露出白色角。
  */
 object ShareCardGenerator {
 
@@ -37,6 +38,9 @@ object ShareCardGenerator {
     private const val RADIUS = 81f        // CSS 24px × 3.375
     private const val PAD = 88f           // CSS 26px（左右）× 3.375
     private const val PAD_TOP = 115f      // CSS 34px（上下）× 3.375
+
+    /** 圆角外角部底色：design-card-demo.html 页面底色 #14161c，任何背景下不露白 */
+    private const val COLOR_CORNER = 0xFF14161C.toInt()
 
     // A 风格配色
     private const val COLOR_A_BG1 = 0xFF0C1020.toInt()
@@ -86,19 +90,22 @@ object ShareCardGenerator {
     private fun drawAurora(canvas: Canvas, b: Birthday) {
         val cardRect = RectF(0f, 0f, W.toFloat(), H.toFloat())
 
-        // 0. 圆角裁剪：渐变底与极光光斑只出现在圆角内，角外保持透明
+        // 0. 整卡先铺中性深色底：圆角外的角部不再透明，浅色背景下也不露白角
+        canvas.drawRect(cardRect, Paint().apply { color = COLOR_CORNER })
+
+        // 1. 渐变底与极光光斑：裁剪在圆角内
         val clip = Path().apply { addRoundRect(cardRect, RADIUS, RADIUS, Path.Direction.CW) }
         canvas.save()
         canvas.clipPath(clip)
 
-        // 1. 整卡背景：135° 渐变 #0c1020 → #1a0f2e(50%) → #0d1f1f
+        // 整卡背景：135° 渐变 #0c1020 → #1a0f2e(50%) → #0d1f1f
         canvas.drawRect(cardRect, Paint().apply {
             shader = LinearGradient(0f, 0f, W.toFloat(), H.toFloat(),
                 intArrayOf(COLOR_A_BG1, COLOR_A_BG2, COLOR_A_BG3),
                 floatArrayOf(0f, 0.5f, 1f), Shader.TileMode.CLAMP)
         })
 
-        // 2. 极光光斑：右上青绿 rgba(0,255,200,.15)、左下淡紫 rgba(150,100,255,.12)
+        // 极光光斑：右上青绿 rgba(0,255,200,.15)、左下淡紫 rgba(150,100,255,.12)
         drawGlow(canvas, 878f, 135f, 675f, 0x2600FFC8.toInt())
         drawGlow(canvas, 202f, 1751f, 608f, 0x1F9664FF.toInt())
         canvas.restore()
@@ -197,11 +204,14 @@ object ShareCardGenerator {
 
     private fun drawMemorial(canvas: Canvas, b: Birthday) {
         val cardRect = RectF(0f, 0f, W.toFloat(), H.toFloat())
+
+        // 0. 整卡先铺中性深色底：圆角外的角部不再透明，浅色背景下也不露白角
+        canvas.drawRect(cardRect, Paint().apply { color = COLOR_CORNER })
+
+        // 1. 纯黑底 #0f0f12 + 顶中烛光晕 rgba(255,160,60,.12)：裁剪在圆角内
         val clip = Path().apply { addRoundRect(cardRect, RADIUS, RADIUS, Path.Direction.CW) }
         canvas.save()
         canvas.clipPath(clip)
-
-        // 1. 纯黑底 #0f0f12 + 顶中烛光晕 rgba(255,160,60,.12)
         canvas.drawRect(cardRect, Paint().apply { color = COLOR_B_BG })
         drawGlow(canvas, W / 2f, 0f, 450f, 0x1EFFA03C.toInt())
         canvas.restore()

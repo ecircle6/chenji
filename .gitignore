@@ -37,3 +37,6 @@ captures/
 
 # ZCode 工作区状态（计划文件等，不入库）
 .zcode/
+
+# 分享卡片效果图渲染输出（临时测试生成）
+app/renders/
