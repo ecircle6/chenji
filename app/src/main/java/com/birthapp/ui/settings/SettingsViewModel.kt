@@ -11,7 +11,9 @@ import com.birthapp.backup.BackupCodec
 import com.birthapp.backup.BackupMerge
 import com.birthapp.backup.BackupSettings
 import com.birthapp.backup.ImportItem
+import com.birthapp.data.AppDatabase
 import com.birthapp.settings.ThemeMode
+import com.birthapp.settings.ThemeStore
 import com.birthapp.widget.WidgetRefresher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -35,11 +37,13 @@ sealed interface SettingsEvent {
 /** 导入预览里每条记录的三选动作 */
 enum class ImportAction { SKIP, INSERT, OVERWRITE }
 
-class SettingsViewModel(application: Application) : AndroidViewModel(application) {
+class SettingsViewModel @JvmOverloads constructor(
+    application: Application,
+    private val database: AppDatabase = (application as BirthApp).database,
+    private val themeStore: ThemeStore = (application as BirthApp).themeStore
+) : AndroidViewModel(application) {
 
-    private val database = (application as BirthApp).database
     private val scheduler = AlarmScheduler(application, database)
-    private val themeStore = (application as BirthApp).themeStore
 
     private val _events = MutableSharedFlow<SettingsEvent>()
     val events: SharedFlow<SettingsEvent> = _events.asSharedFlow()

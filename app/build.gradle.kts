@@ -102,6 +102,10 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
+    // IDE 里 @Preview 的实时渲染工具（只在 debug 变体里）
+    debugImplementation("androidx.compose.ui:ui-tooling")
+    // 预览用的 ComponentActivity 声明（Compose UI 测试的 createComposeRule 需要）
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     // Activity
     implementation("androidx.activity:activity-compose:1.9.3")
@@ -140,4 +144,6 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.14.1")
     testImplementation("androidx.test:core:1.6.1")
     testImplementation("androidx.test:monitor:1.7.1")
+    // Compose UI 测试（Robolectric 本地跑，语义树断言，不需要模拟器）
+    testImplementation("androidx.compose.ui:ui-test-junit4")
 }

@@ -10,10 +10,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.birthapp.data.EventType
 import com.birthapp.ui.home.BirthdayDisplay
+import com.birthapp.ui.preview.previewBirthdays
 import com.birthapp.ui.theme.*
 
 /** 卡片柔色背景循环 */
@@ -322,4 +324,34 @@ fun EmptyBirthdayList(onAddClick: () -> Unit) {
             Text("添加第一个记录", fontWeight = FontWeight.SemiBold)
         }
     }
+}
+
+// ==================== Previews ====================
+
+@Preview(showBackground = true, locale = "zh-rCN", name = "生日卡片 · 浅色")
+@Composable
+private fun BirthdayCardPreview() {
+    BirthAppTheme {
+        BirthdayCard(display = previewBirthdays()[0], index = 0, onClick = {}, darkTheme = false)
+    }
+}
+
+@Preview(showBackground = true, locale = "zh-rCN", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES, name = "生日卡片 · 深色")
+@Composable
+private fun BirthdayCardPreviewDark() {
+    BirthAppTheme(darkTheme = true) {
+        BirthdayCard(display = previewBirthdays()[0], index = 0, onClick = {}, darkTheme = true)
+    }
+}
+
+@Preview(showBackground = true, locale = "zh-rCN", name = "空列表")
+@Composable
+private fun EmptyBirthdayListPreview() {
+    BirthAppTheme { EmptyBirthdayList(onAddClick = {}) }
+}
+
+@Preview(showBackground = true, locale = "zh-rCN", name = "空搜索结果")
+@Composable
+private fun EmptySearchResultPreview() {
+    BirthAppTheme { EmptySearchResult(keyword = "张三") }
 }

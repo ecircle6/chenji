@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -28,6 +29,10 @@ import com.birthapp.ui.theme.*
 import java.time.YearMonth
 import java.util.Calendar
 
+/**
+ * 添加/编辑页入口（薄壳）：收集 ViewModel 状态、处理「保存后返回」，
+ * 渲染逻辑全部在无状态的 [AddEditContent] 里，便于 @Preview 与 UI 测试直接驱动。
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddEditScreen(
@@ -45,6 +50,49 @@ fun AddEditScreen(
         if (state.saved) onBack()
     }
 
+    AddEditContent(
+        state = state,
+        onBack = onBack,
+        onUpdateEventType = { viewModel.updateEventType(it) },
+        onUpdateName = { viewModel.updateName(it) },
+        onUpdateCalendarType = { viewModel.updateCalendarType(it) },
+        onUpdateBirthYear = { viewModel.updateBirthYear(it) },
+        onUpdateBirthMonth = { viewModel.updateBirthMonth(it) },
+        onUpdateBirthDay = { viewModel.updateBirthDay(it) },
+        onUpdateLeapMonth = { viewModel.updateLeapMonth(it) },
+        onToggleAdvanceDay = { viewModel.toggleAdvanceDay(it) },
+        onAddCustomAdvanceDay = { viewModel.addCustomAdvanceDay(it) },
+        onRemoveAdvanceDay = { viewModel.removeAdvanceDay(it) },
+        onUpdateReminderTime = { h, m -> viewModel.updateReminderTime(h, m) },
+        onUpdateRelation = { viewModel.updateRelation(it) },
+        onUpdateNotes = { viewModel.updateNotes(it) },
+        onSave = { viewModel.save() },
+        onDelete = { viewModel.delete() }
+    )
+}
+
+/** 添加/编辑页纯渲染：状态 + 回调，不感知 ViewModel，可 @Preview / UI 测试 */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun AddEditContent(
+    state: AddEditUiState,
+    onBack: () -> Unit,
+    onUpdateEventType: (String) -> Unit,
+    onUpdateName: (String) -> Unit,
+    onUpdateCalendarType: (String) -> Unit,
+    onUpdateBirthYear: (Int) -> Unit,
+    onUpdateBirthMonth: (Int) -> Unit,
+    onUpdateBirthDay: (Int) -> Unit,
+    onUpdateLeapMonth: (Boolean) -> Unit,
+    onToggleAdvanceDay: (Int) -> Unit,
+    onAddCustomAdvanceDay: (Int) -> Unit,
+    onRemoveAdvanceDay: (Int) -> Unit,
+    onUpdateReminderTime: (hour: Int, minute: Int) -> Unit,
+    onUpdateRelation: (String) -> Unit,
+    onUpdateNotes: (String) -> Unit,
+    onSave: () -> Unit,
+    onDelete: () -> Unit
+) {
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -98,7 +146,7 @@ fun AddEditScreen(
                             val isSelected = state.eventType == type
                             val accent = eventAccent(type)
                             Surface(
-                                onClick = { viewModel.updateEventType(type) },
+                                onClick = { onUpdateEventType(type) },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp),
                                 color = if (isSelected) accent.copy(alpha = 0.15f)
@@ -129,7 +177,7 @@ fun AddEditScreen(
             // Name field
             OutlinedTextField(
                 value = state.name,
-                onValueChange = { viewModel.updateName(it) },
+                onValueChange = onUpdateName,
                 label = { Text(EventType.nameFieldLabel(state.eventType)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -153,7 +201,7 @@ fun AddEditScreen(
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 SegmentedButton(
                     selected = state.calendarType == "solar",
-                    onClick = { viewModel.updateCalendarType("solar") },
+                    onClick = { onUpdateCalendarType("solar") },
                     shape = SegmentedButtonDefaults.itemShape(0, 2),
                     colors = SegmentedButtonDefaults.colors(
                         activeContainerColor = Coral500,
@@ -164,7 +212,7 @@ fun AddEditScreen(
                 }
                 SegmentedButton(
                     selected = state.calendarType == "lunar",
-                    onClick = { viewModel.updateCalendarType("lunar") },
+                    onClick = { onUpdateCalendarType("lunar") },
                     shape = SegmentedButtonDefaults.itemShape(1, 2),
                     colors = SegmentedButtonDefaults.colors(
                         activeContainerColor = Teal500,
@@ -182,9 +230,9 @@ fun AddEditScreen(
                     year = state.birthYear,
                     month = state.birthMonth,
                     day = state.birthDay,
-                    onYearChange = { viewModel.updateBirthYear(it) },
-                    onMonthChange = { viewModel.updateBirthMonth(it) },
-                    onDayChange = { viewModel.updateBirthDay(it) },
+                    onYearChange = onUpdateBirthYear,
+                    onMonthChange = onUpdateBirthMonth,
+                    onDayChange = onUpdateBirthDay,
                     onOpenCalendar = { showDatePicker = true }
                 )
             } else {
@@ -194,10 +242,10 @@ fun AddEditScreen(
                     month = state.birthMonth,
                     day = state.birthDay,
                     isLeap = state.isLeapMonth,
-                    onYearChange = { viewModel.updateBirthYear(it) },
-                    onMonthChange = { viewModel.updateBirthMonth(it) },
-                    onDayChange = { viewModel.updateBirthDay(it) },
-                    onLeapChange = { viewModel.updateLeapMonth(it) }
+                    onYearChange = onUpdateBirthYear,
+                    onMonthChange = onUpdateBirthMonth,
+                    onDayChange = onUpdateBirthDay,
+                    onLeapChange = onUpdateLeapMonth
                 )
             }
 
@@ -252,7 +300,7 @@ fun AddEditScreen(
                 advanceOptions.forEach { (days, label) ->
                     val isSelected = days in state.advanceDays
                     Surface(
-                        onClick = { viewModel.toggleAdvanceDay(days) },
+                        onClick = { onToggleAdvanceDay(days) },
                         shape = RoundedCornerShape(12.dp),
                         color = if (isSelected) Teal500 else MaterialTheme.colorScheme.surface,
                         border = if (isSelected) null
@@ -311,7 +359,7 @@ fun AddEditScreen(
                     val (key, label) = keyLabel
                     val isSelected = state.relation == key
                     Surface(
-                        onClick = { viewModel.updateRelation(key) },
+                        onClick = { onUpdateRelation(key) },
                         shape = RoundedCornerShape(12.dp),
                         color = if (isSelected) color.copy(alpha = 0.15f)
                         else MaterialTheme.colorScheme.surface,
@@ -335,7 +383,7 @@ fun AddEditScreen(
             // Notes
             OutlinedTextField(
                 value = state.notes,
-                onValueChange = { viewModel.updateNotes(it) },
+                onValueChange = onUpdateNotes,
                 label = { Text("备注") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,
@@ -349,7 +397,7 @@ fun AddEditScreen(
 
             // Save button
             Button(
-                onClick = { viewModel.save() },
+                onClick = onSave,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
@@ -382,7 +430,7 @@ fun AddEditScreen(
             text = { TimePicker(state = timePickerState) },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.updateReminderTime(timePickerState.hour, timePickerState.minute)
+                    onUpdateReminderTime(timePickerState.hour, timePickerState.minute)
                     showTimePicker = false
                 }) { Text("确定", color = Coral500, fontWeight = FontWeight.SemiBold) }
             },
@@ -407,9 +455,9 @@ fun AddEditScreen(
                     datePickerState.selectedDateMillis?.let { millis ->
                         val cal = Calendar.getInstance()
                         cal.timeInMillis = millis
-                        viewModel.updateBirthYear(cal.get(Calendar.YEAR))
-                        viewModel.updateBirthMonth(cal.get(Calendar.MONTH) + 1)
-                        viewModel.updateBirthDay(cal.get(Calendar.DAY_OF_MONTH))
+                        onUpdateBirthYear(cal.get(Calendar.YEAR))
+                        onUpdateBirthMonth(cal.get(Calendar.MONTH) + 1)
+                        onUpdateBirthDay(cal.get(Calendar.DAY_OF_MONTH))
                     }
                     showDatePicker = false
                 }) { Text("确定", color = Coral500, fontWeight = FontWeight.SemiBold) }
@@ -462,7 +510,7 @@ fun AddEditScreen(
                         TextButton(
                             enabled = inputValid && !alreadyAdded && !atLimit,
                             onClick = {
-                                viewModel.addCustomAdvanceDay(inputDays!!)
+                                onAddCustomAdvanceDay(inputDays!!)
                                 customDaysInput = ""
                             }
                         ) { Text("添加", color = Teal500, fontWeight = FontWeight.SemiBold) }
@@ -491,7 +539,7 @@ fun AddEditScreen(
                         ) {
                             customLevels.forEach { day ->
                                 Surface(
-                                    onClick = { viewModel.removeAdvanceDay(day) },
+                                    onClick = { onRemoveAdvanceDay(day) },
                                     shape = RoundedCornerShape(12.dp),
                                     color = Teal500,
                                     border = null
@@ -532,7 +580,7 @@ fun AddEditScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
-                    viewModel.delete()
+                    onDelete()
                 }) { Text("删除", color = Coral500, fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = {
@@ -716,7 +764,7 @@ private fun LunarDatePickerSection(
         )
         Switch(
             checked = isLeap,
-            onCheckedChange = { onLeapChange(it) },
+            onCheckedChange = onLeapChange,
             enabled = hasLeapMonth,
             colors = SwitchDefaults.colors(checkedTrackColor = Teal500)
         )
@@ -814,5 +862,41 @@ private fun DateDropdown(
                 )
             }
         }
+    }
+}
+
+// ==================== Previews ====================
+
+@Preview(showBackground = true, locale = "zh-rCN", name = "添加记录 · 浅色")
+@Composable
+private fun AddEditContentPreview() {
+    BirthAppTheme {
+        AddEditContent(
+            state = AddEditUiState(name = "小明", reminderHour = 8, reminderMinute = 30),
+            onBack = {}, onUpdateEventType = {}, onUpdateName = {}, onUpdateCalendarType = {},
+            onUpdateBirthYear = {}, onUpdateBirthMonth = {}, onUpdateBirthDay = {},
+            onUpdateLeapMonth = {}, onToggleAdvanceDay = {}, onAddCustomAdvanceDay = {},
+            onRemoveAdvanceDay = {}, onUpdateReminderTime = { _, _ -> },
+            onUpdateRelation = {}, onUpdateNotes = {}, onSave = {}, onDelete = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, locale = "zh-rCN", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES, name = "编辑记录 · 深色")
+@Composable
+private fun AddEditContentPreviewDark() {
+    BirthAppTheme(darkTheme = true) {
+        AddEditContent(
+            state = AddEditUiState(
+                id = 1, name = "爷爷", eventType = EventType.MEMORIAL,
+                calendarType = "lunar", birthYear = 1945, birthMonth = 7, birthDay = 15,
+                advanceDays = listOf(0, 3), isEditMode = true
+            ),
+            onBack = {}, onUpdateEventType = {}, onUpdateName = {}, onUpdateCalendarType = {},
+            onUpdateBirthYear = {}, onUpdateBirthMonth = {}, onUpdateBirthDay = {},
+            onUpdateLeapMonth = {}, onToggleAdvanceDay = {}, onAddCustomAdvanceDay = {},
+            onRemoveAdvanceDay = {}, onUpdateReminderTime = { _, _ -> },
+            onUpdateRelation = {}, onUpdateNotes = {}, onSave = {}, onDelete = {}
+        )
     }
 }

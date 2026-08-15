@@ -15,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -28,14 +27,19 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.birthapp.data.Birthday
 import com.birthapp.data.EventType
 import com.birthapp.ui.common.BirthdayCard
 import com.birthapp.ui.common.EmptyBirthdayList
 import com.birthapp.ui.common.EmptySearchResult
+import com.birthapp.ui.common.SwipeToDeleteBox
+import com.birthapp.ui.preview.previewBirthdays
+import com.birthapp.ui.theme.BirthAppTheme
 import com.birthapp.ui.theme.Coral500
 import com.birthapp.ui.theme.LocalDarkTheme
 
@@ -47,6 +51,10 @@ private val TABS = listOf(
     "other" to "其他"
 )
 
+/**
+ * 首页入口（薄壳）：只做 ViewModel 状态收集与回调转发，
+ * 渲染逻辑全部在无状态的 [HomeContent] 里，便于 @Preview 与 UI 测试直接驱动。
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -61,6 +69,46 @@ fun HomeScreen(
     val availableTypes by viewModel.availableTypes.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val isSearching by viewModel.isSearching.collectAsStateWithLifecycle()
+
+    HomeContent(
+        birthdays = birthdays,
+        selectedTab = selectedTab,
+        selectedType = selectedType,
+        availableTypes = availableTypes,
+        searchQuery = searchQuery,
+        isSearching = isSearching,
+        onAddClick = onAddClick,
+        onItemClick = onItemClick,
+        onSettingsClick = onSettingsClick,
+        onTabSelect = { viewModel.selectTab(it) },
+        onTypeSelect = { viewModel.selectType(it) },
+        onSearchChange = { viewModel.updateSearchQuery(it) },
+        onEnterSearch = { viewModel.enterSearch() },
+        onExitSearch = { viewModel.exitSearch() },
+        onDeleteBirthday = { viewModel.deleteBirthday(it) }
+    )
+}
+
+/** 首页纯渲染：状态 + 回调，不感知 ViewModel，可 @Preview / UI 测试 */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HomeContent(
+    birthdays: List<BirthdayDisplay>,
+    selectedTab: String,
+    selectedType: String,
+    availableTypes: List<String>,
+    searchQuery: String,
+    isSearching: Boolean,
+    onAddClick: () -> Unit,
+    onItemClick: (Long) -> Unit,
+    onSettingsClick: () -> Unit,
+    onTabSelect: (String) -> Unit,
+    onTypeSelect: (String) -> Unit,
+    onSearchChange: (String) -> Unit,
+    onEnterSearch: () -> Unit,
+    onExitSearch: () -> Unit,
+    onDeleteBirthday: (Birthday) -> Unit
+) {
     var deleteTargetId by remember { mutableLongStateOf(-1L) }
     // 列表/月历视图切换（页面级状态，旋转屏幕后保持）
     var showCalendar by rememberSaveable { mutableStateOf(false) }
@@ -70,12 +118,16 @@ fun HomeScreen(
     val listState = rememberLazyListState()
 
     // 搜索态下的返回键先退出搜索，而不是直接退出 App
-    BackHandler(enabled = isSearching) { viewModel.exitSearch() }
+    BackHandler(enabled = isSearching) { onExitSearch() }
 
     LaunchedEffect(isSearching) {
         // 只在刚进搜索（还没输关键词）时自动弹键盘；
-        // 从详情页返回时关键词还在，这时用户是要看结果，不该再被键盘挡住半屏
-        if (isSearching && searchQuery.isEmpty()) searchFocus.requestFocus()
+        // 从详情页返回时关键词还在，这时用户是要看结果，不该再被键盘挡住半屏。
+        // 推迟到下一帧再请求：首帧焦点系统可能还没挂上 FocusRequester，
+        // 立即 requestFocus 会抛「FocusRequester is not initialized」
+        if (isSearching && searchQuery.isEmpty()) {
+            withFrameNanos { searchFocus.requestFocus() }
+        }
     }
 
     // 搜索态或关键词一变，列表内容已经不是同一批了，
@@ -91,7 +143,7 @@ fun HomeScreen(
                     if (isSearching) {
                         TextField(
                             value = searchQuery,
-                            onValueChange = { viewModel.updateSearchQuery(it) },
+                            onValueChange = onSearchChange,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .focusRequester(searchFocus),
@@ -100,7 +152,7 @@ fun HomeScreen(
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                             trailingIcon = {
                                 if (searchQuery.isNotEmpty()) {
-                                    IconButton(onClick = { viewModel.updateSearchQuery("") }) {
+                                    IconButton(onClick = { onSearchChange("") }) {
                                         Icon(Icons.Default.Clear, contentDescription = "清空")
                                     }
                                 }
@@ -122,11 +174,11 @@ fun HomeScreen(
                 },
                 actions = {
                     if (isSearching) {
-                        IconButton(onClick = { viewModel.exitSearch() }) {
+                        IconButton(onClick = onExitSearch) {
                             Icon(Icons.Default.Close, contentDescription = "退出搜索")
                         }
                     } else {
-                        IconButton(onClick = { viewModel.enterSearch() }) {
+                        IconButton(onClick = onEnterSearch) {
                             Icon(Icons.Default.Search, contentDescription = "搜索")
                         }
                         IconButton(onClick = onSettingsClick) {
@@ -195,7 +247,7 @@ fun HomeScreen(
                     items(TABS) { (key, label) ->
                         val isSelected = selectedTab == key
                         Surface(
-                            onClick = { viewModel.selectTab(key) },
+                            onClick = { onTabSelect(key) },
                             shape = RoundedCornerShape(20.dp),
                             color = if (isSelected) Coral500
                             else MaterialTheme.colorScheme.surface,
@@ -232,7 +284,7 @@ fun HomeScreen(
                     items(listOf("all") + availableTypes) { type ->
                         val isSelected = selectedType == type
                         Surface(
-                            onClick = { viewModel.selectType(type) },
+                            onClick = { onTypeSelect(type) },
                             shape = RoundedCornerShape(16.dp),
                             // 用描边胶囊区分于上面实心的关系标签，避免两排长得一样分不清
                             color = if (isSelected) Coral500.copy(alpha = 0.15f)
@@ -282,34 +334,10 @@ fun HomeScreen(
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
                     itemsIndexed(birthdays, key = { _, item -> item.birthday.id }) { index, display ->
-                        SwipeToDismissBox(
-                            state = rememberSwipeToDismissBoxState(
-                                confirmValueChange = { value ->
-                                    if (value == SwipeToDismissBoxValue.EndToStart) {
-                                        deleteTargetId = display.birthday.id
-                                        false
-                                    } else false
-                                },
-                                // 默认滑一小段就算删除，手指上下滑动时带的横向偏移
-                                // 很容易误触；改成要滑过卡片一半宽度才弹删除确认
-                                positionalThreshold = { totalDistance -> totalDistance * 0.5f }
-                            ),
-                            backgroundContent = {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 24.dp),
-                                    horizontalArrangement = Arrangement.End,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = "删除",
-                                        tint = Coral500
-                                    )
-                                }
-                            },
-                            enableDismissFromStartToEnd = false
+                        SwipeToDeleteBox(
+                            // 系统 SwipeToDismissBox 的水平手势会跟列表滚动抢触摸，下滑常被误判成左滑；
+                            // 自绘容器做了方向锁定：横向占优才启动左滑，且滑过半屏才弹删除确认
+                            onDelete = { deleteTargetId = display.birthday.id }
                         ) {
                             BirthdayCard(
                                 display = display,
@@ -334,7 +362,7 @@ fun HomeScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        target?.let { viewModel.deleteBirthday(it.birthday) }
+                        target?.let { onDeleteBirthday(it.birthday) }
                         deleteTargetId = -1L
                     }
                 ) {
@@ -374,6 +402,54 @@ private fun EmptyFilterResult() {
             text = "换个标签看看，或点“全部”回到完整列表",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Preview(showBackground = true, locale = "zh-rCN", name = "首页 · 浅色")
+@Composable
+private fun HomeContentPreview() {
+    BirthAppTheme {
+        HomeContent(
+            birthdays = previewBirthdays(),
+            selectedTab = "all",
+            selectedType = "all",
+            availableTypes = listOf("birthday", "love"),
+            searchQuery = "",
+            isSearching = false,
+            onAddClick = {},
+            onItemClick = {},
+            onSettingsClick = {},
+            onTabSelect = {},
+            onTypeSelect = {},
+            onSearchChange = {},
+            onEnterSearch = {},
+            onExitSearch = {},
+            onDeleteBirthday = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, locale = "zh-rCN", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES, name = "首页 · 深色")
+@Composable
+private fun HomeContentPreviewDark() {
+    BirthAppTheme(darkTheme = true) {
+        HomeContent(
+            birthdays = previewBirthdays(),
+            selectedTab = "all",
+            selectedType = "all",
+            availableTypes = emptyList(),
+            searchQuery = "",
+            isSearching = false,
+            onAddClick = {},
+            onItemClick = {},
+            onSettingsClick = {},
+            onTabSelect = {},
+            onTypeSelect = {},
+            onSearchChange = {},
+            onEnterSearch = {},
+            onExitSearch = {},
+            onDeleteBirthday = {}
         )
     }
 }

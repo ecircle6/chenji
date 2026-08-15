@@ -78,10 +78,13 @@
   - 实现：`MainActivity` 调 `enableEdgeToEdge()`（targetSdk 35 下 Android 15 强制），`Theme.kt` 删除已废弃的 `statusBarColor` 手动涂色（保留图标明暗控制）；`ThemeStore` 加 `dynamicColor` 开关（prefs 持久化，默认关保持品牌 Coral/Teal 配色），`BirthAppTheme` 在 Android 12+ 且开启时用 `dynamicLightColorScheme/dynamicDarkColorScheme`；设置页深夜模式卡片加"动态取色"Switch（SDK<31 隐藏）
   - 验收：✅ 模拟器（Android 15）状态栏与内容衔接正常、无遮挡；开关写入 prefs 即时生效、无崩溃
 
-- [ ] **@Preview 与 Compose UI 测试**
-  - 问题：38 个主源码文件零 @Preview，UI 迭代全靠真机
-  - 方案：为首页/详情/设置核心界面补 @Preview；用 Robolectric + in-memory Room 补 DAO/ViewModel 测试
-  - 验收：关键界面都有 @Preview；ViewModel 核心状态变换有测试
+- [x] **@Preview 与 Compose UI 测试**（2026-08-15 完成）
+  - 无状态化重构：4 个页面抽 `XxxContent(state, callbacks)` 纯渲染（薄壳 `XxxScreen(viewModel)` 只做状态收集与回调转发，导航零改动）；Settings 页消除 `applicationContext as BirthApp` 强转与 SharedPreferences 直读，新增 `SettingsUiState`/`SettingsCallbacks`
+  - @Preview：首页/详情/添加编辑/设置 4 页 Content + 月历 + BirthdayCard/空态等共享组件，浅色/深色双预览（`ui/preview/PreviewData.kt` 提供样例数据）
+  - Compose UI 测试（Robolectric 本地跑，`ui-test-junit4` + `@GraphicsMode(NATIVE)`）：5 个测试类 26 用例，语义树断言文本/状态切换/点击回调
+  - ViewModel 测试（in-memory Room 注入，`@JvmOverloads` 保持 `viewModel()` 工厂不变）：Home（排序/类型筛选/搜索/删除）、Detail（加载/置顶/暂停/删除）、AddEdit（默认时间/提前提醒/保存/编辑加载）、Settings（分享备份/导入预览三选）共 17 用例
+  - 坑记录：① 页面 Composable 直接注入 AndroidViewModel 无法预览，需先无状态化（对比过假 VM 子类/previewState 参数两方案，均否）；② Robolectric 下 emoji 字形与「 天后」前导空格文本节点尺寸为 0，断言改用存在性 + substring；③ Robolectric 下 FileProvider 路径根解析不生效，shareBackup 测试只断言文件内容与事件已发出；④ UI 测试需 `@Config(application = Application::class)` 绕开 BirthApp.onCreate 的数据库访问
+  - 验收：✅ 单测 97 → 140 用例全绿；`assembleDebug` 通过；IDE @Preview 面板 4 页 + 组件全部可渲染
 
 - [x] **分享卡片**（2026-08-14 首版；2026-08-15 改版为 1080×1920 竖版双风格）
   - 改版后：竖版 1080×1920（9:16，适配朋友圈/小红书）；按事件类型分流两套风格：

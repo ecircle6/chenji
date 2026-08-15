@@ -53,9 +53,11 @@ data class DetailUiState(
     val isPinned: Boolean = false
 )
 
-class DetailViewModel(application: Application) : AndroidViewModel(application) {
-
+class DetailViewModel @JvmOverloads constructor(
+    application: Application,
     private val database: AppDatabase = (application as BirthApp).database
+) : AndroidViewModel(application) {
+
     private val scheduler = AlarmScheduler(application, database)
 
     private val _id = MutableStateFlow(0L)

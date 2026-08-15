@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -30,8 +31,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.birthapp.data.EventType
 import com.birthapp.ui.common.eventAccent
 import com.birthapp.ui.common.eventBannerColors
+import com.birthapp.ui.preview.previewDetailState
 import com.birthapp.ui.theme.*
 
+/**
+ * 详情页入口（薄壳）：收集 ViewModel 状态、处理「删除/未找到退出门」和分享面板拉起，
+ * 渲染逻辑全部在无状态的 [DetailContent] 里，便于 @Preview 与 UI 测试直接驱动。
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
@@ -42,7 +48,6 @@ fun DetailScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
-    val darkTheme = LocalDarkTheme.current
 
     LaunchedEffect(birthdayId) { viewModel.load(birthdayId) }
 
@@ -73,8 +78,32 @@ fun DetailScreen(
         }
     }
 
-    // 从编辑页改完名字/类型返回时，observeById 会自动把新值推过来，这里不需要手动刷新
+    DetailContent(
+        state = state,
+        onBack = onBack,
+        onEditClick = onEditClick,
+        onTogglePinned = { viewModel.togglePinned() },
+        onShare = { viewModel.shareCard() },
+        onDelete = { viewModel.delete() },
+        onToggleActive = { viewModel.toggleActive(it) }
+    )
+}
 
+/** 详情页纯渲染：状态 + 回调，不感知 ViewModel，可 @Preview / UI 测试 */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DetailContent(
+    state: DetailUiState,
+    onBack: () -> Unit,
+    onEditClick: (Long) -> Unit,
+    onTogglePinned: () -> Unit,
+    onShare: () -> Unit,
+    onDelete: () -> Unit,
+    onToggleActive: (Boolean) -> Unit
+) {
+    val darkTheme = LocalDarkTheme.current
+
+    // 从编辑页改完名字/类型返回时，observeById 会自动把新值推过来，这里不需要手动刷新
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     val accent = eventAccent(state.eventType)
@@ -91,7 +120,7 @@ fun DetailScreen(
                 actions = {
                     // 置顶：固定在首页列表顶部。选中态用主题色，未选中用灰
                     IconButton(
-                        onClick = { viewModel.togglePinned() },
+                        onClick = onTogglePinned,
                         enabled = state.id > 0
                     ) {
                         Icon(
@@ -101,7 +130,7 @@ fun DetailScreen(
                         )
                     }
                     // 分享卡片：生成一张带倒计时的图片发到微信/朋友圈
-                    IconButton(onClick = { viewModel.shareCard() }, enabled = state.id > 0) {
+                    IconButton(onClick = onShare, enabled = state.id > 0) {
                         Icon(Icons.Default.Share, contentDescription = "分享卡片")
                     }
                     IconButton(onClick = { onEditClick(state.id) }, enabled = state.id > 0) {
@@ -277,7 +306,7 @@ fun DetailScreen(
                     }
                     Switch(
                         checked = state.isActive,
-                        onCheckedChange = { viewModel.toggleActive(it) },
+                        onCheckedChange = onToggleActive,
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
                             checkedTrackColor = accent
@@ -328,7 +357,7 @@ fun DetailScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
-                    viewModel.delete()
+                    onDelete()
                 }) {
                     Text("删除", color = Coral500)
                 }
@@ -396,4 +425,16 @@ private fun InfoRow(label: String, value: String) {
             color = MaterialTheme.colorScheme.onSurface
         )
     }
+}
+
+@Preview(showBackground = true, locale = "zh-rCN", name = "详情页 · 浅色")
+@Composable
+private fun DetailContentPreview() {
+    BirthAppTheme { DetailContent(state = previewDetailState(), onBack = {}, onEditClick = {}, onTogglePinned = {}, onShare = {}, onDelete = {}, onToggleActive = {}) }
+}
+
+@Preview(showBackground = true, locale = "zh-rCN", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES, name = "详情页 · 深色")
+@Composable
+private fun DetailContentPreviewDark() {
+    BirthAppTheme(darkTheme = true) { DetailContent(state = previewDetailState(), onBack = {}, onEditClick = {}, onTogglePinned = {}, onShare = {}, onDelete = {}, onToggleActive = {}) }
 }

@@ -38,9 +38,11 @@ data class AddEditUiState(
     val saved: Boolean = false
 )
 
-class AddEditViewModel(application: Application) : AndroidViewModel(application) {
-
+class AddEditViewModel @JvmOverloads constructor(
+    application: Application,
     private val database: AppDatabase = (application as BirthApp).database
+) : AndroidViewModel(application) {
+
     private val scheduler = AlarmScheduler(application, database)
 
     private val _uiState = MutableStateFlow(AddEditUiState())

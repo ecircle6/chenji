@@ -279,3 +279,26 @@ private fun RowScope.DayCell(
 }
 
 private val WEEKDAYS = listOf("一", "二", "三", "四", "五", "六", "日")
+
+// ==================== Previews ====================
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, locale = "zh-rCN", name = "月历 · 浅色")
+@androidx.compose.runtime.Composable
+private fun CalendarScreenPreview() {
+    com.birthapp.ui.theme.BirthAppTheme {
+        CalendarScreen(birthdays = com.birthapp.ui.preview.previewBirthdays(), onItemClick = {})
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(
+    showBackground = true,
+    locale = "zh-rCN",
+    uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES,
+    name = "月历 · 深色"
+)
+@androidx.compose.runtime.Composable
+private fun CalendarScreenPreviewDark() {
+    com.birthapp.ui.theme.BirthAppTheme(darkTheme = true) {
+        CalendarScreen(birthdays = com.birthapp.ui.preview.previewBirthdays(), onItemClick = {})
+    }
+}

@@ -1,17 +1,18 @@
 package com.birthapp.ui.settings
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Download
@@ -24,18 +25,56 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.birthapp.BirthApp
+import com.birthapp.data.Birthday
+import com.birthapp.data.EventType
+import com.birthapp.lunar.LunarCalendar
 import com.birthapp.settings.Changelog
 import com.birthapp.settings.ReminderSettings
 import com.birthapp.settings.ThemeMode
+import com.birthapp.ui.theme.BirthAppTheme
 import com.birthapp.ui.theme.Coral500
 import com.birthapp.ui.theme.Teal500
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
+/** 设置页的纯渲染状态：主题/通知偏好 + 版本号，全部由外部传入 */
+data class SettingsUiState(
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val dynamicColor: Boolean = false,
+    val remindersEnabled: Boolean = true,
+    val defaultHour: Int = 8,
+    val defaultMinute: Int = 0,
+    val versionName: String = ""
+)
+
+/** 设置页的全部用户动作回调（壳层接到真实实现：写偏好、起 Intent、调 ViewModel） */
+class SettingsCallbacks(
+    val onBack: () -> Unit,
+    val onThemeModeSelect: (ThemeMode) -> Unit,
+    val onToggleDynamicColor: (Boolean) -> Unit,
+    val onSetDefaultTime: (hour: Int, minute: Int) -> Unit,
+    val onToggleReminders: (Boolean) -> Unit,
+    val onExportClick: () -> Unit,
+    val onShareBackup: () -> Unit,
+    val onImportClick: () -> Unit,
+    val onApplyImport: (List<ImportAction>, Boolean) -> Unit,
+    val onToast: (String) -> Unit,
+    val onShareFile: (Uri) -> Unit,
+    val onOpenSystemNotificationSettings: () -> Unit
+)
+
+/**
+ * 设置页入口（薄壳）：读主题/通知偏好、组装 [SettingsCallbacks]（含系统文件选择器、
+ * Intent、Toast 等真实环境行为），渲染逻辑全部在无状态的 [SettingsContent] 里。
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -51,44 +90,10 @@ fun SettingsScreen(
     // 通知偏好：默认提醒时间 + 提醒总开关
     val reminderSettings = ReminderSettings(context)
     val remindersEnabled by reminderSettings.remindersEnabled.collectAsStateWithLifecycle()
-    var defaultHour by remember { mutableIntStateOf(reminderSettings.defaultHour) }
-    var defaultMinute by remember { mutableIntStateOf(reminderSettings.defaultMinute) }
-    var showTimePicker by remember { mutableStateOf(false) }
 
-    // 导入预览：解析完备份文件后弹逐条三选对话框
-    var importPreview by remember { mutableStateOf<SettingsEvent.ImportPreview?>(null) }
-
-    // 版本更新说明：升级弹窗外，设置页也留一个入口看全部历史
-    var showChangelog by remember { mutableStateOf(false) }
     val versionName = runCatching {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName
     }.getOrNull() ?: ""
-
-    // 默认提醒时间的 TimePicker
-    if (showTimePicker) {
-        val timePickerState = rememberTimePickerState(
-            initialHour = reminderSettings.defaultHour,
-            initialMinute = reminderSettings.defaultMinute,
-            is24Hour = true
-        )
-        AlertDialog(
-            onDismissRequest = { showTimePicker = false },
-            title = { Text("默认提醒时间", fontWeight = FontWeight.Bold) },
-            text = { TimePicker(state = timePickerState) },
-            confirmButton = {
-                TextButton(onClick = {
-                    reminderSettings.setDefaultTime(timePickerState.hour, timePickerState.minute)
-                    defaultHour = timePickerState.hour
-                    defaultMinute = timePickerState.minute
-                    showTimePicker = false
-                }) { Text("确定", color = Coral500, fontWeight = FontWeight.SemiBold) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) { Text("取消") }
-            },
-            shape = RoundedCornerShape(24.dp)
-        )
-    }
 
     // 导出：系统文件选择器让用户自己挑保存位置，不需要存储权限
     val exportLauncher = rememberLauncherForActivityResult(
@@ -101,22 +106,105 @@ fun SettingsScreen(
         ActivityResultContracts.OpenDocument()
     ) { uri -> uri?.let { viewModel.importFrom(it) } }
 
-    LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
-            when (event) {
-                is SettingsEvent.Toast ->
-                    Toast.makeText(context, event.text, Toast.LENGTH_LONG).show()
-                is SettingsEvent.ShareFile -> {
-                    val send = Intent(Intent.ACTION_SEND).apply {
-                        type = "application/json"
-                        putExtra(Intent.EXTRA_STREAM, event.uri)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    context.startActivity(Intent.createChooser(send, "把备份发给另一台手机"))
+    SettingsContent(
+        uiState = SettingsUiState(
+            themeMode = currentMode,
+            dynamicColor = dynamicColor,
+            remindersEnabled = remindersEnabled,
+            defaultHour = reminderSettings.defaultHour,
+            defaultMinute = reminderSettings.defaultMinute,
+            versionName = versionName
+        ),
+        events = viewModel.events,
+        callbacks = SettingsCallbacks(
+            onBack = onBack,
+            onThemeModeSelect = { themeStore.setMode(it) },
+            onToggleDynamicColor = { themeStore.setDynamicColor(it) },
+            onSetDefaultTime = { h, m -> reminderSettings.setDefaultTime(h, m) },
+            onToggleReminders = { enabled ->
+                reminderSettings.setRemindersEnabled(enabled)
+                // 重排一次：关闭时清掉已排闹钟，重开时恢复
+                (context.applicationContext as BirthApp).rescheduleAllAlarms()
+            },
+            onExportClick = { exportLauncher.launch(SettingsViewModel.backupFileName()) },
+            onShareBackup = { viewModel.shareBackup() },
+            onImportClick = { importLauncher.launch(arrayOf("*/*")) },
+            onApplyImport = { choices, restore -> viewModel.applyImport(choices, restore) },
+            onToast = { text -> Toast.makeText(context, text, Toast.LENGTH_LONG).show() },
+            onShareFile = { uri ->
+                val send = Intent(Intent.ACTION_SEND).apply {
+                    type = "application/json"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
+                context.startActivity(Intent.createChooser(send, "把备份发给另一台手机"))
+            },
+            onOpenSystemNotificationSettings = {
+                context.startActivity(
+                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                )
+            }
+        )
+    )
+}
+
+/**
+ * 设置页纯渲染：状态 + 一次性事件流 + 回调，不感知 ViewModel / Context，
+ * 可 @Preview / UI 测试。Toast、分享、系统跳转等副作用全部走 [SettingsCallbacks]。
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsContent(
+    uiState: SettingsUiState,
+    events: Flow<SettingsEvent>,
+    callbacks: SettingsCallbacks
+) {
+    var defaultHour by remember { mutableIntStateOf(uiState.defaultHour) }
+    var defaultMinute by remember { mutableIntStateOf(uiState.defaultMinute) }
+    var showTimePicker by remember { mutableStateOf(false) }
+
+    // 导入预览：解析完备份文件后弹逐条三选对话框
+    var importPreview by remember { mutableStateOf<SettingsEvent.ImportPreview?>(null) }
+
+    // 版本更新说明：升级弹窗外，设置页也留一个入口看全部历史
+    var showChangelog by remember { mutableStateOf(false) }
+
+    // 一次性事件：Toast / 分享备份 / 导入预览
+    LaunchedEffect(Unit) {
+        events.collect { event ->
+            when (event) {
+                is SettingsEvent.Toast -> callbacks.onToast(event.text)
+                is SettingsEvent.ShareFile -> callbacks.onShareFile(event.uri)
                 is SettingsEvent.ImportPreview -> importPreview = event
             }
         }
+    }
+
+    // 默认提醒时间的 TimePicker
+    if (showTimePicker) {
+        val timePickerState = rememberTimePickerState(
+            initialHour = uiState.defaultHour,
+            initialMinute = uiState.defaultMinute,
+            is24Hour = true
+        )
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            title = { Text("默认提醒时间", fontWeight = FontWeight.Bold) },
+            text = { TimePicker(state = timePickerState) },
+            confirmButton = {
+                TextButton(onClick = {
+                    callbacks.onSetDefaultTime(timePickerState.hour, timePickerState.minute)
+                    defaultHour = timePickerState.hour
+                    defaultMinute = timePickerState.minute
+                    showTimePicker = false
+                }) { Text("确定", color = Coral500, fontWeight = FontWeight.SemiBold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) { Text("取消") }
+            },
+            shape = RoundedCornerShape(24.dp)
+        )
     }
 
     Scaffold(
@@ -124,7 +212,7 @@ fun SettingsScreen(
             TopAppBar(
                 title = { Text("设置", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = callbacks.onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                     }
                 },
@@ -155,8 +243,8 @@ fun SettingsScreen(
                     ThemeMode.entries.forEachIndexed { index, mode ->
                         ThemeModeRow(
                             mode = mode,
-                            selected = currentMode == mode,
-                            onSelect = { themeStore.setMode(mode) }
+                            selected = uiState.themeMode == mode,
+                            onSelect = { callbacks.onThemeModeSelect(mode) }
                         )
                         // 选项之间加细分割线，最后一项不加
                         if (index < ThemeMode.entries.lastIndex) {
@@ -175,7 +263,7 @@ fun SettingsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { themeStore.setDynamicColor(!dynamicColor) }
+                                .clickable { callbacks.onToggleDynamicColor(!uiState.dynamicColor) }
                                 .padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -188,8 +276,8 @@ fun SettingsScreen(
                                 )
                             }
                             Switch(
-                                checked = dynamicColor,
-                                onCheckedChange = { themeStore.setDynamicColor(it) }
+                                checked = uiState.dynamicColor,
+                                onCheckedChange = callbacks.onToggleDynamicColor
                             )
                         }
                     }
@@ -249,12 +337,9 @@ fun SettingsScreen(
                             )
                         }
                         Switch(
-                            checked = remindersEnabled,
-                            onCheckedChange = { enabled ->
-                                reminderSettings.setRemindersEnabled(enabled)
-                                // 重排一次：关闭时清掉已排闹钟，重开时恢复
-                                (context.applicationContext as BirthApp).rescheduleAllAlarms()
-                            }
+                            checked = uiState.remindersEnabled,
+                            onCheckedChange = callbacks.onToggleReminders,
+                            modifier = Modifier.testTag("switch_reminders")
                         )
                     }
                     HorizontalDivider(
@@ -265,12 +350,7 @@ fun SettingsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable {
-                                context.startActivity(
-                                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-                                        .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                )
-                            }
+                            .clickable(onClick = callbacks.onOpenSystemNotificationSettings)
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -306,21 +386,21 @@ fun SettingsScreen(
                         icon = Icons.Outlined.Download,
                         title = "导出备份到手机",
                         desc = "存成一个文件，换手机、误删时可恢复",
-                        onClick = { exportLauncher.launch(SettingsViewModel.backupFileName()) }
+                        onClick = callbacks.onExportClick
                     )
                     BackupDivider()
                     BackupActionRow(
                         icon = Icons.Outlined.Share,
                         title = "把备份发到其他设备",
                         desc = "通过微信 / QQ 等发给另一台手机",
-                        onClick = { viewModel.shareBackup() }
+                        onClick = callbacks.onShareBackup
                     )
                     BackupDivider()
                     BackupActionRow(
                         icon = Icons.Outlined.Upload,
                         title = "导入备份",
                         desc = "已有记录会保留，重复的自动跳过",
-                        onClick = { importLauncher.launch(arrayOf("*/*")) }
+                        onClick = callbacks.onImportClick
                     )
                 }
             }
@@ -338,7 +418,7 @@ fun SettingsScreen(
                 BackupActionRow(
                     icon = Icons.Outlined.Info,
                     title = "版本更新说明",
-                    desc = "当前版本 v$versionName · 查看每次更新了什么",
+                    desc = "当前版本 v${uiState.versionName} · 查看每次更新了什么",
                     onClick = { showChangelog = true }
                 )
             }
@@ -412,7 +492,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.applyImport(choices, restoreSettings)
+                    callbacks.onApplyImport(choices, restoreSettings)
                     importPreview = null
                 }) { Text("导入", color = Coral500, fontWeight = FontWeight.SemiBold) }
             },
@@ -436,7 +516,7 @@ fun SettingsScreen(
                     Changelog.all.forEach { entry ->
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(
-                                "v${entry.version} · ${entry.title}${if (entry.version == versionName) "（当前版本）" else ""}",
+                                "v${entry.version} · ${entry.title}${if (entry.version == uiState.versionName) "（当前版本）" else ""}",
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 14.sp
                             )
@@ -460,13 +540,13 @@ fun SettingsScreen(
 }
 
 /** 导入条目副标题：类型 + 日期（与首页信息行同一口径） */
-private fun importItemSubtitle(b: com.birthapp.data.Birthday): String {
+private fun importItemSubtitle(b: Birthday): String {
     val dateLabel = if (b.calendarType == "lunar") {
-        "农历${com.birthapp.lunar.LunarCalendar.formatLunarDate(b.birthMonth, b.birthDay)}"
+        "农历${LunarCalendar.formatLunarDate(b.birthMonth, b.birthDay)}"
     } else {
         "${b.birthMonth}月${b.birthDay}日"
     }
-    return "${com.birthapp.data.EventType.label(b.eventType)} · $dateLabel"
+    return "${EventType.label(b.eventType)} · $dateLabel"
 }
 
 @Composable
@@ -581,4 +661,43 @@ private fun SettingsSectionLabel(text: String) {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 10.dp)
     )
+}
+
+private val previewSettingsCallbacks = SettingsCallbacks(
+    onBack = {},
+    onThemeModeSelect = {},
+    onToggleDynamicColor = {},
+    onSetDefaultTime = { _, _ -> },
+    onToggleReminders = {},
+    onExportClick = {},
+    onShareBackup = {},
+    onImportClick = {},
+    onApplyImport = { _, _ -> },
+    onToast = {},
+    onShareFile = {},
+    onOpenSystemNotificationSettings = {}
+)
+
+@Preview(showBackground = true, locale = "zh-rCN", name = "设置页 · 浅色")
+@Composable
+private fun SettingsContentPreview() {
+    BirthAppTheme {
+        SettingsContent(
+            uiState = SettingsUiState(versionName = "2.1.5"),
+            events = emptyFlow(),
+            callbacks = previewSettingsCallbacks
+        )
+    }
+}
+
+@Preview(showBackground = true, locale = "zh-rCN", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES, name = "设置页 · 深色")
+@Composable
+private fun SettingsContentPreviewDark() {
+    BirthAppTheme(darkTheme = true) {
+        SettingsContent(
+            uiState = SettingsUiState(themeMode = ThemeMode.DARK, dynamicColor = true, versionName = "2.1.5"),
+            events = emptyFlow(),
+            callbacks = previewSettingsCallbacks
+        )
+    }
 }

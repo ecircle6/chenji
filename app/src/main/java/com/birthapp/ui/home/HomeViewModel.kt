@@ -38,9 +38,10 @@ data class BirthdayDisplay(
     val todayBanner: String
 )
 
-class HomeViewModel(application: Application) : AndroidViewModel(application) {
-
+class HomeViewModel @JvmOverloads constructor(
+    application: Application,
     private val database: AppDatabase = (application as BirthApp).database
+) : AndroidViewModel(application) {
     private val scheduler = AlarmScheduler(application, database)
 
     private val _selectedTab = MutableStateFlow("all")
