@@ -31,6 +31,12 @@
   - 坑记录：① Room schema JSON 的 createSql 里表名是 `${TABLE_NAME}` 占位符，测试需替换为真实表名；② Robolectric 不合并测试源集 assets，`MigrationTestHelper` 读不到 schema → 改用 Room 自身运行时校验（RoomOpenHelper.validateMigration），不依赖 helper；③ Room 2.6.1 的 Gradle 插件没有 `checkSchema` 任务，schema 漂移靠迁移测试兜底（升级 Room 后可补）
   - 验收：✅ `assembleDebug` 产物含 schema JSON；迁移测试通过（2 用例）
 
+- [x] **首页卡片右上角露出删除图标**（2026-08-15 修复）
+  - 现象：卡片右上角（圆角切口处）透出一个红色垃圾桶图标
+  - 根因：`SwipeToDeleteBox` 底层删除图标层用 `fillMaxSize()`，LazyColumn 列表项是无限高度约束，fillMaxSize 塌缩成图标自身高度、贴顶对齐 → 图标落在卡片右上角并从圆角透明区透出
+  - 修复：改用 Box 的 `matchParentSize()`（铺满实际卡片尺寸），图标回到右侧垂直居中、被卡片完全盖住，仅左滑时露出
+  - 验收：✅ 全量单测 140 用例通过（Compose 探针验证图标 bounds 从右上角 y=192 回到卡片中线 y=268）
+
 ---
 
 ## P1 — 功能对齐竞品（差异化收益最高）

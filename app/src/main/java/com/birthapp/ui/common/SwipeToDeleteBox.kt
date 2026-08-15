@@ -71,10 +71,12 @@ fun SwipeToDeleteBox(
     val scope = rememberCoroutineScope()
 
     Box(modifier = modifier.onSizeChanged { widthPx = it.width.toFloat() }) {
-        // 底层：右侧删除图标，卡片左滑时露出（视觉与旧 SwipeToDismissBox 保持一致）
+        // 底层：右侧删除图标，卡片左滑时露出（视觉与旧 SwipeToDismissBox 保持一致）。
+        // 必须用 matchParentSize 而非 fillMaxSize：列表项是无限高度约束，
+        // fillMaxSize 会塌缩成图标自身高度、贴顶对齐，图标从卡片右上角透出来
         Row(
             modifier = Modifier
-                .fillMaxSize()
+                .matchParentSize()
                 .padding(horizontal = 24.dp),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
