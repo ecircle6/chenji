@@ -19,23 +19,25 @@ import java.io.FileOutputStream
 import java.time.DayOfWeek
 
 /**
- * 分享卡片生成器：Canvas 直绘 1080×1920 竖版 PNG。
+ * 分享卡片生成器：Canvas 直绘 PNG。
  *
- * 按设计稿（Prompt A/B 修正版）1:1 像素实现：
- * - A · 极光毛玻璃（生日/纪念日等）：纯深蓝底 + 极微弱深紫渐变 + 右上青绿/左下紫
- *   雾状光斑（径向渐变多层模拟高斯模糊）→ 720×900 毛玻璃卡片垂直偏上居中 →
- *   内部全部水平居中：品牌 → 标签 → 标题 → 日期 → 倒计时 → 三栏
- * - B · 深夜烛火（缅怀）：纯黑底 + 顶部暖色光晕 → 居中大留白：🕯️ → In Memory →
- *   纪念文案 → 翻页数字方块 → 分隔线 → 斜体诗句 → 日期 → 底部品牌
+ * 按事件类型分流两套规格：
+ * - A · 毛玻璃信息卡（生日/纪念日等）：840×640 横版独立卡片组件——没有外部
+ *   背景/极光/边距，卡片即画面；内部三段均匀撑满：品牌栏 → 标签/名字/日期 →
+ *   倒计时（上下段正中心）→ 底部三栏（月/日/星期）
+ * - B · 深夜烛火（缅怀）：1080×1920 竖版，纯黑底 + 顶部烛光 + 翻页数字 + 诗句
  */
 object ShareCardGenerator {
 
-    private const val W = 1080
-    private const val H = 1920
-    private const val CX = W / 2f  // 540
+    // A 卡（横版 840×640）
+    private const val AW = 840
+    private const val AH = 640
 
-    // ---- A 风格配色（严格按 Prompt A）----
-    private const val COLOR_BG_A = 0xFF0C1020.toInt()
+    // B 卡（竖版 1080×1920）
+    private const val BW = 1080
+    private const val BH = 1920
+
+    // ---- A 风格配色 ----
     private const val COLOR_TITLE = 0xFFFFFFFF.toInt()
     private const val COLOR_SUB = 0xFF8899AA.toInt()
     private const val COLOR_TAG = 0xFF66DDAA.toInt()
@@ -57,7 +59,8 @@ object ShareCardGenerator {
 
     /** 生成卡片位图并保存到 cacheDir/share/，返回文件（FileProvider 分享用） */
     fun generate(context: Context, birthday: Birthday): File {
-        val bitmap = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888)
+        val (w, h) = if (EventType.isSolemn(birthday.eventType)) BW to BH else AW to AH
+        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         draw(Canvas(bitmap), birthday)
         val dir = File(context.cacheDir, "share")
         dir.mkdirs()
@@ -66,7 +69,7 @@ object ShareCardGenerator {
         return file
     }
 
-    /** 按事件类型分流：缅怀走深夜烛火，其余走极光毛玻璃 */
+    /** 按事件类型分流：缅怀走深夜烛火（竖版），其余走毛玻璃信息卡（横版） */
     fun draw(canvas: Canvas, b: Birthday) {
         if (EventType.isSolemn(b.eventType)) {
             drawMemorial(canvas, b)
@@ -76,115 +79,58 @@ object ShareCardGenerator {
     }
 
     // ================================================================
-    // A · 极光毛玻璃（Prompt A 修正版）
+    // A · 毛玻璃信息卡（840×640 独立组件，无外部背景/极光/边距）
     // ================================================================
 
     private fun drawAurora(canvas: Canvas, b: Birthday) {
-        // 1. 背景：纯 #0c1020
-        canvas.drawColor(COLOR_BG_A)
-        // 2. 左上→右下极微弱深紫渐变（#1a0f2e，不透明度 ≤20%）
-        canvas.drawRect(0f, 0f, W.toFloat(), H.toFloat(), Paint().apply {
-            shader = LinearGradient(
-                0f, 0f, W.toFloat(), H.toFloat(),
-                intArrayOf(0x331A0F2E.toInt(), 0x001A0F2E.toInt()),
-                null, Shader.TileMode.CLAMP
-            )
-        })
-        // 3. 背景极光光斑：中心在画布外，只露出角部切入，高斯模糊雾状
-        //    右上 rgba(0,255,200,0.15) 直径 400 中心 (900,-100)
-        drawFog(canvas, 900f, -100f, 200f, 0xFF00FFC8.toInt(), 0x26)
-        //    左下 rgba(150,100,255,0.12) 直径 350 中心 (200,1800)
-        drawFog(canvas, 200f, 1800f, 175f, 0xFF9664FF.toInt(), 0x1F)
-
-        // 4. 卡片容器：720×960，水平垂直均居中（四周留大量深色边距）
-        val cardW = 720f
-        val cardH = 960f
-        val cardLeft = CX - cardW / 2f
-        val cardTop = (H - cardH) / 2f  // 480
-        val cardRect = RectF(cardLeft, cardTop, cardLeft + cardW, cardTop + cardH)
-        // 4a. 柔和的深色投影（卡片下方偏移）
+        // 1. 卡片本体：圆角 24、边框 rgba(255,255,255,0.08)、毛玻璃底色。
+        //    PNG 无法携带 backdrop-filter，纯 rgba(255,255,255,0.04) 在透明底上几乎
+        //    不可见且白字会在浅色场景失读——用半透明深色（#0c1020 @55%）呈现
+        //    「深夜毛玻璃」：白字清晰、嵌入浅/深背景都成立
+        val cardRect = RectF(0f, 0f, AW.toFloat(), AH.toFloat())
+        canvas.drawRoundRect(cardRect, 24f, 24f, Paint().apply { color = 0x8C0C1020.toInt() })
         canvas.drawRoundRect(
-            RectF(cardLeft + 18f, cardTop + 26f, cardLeft + cardW + 18f, cardTop + cardH + 26f),
-            32f, 32f, Paint().apply { color = 0x20000000.toInt() }
-        )
-        // 4b. 毛玻璃：底层极光透过（卡片内虚化光斑）+ 极淡白底
-        val cardPath = Path().apply { addRoundRect(cardRect, 32f, 32f, Path.Direction.CW) }
-        canvas.save()
-        canvas.clipPath(cardPath)
-        drawFog(canvas, cardLeft + 100f, cardTop + 140f, 220f, 0xFF00FFC8.toInt(), 0x14)
-        drawFog(canvas, cardLeft + cardW - 80f, cardTop + cardH - 60f, 190f, 0xFF9664FF.toInt(), 0x10)
-        canvas.restore()
-        canvas.drawRoundRect(cardRect, 32f, 32f, Paint().apply { color = 0x0AFFFFFF.toInt() }) // rgba(255,255,255,0.04)
-        canvas.drawRoundRect(
-            cardRect, 32f, 32f,
-            Paint().apply { style = Paint.Style.STROKE; strokeWidth = 1f; color = 0x14FFFFFF.toInt() } // 边框 0.08
+            cardRect, 24f, 24f,
+            Paint().apply { style = Paint.Style.STROKE; strokeWidth = 1f; color = 0x14FFFFFF.toInt() }
         )
 
-        // 5. 卡片内部：品牌左对齐，其余元素居中；间距 40/36/16/12/48/48；三栏贴卡片底 40
-        val innerLeft = cardLeft + 40f
-
-        // 5a. 品牌栏：月亮方块 + CHENJI，卡片内顶部距顶 40，左对齐
-        val brandTop = cardTop + 40f
-        val chPaint = Paint().apply { color = COLOR_SUB; textSize = 12f; letterSpacing = 0.18f }
+        // 2. 上段：品牌栏（距顶 36，左内边距 48，左对齐）
+        val padL = 48f
+        val brandTop = 36f
         canvas.drawRoundRect(
-            RectF(innerLeft, brandTop, innerLeft + 44f, brandTop + 44f),
-            12f, 12f, Paint().apply { color = 0x14FFFFFF.toInt() } // rgba(255,255,255,0.08)
+            RectF(padL, brandTop, padL + 36f, brandTop + 36f),
+            10f, 10f, Paint().apply { color = 0x14FFFFFF.toInt() } // rgba(255,255,255,0.08)
         )
         canvas.drawRoundRect(
-            RectF(innerLeft, brandTop, innerLeft + 44f, brandTop + 44f),
-            12f, 12f,
+            RectF(padL, brandTop, padL + 36f, brandTop + 36f),
+            10f, 10f,
             Paint().apply { style = Paint.Style.STROKE; strokeWidth = 1f; color = 0x1AFFFFFF.toInt() } // 0.1
         )
-        drawCenteredText(canvas, "🌙", innerLeft + 22f, brandTop + 22f,
-            Paint().apply { textSize = 20f }, centerVertical = true)
+        drawCenteredText(canvas, "🌙", padL + 18f, brandTop + 18f,
+            Paint().apply { textSize = 18f }, centerVertical = true)
+        val chPaint = Paint().apply { color = COLOR_SUB; textSize = 12f; letterSpacing = 0.18f }
         canvas.drawText(
-            "CHENJI", innerLeft + 44f + 10f,
-            brandTop + 22f - (chPaint.ascent() + chPaint.descent()) / 2, chPaint
+            "CHENJI", padL + 36f + 10f,
+            brandTop + 18f - (chPaint.ascent() + chPaint.descent()) / 2, chPaint
         )
 
-        // 5b~5e. 标签 → 名字 → 日期（顶部紧凑，固定间距）
-        var cursor = brandTop + 44f + 36f
-        drawTextAtTop(canvas, tagText(b.eventType), cursor, Paint().apply { color = COLOR_TAG; textSize = 13f })
-        cursor += 13f + 16f
-        drawTextAtTop(canvas, b.name, cursor, Paint().apply {
-            color = COLOR_TITLE; textSize = 32f; typeface = Typeface.DEFAULT_BOLD
-        })
-        cursor += 32f + 12f
-        drawTextAtTop(canvas, dateLine(b), cursor, Paint().apply { color = COLOR_SUB; textSize = 13f })
+        // 3. 上中段（距品牌栏 20，左对齐，左内边距 48）：标签 → 名字 → 日期
+        var cursor = brandTop + 36f + 20f
+        drawTextAtLeftTop(canvas, tagText(b.eventType), padL, cursor,
+            Paint().apply { color = COLOR_TAG; textSize = 13f })
+        cursor += 13f + 10f
+        drawTextAtLeftTop(canvas, b.name, padL, cursor,
+            Paint().apply { color = COLOR_TITLE; textSize = 32f; typeface = Typeface.DEFAULT_BOLD })
+        cursor += 32f + 8f
+        drawTextAtLeftTop(canvas, dateLine(b), padL, cursor,
+            Paint().apply { color = COLOR_SUB; textSize = 13f })
         val dateBottom = cursor + 13f
 
-        // 5f. 三栏：卡片内底部，距下边缘 40，作为最后一个元素
-        val colW = 200f
-        val colGap = 20f
-        val colH = 96f
-        val triBottom = cardRect.bottom - 40f
-        val triTop = triBottom - colH
-        val triTotalW = colW * 3 + colGap * 2
-        val triStartX = CX - triTotalW / 2f
-
-        // 5g. 倒计时：垂直居中于「日期底+48」到「三栏顶-48」之间（吸收中间空白，无大片空隙）
-        val countdown = EventCalc.countdown(b)
-        val countBlockH = if (countdown == 0) 32f else 72f
-        val countTop = dateBottom + 48f +
-            ((triTop - 48f) - (dateBottom + 48f) - countBlockH) / 2f
-        if (countdown == 0) {
-            drawTextAtTop(canvas, "🎉 就是今天", countTop, Paint().apply {
-                color = COLOR_TITLE; textSize = 32f; typeface = Typeface.DEFAULT_BOLD
-            })
-        } else {
-            val numText = "$countdown"
-            val numPaint = Paint().apply { color = COLOR_TITLE; textSize = 72f; typeface = Typeface.DEFAULT_BOLD }
-            val unitPaint = Paint().apply { color = COLOR_SUB; textSize = 16f }
-            val numW = numPaint.measureText(numText)
-            val unitW = unitPaint.measureText("天后")
-            val blockW = numW + 8f + unitW
-            val numBaseline = countTop - numPaint.fontMetrics.top
-            canvas.drawText(numText, CX - blockW / 2f, numBaseline, numPaint)
-            // 与数字底部基线对齐
-            canvas.drawText("天后", CX - blockW / 2f + numW + 8f, numBaseline, unitPaint)
-        }
-
-        // 5h. 三栏内容（值 18px 加粗紫/蓝/绿 + 键 11px #667788）
+        // 4. 下段：三栏（距卡片底 36，左右内边距 48，栏间距 16）
+        val colGap = 16f
+        val colW = (AW - padL * 2 - colGap * 2) / 3f  // 237.3
+        val colH = 76f
+        val triTop = AH - 36f - colH  // 528
         val nextDate = EventCalc.nextSolarDate(b).toLocalDate()
         val cols = listOf(
             Triple("${nextDate.monthValue}月", "月份", COLOR_MONTH),
@@ -192,8 +138,8 @@ object ShareCardGenerator {
             Triple(weekdayName(nextDate.dayOfWeek), "星期", COLOR_WEEK)
         )
         cols.forEachIndexed { i, (value, key, colColor) ->
-            val left = triStartX + i * (colW + colGap)
-            val colRect = RectF(left, triTop, left + colW, triBottom)
+            val left = padL + i * (colW + colGap)
+            val colRect = RectF(left, triTop, left + colW, triTop + colH)
             canvas.drawRoundRect(colRect, 12f, 12f, Paint().apply { color = 0x08FFFFFF.toInt() }) // 0.03
             canvas.drawRoundRect(
                 colRect, 12f, 12f,
@@ -204,21 +150,25 @@ object ShareCardGenerator {
             drawCenteredText(canvas, key, colRect.centerX(), colRect.centerY() + 26f,
                 Paint().apply { color = COLOR_TRI_KEY; textSize = 11f })
         }
-    }
 
-    /** 雾状光斑：多层径向渐变模拟高斯模糊，边缘柔和如雾气 */
-    private fun drawFog(canvas: Canvas, cx: Float, cy: Float, radius: Float, color: Int, maxAlpha: Int) {
-        val base = color and 0x00FFFFFF
-        // 外层大而淡、内层小而浓，叠加出柔和衰减
-        val layers = listOf(
-            radius to maxAlpha,
-            radius * 0.72f to (maxAlpha * 0.7).toInt(),
-            radius * 0.45f to (maxAlpha * 0.5).toInt()
-        )
-        for ((r, a) in layers) {
-            canvas.drawCircle(cx, cy, r, Paint().apply {
-                shader = RadialGradient(cx, cy, r, (a shl 24) or base, 0x00FFFFFF, Shader.TileMode.CLAMP)
-            })
+        // 5. 中段：倒计时，垂直居中于「日期底」与「三栏顶」之间的正中心（均匀撑满）
+        val countdown = EventCalc.countdown(b)
+        val blockH = if (countdown == 0) 32f else 56f
+        val countTop = dateBottom + (triTop - dateBottom - blockH) / 2f
+        if (countdown == 0) {
+            drawTextAtLeftTop(canvas, "🎉 就是今天", padL, countTop,
+                Paint().apply { color = COLOR_TITLE; textSize = 32f; typeface = Typeface.DEFAULT_BOLD })
+        } else {
+            val numText = "$countdown"
+            val numPaint = Paint().apply { color = COLOR_TITLE; textSize = 56f; typeface = Typeface.DEFAULT_BOLD }
+            val unitPaint = Paint().apply { color = COLOR_SUB; textSize = 14f }
+            val numBaseline = countTop - numPaint.fontMetrics.top
+            canvas.drawText(numText, padL, numBaseline, numPaint)
+            // 天后与数字底部基线对齐，间距 8
+            canvas.drawText(
+                "天后", padL + numPaint.measureText(numText) + 8f,
+                numBaseline, unitPaint
+            )
         }
     }
 
@@ -255,9 +205,9 @@ object ShareCardGenerator {
         canvas.drawColor(COLOR_BG_B)
 
         // 2. 顶部中央暖色光晕：椭圆 300×150，中心距顶 60，rgba(255,160,60,0.08)
-        val glowRect = RectF(CX - 150f, 60f - 75f, CX + 150f, 60f + 75f)
+        val glowRect = RectF((BW / 2f) - 150f, 60f - 75f, (BW / 2f) + 150f, 60f + 75f)
         canvas.drawOval(glowRect, Paint().apply {
-            shader = RadialGradient(CX, 60f, 150f, 0x14FFA03C.toInt(), 0x00FFA03C.toInt(), Shader.TileMode.CLAMP)
+            shader = RadialGradient(BW / 2f, 60f, 150f, 0x14FFA03C.toInt(), 0x00FFA03C.toInt(), Shader.TileMode.CLAMP)
         })
 
         // 3. 第一组：纪念符号（距顶约 280，居中）
@@ -285,7 +235,7 @@ object ShareCardGenerator {
         val digitW = 56f
         val digitH = 64f
         val totalW = digits.length * digitW
-        var dx = CX - totalW / 2f
+        var dx = (BW / 2f) - totalW / 2f
         val digitsTop = cursor
         for (ch in digits) {
             val rect = RectF(dx, digitsTop, dx + digitW, digitsTop + digitH)
@@ -308,7 +258,7 @@ object ShareCardGenerator {
         // 「天」18px #555555，方块右侧 6px，与方块底部对齐
         val unitPaint = Paint().apply { color = COLOR_MEM_DATE; textSize = 18f }
         canvas.drawText(
-            "天", CX + totalW / 2f + 6f,
+            "天", (BW / 2f) + totalW / 2f + 6f,
             digitsTop + digitH - unitPaint.fontMetrics.bottom,
             unitPaint
         )
@@ -317,7 +267,7 @@ object ShareCardGenerator {
 
         // 5. 第三组：分隔线与诗句
         // 分隔线：宽 240，高 1，居中
-        drawHorizontalLine(canvas, CX - 120f, CX + 120f, cursor, 0x0FFFFFFF.toInt(), 1f)
+        drawHorizontalLine(canvas, (BW / 2f) - 120f, (BW / 2f) + 120f, cursor, 0x0FFFFFFF.toInt(), 1f)
         // 诗句：+24，15px 斜体 #888888，行高 2.0
         cursor += 24f
         val poemPaint = Paint().apply {
@@ -332,7 +282,7 @@ object ShareCardGenerator {
         drawTextAtTop(canvas, memorialDate(b), cursor, Paint().apply { color = COLOR_MEM_DATE; textSize = 11f })
 
         // 6. 第四组：品牌（距底部 120），10px #444444 字距 3px
-        drawTextAtBottom(canvas, "辰记", H - 120f, Paint().apply {
+        drawTextAtBottom(canvas, "辰记", BH - 120f, Paint().apply {
             color = COLOR_MEM_BRAND; textSize = 10f; letterSpacing = 0.3f
         })
     }
@@ -357,16 +307,22 @@ object ShareCardGenerator {
         })
     }
 
+    /** 左对齐（x 为左边缘）、文字顶对齐 yTop 的文本 */
+    private fun drawTextAtLeftTop(canvas: Canvas, text: String, xLeft: Float, yTop: Float, paint: Paint) {
+        paint.textAlign = Paint.Align.LEFT
+        canvas.drawText(text, xLeft, yTop - paint.fontMetrics.top, paint)
+    }
+
     /** 水平居中、文字顶对齐 y 的文本 */
     private fun drawTextAtTop(canvas: Canvas, text: String, yTop: Float, paint: Paint) {
         paint.textAlign = Paint.Align.CENTER
-        canvas.drawText(text, CX, yTop - paint.fontMetrics.top, paint)
+        canvas.drawText(text, BW / 2f, yTop - paint.fontMetrics.top, paint)
     }
 
     /** 水平居中、文字底对齐 y 的文本（底部品牌用） */
     private fun drawTextAtBottom(canvas: Canvas, text: String, yBottom: Float, paint: Paint) {
         paint.textAlign = Paint.Align.CENTER
-        canvas.drawText(text, CX, yBottom - paint.fontMetrics.bottom, paint)
+        canvas.drawText(text, BW / 2f, yBottom - paint.fontMetrics.bottom, paint)
     }
 
     /** 水平居中、垂直居中于 (cx, cy) 的文本 */
