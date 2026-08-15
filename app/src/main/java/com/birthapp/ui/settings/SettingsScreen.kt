@@ -15,6 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Upload
 import androidx.compose.material3.*
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.birthapp.BirthApp
+import com.birthapp.settings.Changelog
 import com.birthapp.settings.ReminderSettings
 import com.birthapp.settings.ThemeMode
 import com.birthapp.ui.theme.Coral500
@@ -55,6 +57,12 @@ fun SettingsScreen(
 
     // 导入预览：解析完备份文件后弹逐条三选对话框
     var importPreview by remember { mutableStateOf<SettingsEvent.ImportPreview?>(null) }
+
+    // 版本更新说明：升级弹窗外，设置页也留一个入口看全部历史
+    var showChangelog by remember { mutableStateOf(false) }
+    val versionName = runCatching {
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName
+    }.getOrNull() ?: ""
 
     // 默认提醒时间的 TimePicker
     if (showTimePicker) {
@@ -317,6 +325,24 @@ fun SettingsScreen(
                 }
             }
 
+            SettingsSectionLabel("关于")
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                )
+            ) {
+                BackupActionRow(
+                    icon = Icons.Outlined.Info,
+                    title = "版本更新说明",
+                    desc = "当前版本 v$versionName · 查看每次更新了什么",
+                    onClick = { showChangelog = true }
+                )
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
@@ -392,6 +418,41 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { importPreview = null }) { Text("取消") }
+            },
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+
+    // 版本更新说明对话框：全部历史，最新在前，当前版本加标记
+    if (showChangelog) {
+        AlertDialog(
+            onDismissRequest = { showChangelog = false },
+            title = { Text("版本更新说明", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Changelog.all.forEach { entry ->
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                "v${entry.version} · ${entry.title}${if (entry.version == versionName) "（当前版本）" else ""}",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp
+                            )
+                            entry.items.forEach { item ->
+                                Text(
+                                    "· $item",
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showChangelog = false }) { Text("知道了") }
             },
             shape = RoundedCornerShape(24.dp)
         )

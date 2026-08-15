@@ -18,6 +18,7 @@
 - **依赖仓库环境分流**：`settings.gradle.kts` 在 `CI=true`（GitHub Actions）走官方源，本地走阿里云镜像（阿里云在海外返回 502）。不要改动。
 - **签名密钥**：`keystore.properties` 不入库（.gitignore 已忽略）；无此文件时 release 自动退回未签名（不报错）。任何情况下不要提交密钥。
 - **发版**：`versionCode` 每次 +1，`versionName` 与 GitHub release tag 一致；release 开启 R8 混淆。
+- **更新说明**：每次发版必须在 `settings/Changelog.kt` 的 `all` 列表头部加一条新条目（`version` 与 `versionName` 一致），写本版新增功能/修复。Android 侧载安装器不显示升级说明，该 changelog 由升级后首启弹窗 + 设置页「版本更新说明」展示。
 - **文档同步**：改 `app/src/main/` 功能代码后须同步更新 README.md / TODO.md；本地 pre-push 钩子（`bash tools/install-hooks.sh` 安装）与 CI docs-sync-check 只提醒、不阻断。
 - **TODO.md 是路线图**（P0 缺陷 → P1 功能 → P2 工程 → P3 远期）：动手前先读，避免与既定方向冲突；完成任务后勾选 checkbox 并提交（"TODO: xxx"）。
 - **UI 文案**：i18n 未做，文案硬编码中文（strings.xml 仅 4 条），新增沿用该写法。数据库 schema 变更必须写迁移（Room 2.6.1，exportSchema 目前为 false）。

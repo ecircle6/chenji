@@ -14,16 +14,28 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.core.content.pm.PackageInfoCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -31,6 +43,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.birthapp.alarm.AlarmScheduler
+import com.birthapp.settings.Changelog
 import com.birthapp.settings.ThemeMode
 import com.birthapp.ui.add.AddEditScreen
 import com.birthapp.ui.detail.DetailScreen
@@ -100,6 +113,50 @@ class MainActivity : ComponentActivity() {
                         openAddRequest = openAddRequests.intValue,
                         pendingDetailId = pendingDetailId.value,
                         onDetailHandled = { pendingDetailId.value = null }
+                    )
+                }
+
+                // 升级后首启弹「这版更新了什么」：versionCode 比上次看过的版本高才弹。
+                // markSeen 在弹窗出现前就写入，之后每次打开（包括旋转重建）都不会重复弹
+                var showChangelog by remember { mutableStateOf(false) }
+                val packageInfo = runCatching {
+                    packageManager.getPackageInfo(packageName, 0)
+                }.getOrNull()
+                val versionCode = packageInfo?.let {
+                    PackageInfoCompat.getLongVersionCode(it)
+                } ?: 0L
+                LaunchedEffect(Unit) {
+                    if (versionCode > Changelog.lastSeenCode(this@MainActivity)) {
+                        showChangelog = true
+                        Changelog.markSeen(this@MainActivity, versionCode)
+                    }
+                }
+                if (showChangelog) {
+                    val latest = Changelog.latest
+                    AlertDialog(
+                        onDismissRequest = { showChangelog = false },
+                        title = {
+                            Text(
+                                "新版本 v${packageInfo?.versionName ?: ""}",
+                                fontWeight = FontWeight.Bold
+                            )
+                        },
+                        text = {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(latest.title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                latest.items.forEach { item ->
+                                    Text(
+                                        "· $item",
+                                        fontSize = 13.sp,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                                    )
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { showChangelog = false }) { Text("知道了") }
+                        },
+                        shape = RoundedCornerShape(24.dp)
                     )
                 }
             }
