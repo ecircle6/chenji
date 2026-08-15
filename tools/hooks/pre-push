@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# pre-push 钩子：推送前检测「功能代码变更但 README/TODO 未同步」并提醒
+# pre-push 钩子：推送前提醒「文档是否同步」+「是否该上模拟器验证」
 # 注意：不要直接编辑 .git/hooks/pre-push（会被 install-hooks.sh 覆盖），
 #       修改本文件后重新运行 bash tools/install-hooks.sh
 # =============================================================================
@@ -10,10 +10,17 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
 # 有变更要推送才检查（git push 不带 refs 时 stdin 为空，跳过）
 if [ -p /dev/stdin ]; then
+    # stdin 只能读一次：先缓冲，再分发给两个检测脚本
+    STDIN_DATA="$(cat)"
+
     if [ -f "$REPO_ROOT/tools/check-docs-sync.sh" ]; then
-        bash "$REPO_ROOT/tools/check-docs-sync.sh"
+        echo "$STDIN_DATA" | bash "$REPO_ROOT/tools/check-docs-sync.sh"
     else
         echo "⚠ 文档同步检测脚本缺失：$REPO_ROOT/tools/check-docs-sync.sh（可重新 clone 或 git pull 后运行 bash tools/install-hooks.sh）"
+    fi
+
+    if [ -f "$REPO_ROOT/tools/check-emulator-verify.sh" ]; then
+        echo "$STDIN_DATA" | bash "$REPO_ROOT/tools/check-emulator-verify.sh"
     fi
 fi
 
