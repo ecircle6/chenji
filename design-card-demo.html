@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>辰记 · 分享卡片定稿演示（A 极光毛玻璃 / B 深夜烛火）</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: #14161c; padding: 32px 24px 60px; }
+  h1 { font-size: 22px; text-align: center; color: #e8edf5; margin-bottom: 6px; }
+  .sub { text-align: center; color: #7d8aa0; font-size: 13px; margin-bottom: 24px; }
+  .type-switch { display: flex; gap: 8px; justify-content: center; margin-bottom: 26px; flex-wrap: wrap; }
+  .type-switch button { border: 1px solid #2a3550; background: #141b2c; border-radius: 8px; padding: 7px 16px; font-size: 13px; color: #9fb0c8; cursor: pointer; }
+  .type-switch button.active { border-color: #66ddaa; color: #66ddaa; font-weight: 600; }
+  .grid { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: flex-start; }
+  .figure { display: flex; flex-direction: column; align-items: center; }
+  .figure .cap { margin-top: 12px; font-size: 12px; color: #8ea0b8; letter-spacing: 1px; }
+
+  /* 1080×1920 → 320×569 展示 */
+  .card { width: 320px; height: 569px; border-radius: 24px; position: relative; overflow: hidden;
+          box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+
+  /* ================================================================
+     Prompt A · 极光毛玻璃（生日/纪念日/情侣纪念）
+     ================================================================ */
+  .card-a { background: linear-gradient(135deg, #0c1020 0%, #1a0f2e 50%, #0d1f1f 100%); border: 1px solid rgba(255,255,255,.06); }
+  .aurora { position: absolute; inset: 0; pointer-events: none; }
+  .aurora .g { position: absolute; top: -60px; right: -40px; width: 200px; height: 200px;
+               background: radial-gradient(circle, rgba(0,255,200,.15) 0%, transparent 70%); filter: blur(40px); }
+  .aurora .p { position: absolute; bottom: -40px; left: -30px; width: 180px; height: 180px;
+               background: radial-gradient(circle, rgba(150,100,255,.12) 0%, transparent 70%); filter: blur(40px); }
+
+  .card-a .pad { position: absolute; inset: 0; padding: 34px 26px; display: flex; flex-direction: column; }
+  /* ① 顶部品牌栏 */
+  .brand-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+  .brand-logo { width: 36px; height: 36px; border-radius: 12px;
+                background: linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+                border: 1px solid rgba(255,255,255,.08);
+                display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .brand-text { color: #8899aa; font-size: 12px; letter-spacing: 2px; }
+
+  /* ② 毛玻璃主卡片 */
+  .glass { background: rgba(255,255,255,.04); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+           border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 28px 24px;
+           flex: 1; display: flex; flex-direction: column; }
+  .tag { color: #66ddaa; font-size: 13px; font-weight: 500; margin-bottom: 12px; }
+  .title { color: #fff; font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+  .date { color: #8899aa; font-size: 13px; margin-bottom: 20px; }
+  .count-row { display: flex; align-items: baseline; margin-top: auto; margin-bottom: auto; }
+  .count-num { color: #fff; font-size: 48px; font-weight: 800; line-height: 1; }
+  .count-unit { color: #8899aa; font-size: 14px; margin-left: 8px; }
+  .today-text { color: #fff; font-size: 26px; font-weight: 800; }
+
+  /* ③ 底部三栏 */
+  .tri { display: flex; gap: 10px; margin-top: 20px; }
+  .tri .col { flex: 1; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+              border-radius: 12px; padding: 12px; text-align: center; }
+  .tri .v { font-size: 18px; font-weight: 700; }
+  .tri .k { font-size: 11px; color: #667788; margin-top: 3px; }
+  .tri .c1 .v { color: #aa88ff; }   /* 月份 淡紫 */
+  .tri .c2 .v { color: #66ccff; }   /* 日期 淡蓝 */
+  .tri .c3 .v { color: #66ddaa; }   /* 星期 青绿 */
+
+  /* 类型标签色 */
+  .card-a .tag.marriage { color: #ff88aa; }   /* 纪念日 暖粉 */
+  .card-a .tag.love { color: #ff88cc; }       /* 情侣 粉紫 */
+
+  /* ================================================================
+     Prompt B · 深夜烛火（缅怀）
+     ================================================================ */
+  .card-b { background: #0f0f12; border: 1px solid rgba(255,255,255,.05); }
+  .candle-glow { position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+                 width: 120px; height: 120px;
+                 background: radial-gradient(ellipse at center top, rgba(255,160,60,.12) 0%, transparent 70%); }
+  .card-b .pad { position: absolute; inset: 0; padding: 48px 30px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .candle { font-size: 32px; margin-bottom: 12px; }
+  .in-memory { color: #cc9977; font-size: 11px; letter-spacing: 4px; margin-bottom: 44px; }
+  .mem-line1 { color: #888888; font-size: 13px; margin-bottom: 12px; }
+  /* 翻页数字 */
+  .flip { display: flex; align-items: flex-end; justify-content: center; margin-bottom: 44px; }
+  .flip .digits { display: flex; }
+  .flip .d { width: 44px; height: 52px; margin: 0 1px; border-radius: 10px;
+              background: linear-gradient(180deg, #2a2a2a, #1a1a1a); border: 1px solid rgba(255,255,255,.08);
+              display: flex; align-items: center; justify-content: center;
+              color: #e8c080; font-size: 28px; font-weight: 800; }
+  .flip .unit { color: #666666; font-size: 18px; font-weight: 500; margin-left: 6px; margin-bottom: 10px; }
+  /* 分隔线 + 诗句 */
+  .divider { width: 60%; border-top: 1px solid rgba(255,255,255,.06); padding-top: 20px; }
+  .poem { color: #aaaaaa; font-size: 14px; font-style: italic; line-height: 1.8; margin-top: 20px; }
+  .mem-date { color: #666666; font-size: 11px; margin-top: 16px; }
+  .brand-b { color: #555555; font-size: 10px; letter-spacing: 3px; margin-top: auto; padding-top: 24px; }
+</style>
+</head>
+<body>
+<h1>辰记 · 分享卡片定稿演示（1080×1920 竖版）</h1>
+<div class="sub">A · 极光毛玻璃（生日/纪念日/情侣纪念）　|　B · 深夜烛火（缅怀/忌日）</div>
+
+<div class="type-switch">
+  <button class="active" onclick="setType('birthday')">生日</button>
+  <button onclick="setType('marriage')">纪念日</button>
+  <button onclick="setType('love')">情侣纪念</button>
+  <button onclick="setType('memorial')">缅怀（B 风格）</button>
+</div>
+
+<div class="grid">
+  <!-- ============ A · 极光毛玻璃：倒计时态 ============ -->
+  <div class="figure">
+    <div class="card card-a">
+      <div class="aurora"><div class="g"></div><div class="p"></div></div>
+      <div class="pad">
+        <div class="brand-row"><div class="brand-logo">🌙</div><div class="brand-text">CHENJI</div></div>
+        <div class="glass">
+          <div class="tag" id="tag-a">🎂 生日提醒</div>
+          <div class="title" id="title-a">小明</div>
+          <div class="date" id="date-a">1998年8月14日 · 阳历</div>
+          <div class="count-row">
+            <span class="count-num" id="count-num-a">338</span>
+            <span class="count-unit">天后</span>
+          </div>
+        </div>
+        <div class="tri">
+          <div class="col c1"><div class="v" id="tri-m">8月</div><div class="k">月份</div></div>
+          <div class="col c2"><div class="v" id="tri-d">14日</div><div class="k">日期</div></div>
+          <div class="col c3"><div class="v" id="tri-w">周六</div><div class="k">星期</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">A · 倒计时态（338 天后）</div>
+  </div>
+
+  <!-- ============ A · 极光毛玻璃：就是今天 ============ -->
+  <div class="figure">
+    <div class="card card-a">
+      <div class="aurora"><div class="g"></div><div class="p"></div></div>
+      <div class="pad">
+        <div class="brand-row"><div class="brand-logo">🌙</div><div class="brand-text">CHENJI</div></div>
+        <div class="glass">
+          <div class="tag" id="tag-a2">🎂 生日提醒</div>
+          <div class="title" id="title-a2">小明</div>
+          <div class="date" id="date-a2">1998年8月14日 · 阳历</div>
+          <div class="count-row"><span class="today-text">🎉 就是今天</span></div>
+        </div>
+        <div class="tri">
+          <div class="col c1"><div class="v" id="tri-m2">8月</div><div class="k">月份</div></div>
+          <div class="col c2"><div class="v" id="tri-d2">14日</div><div class="k">日期</div></div>
+          <div class="col c3"><div class="v" id="tri-w2">周六</div><div class="k">星期</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">A · 就是今天</div>
+  </div>
+
+  <!-- ============ B · 深夜烛火：缅怀 ============ -->
+  <div class="figure">
+    <div class="card card-b">
+      <div class="candle-glow"></div>
+      <div class="pad">
+        <div class="candle">🕯️</div>
+        <div class="in-memory">IN MEMORY</div>
+        <div class="mem-line1">爷爷离开我们已经</div>
+        <div class="flip">
+          <div class="digits"><div class="d">1</div><div class="d">2</div><div class="d">8</div></div>
+          <div class="unit">天</div>
+        </div>
+        <div class="divider"></div>
+        <div class="poem">"有些人离开了<br>但永远活在记忆里"</div>
+        <div class="mem-date">农历七月十五 · 2026年</div>
+        <div class="brand-b">辰 记</div>
+      </div>
+    </div>
+    <div class="cap">B · 深夜烛火（缅怀，翻页数字 128 天）</div>
+  </div>
+</div>
+
+<script>
+  function setType(type) {
+    var btns = document.querySelectorAll('.type-switch button');
+    btns[0].classList.toggle('active', type === 'birthday');
+    btns[1].classList.toggle('active', type === 'marriage');
+    btns[2].classList.toggle('active', type === 'love');
+    btns[3].classList.toggle('active', type === 'memorial');
+    var tagA = document.getElementById('tag-a');
+    var tagA2 = document.getElementById('tag-a2');
+    var titleA = document.getElementById('title-a');
+    var titleA2 = document.getElementById('title-a2');
+    var dateA = document.getElementById('date-a');
+    var dateA2 = document.getElementById('date-a2');
+    tagA.className = 'tag'; tagA2.className = 'tag';
+    if (type === 'birthday') {
+      tagA.textContent = '🎂 生日提醒'; tagA2.textContent = '🎂 生日提醒';
+      titleA.textContent = '小明'; titleA2.textContent = '小明';
+      dateA.textContent = '1998年8月14日 · 阳历'; dateA2.textContent = '1998年8月14日 · 阳历';
+    } else if (type === 'marriage') {
+      tagA.className = 'tag marriage'; tagA2.className = 'tag marriage';
+      tagA.textContent = '💕 纪念日提醒'; tagA2.textContent = '💕 纪念日提醒';
+      titleA.textContent = '结婚三周年'; titleA2.textContent = '结婚三周年';
+      dateA.textContent = '2023年8月22日 · 阳历'; dateA2.textContent = '2023年8月22日 · 阳历';
+    } else if (type === 'love') {
+      tagA.className = 'tag love'; tagA2.className = 'tag love';
+      tagA.textContent = '💑 情侣纪念'; tagA2.textContent = '💑 情侣纪念';
+      titleA.textContent = '在一起三周年'; titleA2.textContent = '在一起三周年';
+      dateA.textContent = '2023年8月22日 · 阳历'; dateA2.textContent = '2023年8月22日 · 阳历';
+    } else {
+      tagA.className = 'tag'; tagA2.className = 'tag';
+      tagA.textContent = '🕯️ 缅怀'; tagA2.textContent = '🕯️ 缅怀';
+      titleA.textContent = '爷爷'; titleA2.textContent = '爷爷';
+      dateA.textContent = '农历七月十五 · 2026年'; dateA2.textContent = '农历七月十五 · 2026年';
+    }
+  }
+</script>
+</body>
+</html>

@@ -54,11 +54,11 @@ class ShareCardGeneratorTest {
     }
 
     @Test
-    fun `位图尺寸_普通类型840乘640横版_缅怀1080乘1920竖版`() {
-        val normal = Bitmap.createBitmap(840, 640, Bitmap.Config.ARGB_8888)
+    fun `位图尺寸_两种风格统一1080乘1920竖版`() {
+        val normal = Bitmap.createBitmap(1080, 1920, Bitmap.Config.ARGB_8888)
         ShareCardGenerator.draw(Canvas(normal), birthday())
-        assertEquals(840, normal.width)
-        assertEquals(640, normal.height)
+        assertEquals(1080, normal.width)
+        assertEquals(1920, normal.height)
 
         val memorial = Bitmap.createBitmap(1080, 1920, Bitmap.Config.ARGB_8888)
         ShareCardGenerator.draw(Canvas(memorial), birthday(eventType = EventType.MEMORIAL))
@@ -68,8 +68,8 @@ class ShareCardGeneratorTest {
 
     @Test
     fun `绘制过程_各种类型都不抛异常`() {
-        // 普通类型（毛玻璃信息卡）+ 缅怀（深夜烛火）都要覆盖
-        val normal = Bitmap.createBitmap(840, 640, Bitmap.Config.ARGB_8888)
+        // 普通类型（极光毛玻璃）+ 缅怀（深夜烛火）都要覆盖
+        val normal = Bitmap.createBitmap(1080, 1920, Bitmap.Config.ARGB_8888)
         val canvasN = Canvas(normal)
         for (type in EventType.ALL) {
             ShareCardGenerator.draw(canvasN, birthday(eventType = type))
