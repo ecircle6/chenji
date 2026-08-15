@@ -25,6 +25,21 @@ object Changelog {
     /** 全部版本说明，最新在前。发版时在头部插入新条目。 */
     val all = listOf(
         ChangelogEntry(
+            version = "2.1.7",
+            title = "界面细节修复",
+            items = listOf(
+                "修复首页卡片右上角删除图标透出的问题"
+            )
+        ),
+        ChangelogEntry(
+            version = "2.1.6",
+            title = "界面预览与测试覆盖",
+            items = listOf(
+                "各页面新增 @Preview 预览，开发调试更直观",
+                "新增 Compose UI 测试，核心页面交互回归有保障"
+            )
+        ),
+        ChangelogEntry(
             version = "2.1.5",
             title = "更新说明上线",
             items = listOf(
