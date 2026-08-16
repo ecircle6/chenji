@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>时光纪 - 纪念日提醒</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* 情感色彩系统 */
+            --bg-primary: #FAF8F5;
+            --bg-secondary: #F5F0EB;
+            --text-primary: #2D2A26;
+            --text-secondary: #8A8580;
+            --text-muted: #B5B0AA;
+
+            /* 生日 - 温暖橙黄 */
+            --birthday-gradient: linear-gradient(135deg, #FFF5E6 0%, #FFE4C4 100%);
+            --birthday-accent: #E8943A;
+            --birthday-soft: rgba(232, 148, 58, 0.12);
+
+            /* 纪念日 - 浪漫粉紫 */
+            --anniversary-gradient: linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 100%);
+            --anniversary-accent: #A855F7;
+            --anniversary-soft: rgba(168, 85, 247, 0.12);
+
+            /* 缅怀日 - 庄重素灰 */
+            --memorial-gradient: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
+            --memorial-accent: #64748B;
+            --memorial-soft: rgba(100, 116, 139, 0.12);
+            --memorial-border: rgba(100, 116, 139, 0.2);
+
+            /* 通用 */
+            --shadow-soft: 0 4px 20px rgba(0,0,0,0.06);
+            --shadow-medium: 0 8px 30px rgba(0,0,0,0.1);
+            --radius-sm: 12px;
+            --radius-md: 20px;
+            --radius-lg: 28px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            padding-bottom: 100px;
+        }
+
+        /* 顶部状态栏 */
+        .status-bar {
+            padding: 12px 24px 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .status-bar .date {
+            letter-spacing: 1px;
+        }
+
+        .status-bar .greeting {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* 页面标题区 */
+        .page-header {
+            padding: 8px 24px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .page-title span {
+            font-weight: 300;
+            color: var(--text-secondary);
+        }
+
+        .settings-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .settings-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* HERO聚焦区 - 最近重要日子 */
+        .hero-section {
+            padding: 0 24px 24px;
+        }
+
+        .hero-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .hero-card.birthday-theme {
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            box-shadow: 0 12px 40px rgba(246, 211, 101, 0.35);
+        }
+
+        .hero-card.anniversary-theme {
+            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+            box-shadow: 0 12px 40px rgba(161, 140, 209, 0.3);
+        }
+
+        .hero-card.memorial-theme {
+            background: linear-gradient(135deg, #8e9eab 0%, #eef2f3 100%);
+            box-shadow: 0 12px 40px rgba(142, 158, 171, 0.25);
+            color: var(--text-primary);
+        }
+
+        .hero-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+
+        .hero-card::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 150px;
+            height: 150px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 50%;
+        }
+
+        .hero-label {
+            font-size: 12px;
+            opacity: 0.9;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-subtitle {
+            font-size: 13px;
+            opacity: 0.85;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-countdown {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-number {
+            font-size: 56px;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -2px;
+            animation: breathe 3s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .hero-unit {
+            font-size: 16px;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .hero-icon {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 64px;
+            opacity: 0.15;
+            z-index: 1;
+        }
+
+        /* 分类筛选区 */
+        .category-section {
+            padding: 0 24px 20px;
+        }
+
+        .category-scroll {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+        }
+
+        .category-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category-chip {
+            flex-shrink: 0;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1.5px solid transparent;
+            background: white;
+            color: var(--text-secondary);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .category-chip.active {
+            background: var(--text-primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(45, 42, 38, 0.2);
+        }
+
+        .category-chip:active {
+            transform: scale(0.95);
+        }
+
+        /* 列表头部 */
+        .list-header {
+            padding: 0 24px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .list-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .list-count {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* 事件卡片列表 */
+        .events-list {
+            padding: 0 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .event-card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .event-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            border-radius: 4px 0 0 4px;
+        }
+
+        .event-card.birthday::before { background: var(--birthday-accent); }
+        .event-card.anniversary::before { background: var(--anniversary-accent); }
+        .event-card.memorial::before { background: var(--memorial-accent); }
+
+        .event-card:active {
+            transform: scale(0.98);
+        }
+
+        .event-card:hover {
+            box-shadow: var(--shadow-medium);
+            transform: translateY(-2px);
+        }
+
+        .event-icon-wrap {
+            width: 52px;
+            height: 52px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .event-card.birthday .event-icon-wrap {
+            background: var(--birthday-soft);
+        }
+
+        .event-card.anniversary .event-icon-wrap {
+            background: var(--anniversary-soft);
+        }
+
+        .event-card.memorial .event-icon-wrap {
+            background: var(--memorial-soft);
+        }
+
+        .event-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .event-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .event-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .event-tag {
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .event-card.birthday .event-tag {
+            background: var(--birthday-soft);
+            color: var(--birthday-accent);
+        }
+
+        .event-card.anniversary .event-tag {
+            background: var(--anniversary-soft);
+            color: var(--anniversary-accent);
+        }
+
+        .event-card.memorial .event-tag {
+            background: var(--memorial-soft);
+            color: var(--memorial-accent);
+            border: 1px solid var(--memorial-border);
+        }
+
+        .event-countdown {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .event-days {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -1px;
+        }
+
+        .event-card.birthday .event-days { color: var(--birthday-accent); }
+        .event-card.anniversary .event-days { color: var(--anniversary-accent); }
+        .event-card.memorial .event-days { color: var(--memorial-accent); }
+
+        .event-days-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* 时间轴装饰 */
+        .timeline-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            position: absolute;
+            left: -28px;
+            top: 28px;
+        }
+
+        /* 底部导航 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(250, 248, 245, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0,0,0,0.05);
+            padding: 8px 0 24px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-muted);
+        }
+
+        .nav-item.active {
+            color: var(--text-primary);
+        }
+
+        .nav-item.active .nav-icon {
+            transform: translateY(-2px);
+        }
+
+        .nav-icon {
+            font-size: 22px;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* 悬浮添加按钮 */
+        .fab {
+            position: fixed;
+            bottom: 90px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .fab:active {
+            transform: scale(0.92);
+        }
+
+        .fab:hover {
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 40px;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-text {
+            font-size: 14px;
+        }
+
+        /* 月份分组 */
+        .month-divider {
+            padding: 16px 24px 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* 响应式 */
+        @media (min-width: 768px) {
+            body {
+                max-width: 414px;
+                margin: 0 auto;
+                border-left: 1px solid #eee;
+                border-right: 1px solid #eee;
+                min-height: 100vh;
+            }
+            .bottom-nav, .fab {
+                max-width: 414px;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            .fab {
+                transform: translateX(-50%);
+            }
+        }
+
+        /* 动画 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        .delay-1 { animation-delay: 0.1s; opacity: 0; }
+        .delay-2 { animation-delay: 0.2s; opacity: 0; }
+        .delay-3 { animation-delay: 0.3s; opacity: 0; }
+        .delay-4 { animation-delay: 0.4s; opacity: 0; }
+    </style>
+</head>
+<body>
+    <!-- 状态栏 -->
+    <div class="status-bar">
+        <div class="date" id="currentDate">8月16日 周六</div>
+        <div class="greeting">愿你被时光温柔以待</div>
+    </div>
+
+    <!-- 页面标题 -->
+    <div class="page-header">
+        <div class="page-title">时光<span>纪</span></div>
+        <div class="settings-btn">⚙️</div>
+    </div>
+
+    <!-- HERO聚焦区 -->
+    <div class="hero-section">
+        <div class="hero-card birthday-theme" id="heroCard">
+            <div class="hero-label">即将到来</div>
+            <div class="hero-title">妈妈生日</div>
+            <div class="hero-subtitle">10月15日 · 农历九月初三</div>
+            <div class="hero-countdown">
+                <span class="hero-number" id="heroDays">60</span>
+                <span class="hero-unit">天后</span>
+            </div>
+            <div class="hero-icon">🎂</div>
+        </div>
+    </div>
+
+    <!-- 分类筛选 -->
+    <div class="category-section">
+        <div class="category-scroll">
+            <div class="category-chip active" data-filter="all">全部</div>
+            <div class="category-chip" data-filter="birthday">🎂 生日</div>
+            <div class="category-chip" data-filter="anniversary">💕 纪念日</div>
+            <div class="category-chip" data-filter="memorial">🕯️ 缅怀日</div>
+        </div>
+    </div>
+
+    <!-- 列表标题 -->
+    <div class="list-header">
+        <div class="list-title"> upcoming</div>
+        <div class="list-count">共 6 个日子</div>
+    </div>
+
+    <!-- 事件列表 -->
+    <div class="events-list" id="eventsList">
+        <!-- 生日卡片 -->
+        <div class="event-card birthday animate-in delay-1" data-type="birthday">
+            <div class="event-icon-wrap">🎂</div>
+            <div class="event-info">
+                <div class="event-name">妈妈生日</div>
+                <div class="event-meta">
+                    <span class="event-tag">生日</span>
+                    <span>10月15日</span>
+                </div>
+            </div>
+            <div class="event-countdown">
+                <div class="event-days">60</div>
+                <div class="event-days-label">天后</div>
+            </div>
+        </div>
+
+        <!-- 纪念日卡片 -->
+        <div class="event-card anniversary animate-in delay-2" data-type="anniversary">
+            <div class="event-icon-wrap">💍</div>
+            <div class="event-info">
+                <div class="event-name">结婚三周年</div>
+                <div class="event-meta">
+                    <span class="event-tag">纪念日</span>
+                    <span>11月8日</span>
+                </div>
+            </div>
+            <div class="event-countdown">
+                <div class="event-days">84</div>
+                <div class="event-days-label">天后</div>
+            </div>
+        </div>
+
+        <!-- 缅怀日卡片 - 特殊设计 -->
+        <div class="event-card memorial animate-in delay-3" data-type="memorial">
+            <div class="event-icon-wrap">🕯️</div>
+            <div class="event-info">
+                <div class="event-name">爷爷忌日</div>
+                <div class="event-meta">
+                    <span class="event-tag">缅怀</span>
+                    <span>12月3日</span>
+                </div>
+            </div>
+            <div class="event-countdown">
+                <div class="event-days">109</div>
+                <div class="event-days-label">天后</div>
+            </div>
+        </div>
+
+        <!-- 更多卡片 -->
+        <div class="event-card birthday animate-in delay-4" data-type="birthday">
+            <div class="event-icon-wrap">🎉</div>
+            <div class="event-info">
+                <div class="event-name">好友小明生日</div>
+                <div class="event-meta">
+                    <span class="event-tag">生日</span>
+                    <span>2027年1月20日</span>
+                </div>
+            </div>
+            <div class="event-countdown">
+                <div class="event-days">157</div>
+                <div class="event-days-label">天后</div>
+            </div>
+        </div>
+
+        <div class="event-card anniversary animate-in delay-4" data-type="anniversary">
+            <div class="event-icon-wrap">💖</div>
+            <div class="event-info">
+                <div class="event-name">恋爱1000天</div>
+                <div class="event-meta">
+                    <span class="event-tag">纪念日</span>
+                    <span>2027年2月14日</span>
+                </div>
+            </div>
+            <div class="event-countdown">
+                <div class="event-days">182</div>
+                <div class="event-days-label">天后</div>
+            </div>
+        </div>
+
+        <div class="event-card memorial animate-in delay-4" data-type="memorial">
+            <div class="event-icon-wrap">🌿</div>
+            <div class="event-info">
+                <div class="event-name">清明祭扫</div>
+                <div class="event-meta">
+                    <span class="event-tag">缅怀</span>
+                    <span>2027年4月4日</span>
+                </div>
+            </div>
+            <div class="event-countdown">
+                <div class="event-days">231</div>
+                <div class="event-days-label">天后</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航 -->
+    <div class="bottom-nav">
+        <div class="nav-item active">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-label">首页</div>
+        </div>
+        <div class="nav-item">
+            <div class="nav-icon">📅</div>
+            <div class="nav-label">日历</div>
+        </div>
+        <div class="nav-item">
+            <div class="nav-icon">📖</div>
+            <div class="nav-label">故事</div>
+        </div>
+        <div class="nav-item">
+            <div class="nav-icon">👤</div>
+            <div class="nav-label">我的</div>
+        </div>
+    </div>
+
+    <!-- 悬浮添加按钮 -->
+    <button class="fab" id="addBtn">+</button>
+
+    <script>
+        // 更新日期
+        function updateDate() {
+            const now = new Date();
+            const month = now.getMonth() + 1;
+            const day = now.getDate();
+            const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+            const week = weekDays[now.getDay()];
+            document.getElementById('currentDate').textContent = `${month}月${day}日 ${week}`;
+        }
+        updateDate();
+
+        // 分类筛选交互
+        const categoryChips = document.querySelectorAll('.category-chip');
+        const eventCards = document.querySelectorAll('.event-card');
+
+        categoryChips.forEach(chip => {
+            chip.addEventListener('click', function() {
+                categoryChips.forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+
+                const filter = this.dataset.filter;
+
+                eventCards.forEach(card => {
+                    if (filter === 'all' || card.dataset.type === filter) {
+                        card.style.display = 'flex';
+                        card.style.animation = 'fadeInUp 0.4s ease forwards';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                // 更新计数
+                const visibleCards = document.querySelectorAll('.event-card[style*="flex"]');
+                document.querySelector('.list-count').textContent = `共 ${visibleCards.length} 个日子`;
+            });
+        });
+
+        // 添加按钮点击
+        document.getElementById('addBtn').addEventListener('click', function() {
+            this.style.transform = 'scale(0.9) rotate(45deg)';
+            setTimeout(() => {
+                this.style.transform = '';
+                alert('打开添加纪念日页面');
+            }, 200);
+        });
+
+        // 卡片点击效果
+        eventCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const name = this.querySelector('.event-name').textContent;
+                alert(`查看详情：${name}`);
+            });
+        });
+
+        // 每日一句随机
+        const greetings = [
+            '愿你被时光温柔以待',
+            '每一个日子都值得铭记',
+            '时光不老，我们不散',
+            '珍惜当下，铭记过往',
+            '岁月漫长，值得等待'
+        ];
+        document.querySelector('.greeting').textContent = greetings[Math.floor(Math.random() * greetings.length)];
+    </script>
+</body>
+</html>

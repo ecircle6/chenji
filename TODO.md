@@ -64,6 +64,20 @@
   - 零第三方依赖：农历标注走 `LunarCalendar.solarToLunar` + 新增 `lunarDayName`
   - 验收：✅ 模拟器验证 2026-08 农历标注（8/13 初一）、8/14 小明圆点、弹窗进详情、切月（9月·农历八月初一）
 
+- [ ] **首页改版：底部双 tab + 分类筛选面板 + Hero 卡 + 紧凑卡片 + FAB 优化**（方案已确认 2026-08-16，待实施）
+  - 背景：参考根目录 `date_reminder_app_ui.html` 排版（Hero 聚焦卡 + 分类胶囊 + 紧凑倒计时卡片 + 底部导航），适配辰记现有功能；HTML 效果图 `home-redesign-mockup.html`（v2 底部导航版）+ `home-filter-mockup.html`（v3 分类方案）已入库供确认
+  - 调研结论（2026-08-16）：全库无 NavigationBar/bottomBar 代码（零冲突引入）；FAB 仅首页 1 处 Large 型；月历无 UI 测试保护（独立成页需新增测试）；`ZodiacUtils.getZodiacName(year)` 已存在（生肖零迁移）；Detail/AddEdit/Settings 均为「topBar 纯 Scaffold + padding(paddingValues)」标准模式，加底栏不遮挡
+  - **1. 底部导航「首页/日历」双 tab**：单 NavHost + 外层 `Scaffold(bottomBar = NavigationBar)`，用 `currentBackStackEntryAsState` 判断路由——仅 home/calendar 显示底栏，detail/add/edit/settings 保持全屏压栈；tab 切换 `navigate + popUpTo(startDestination){saveState=true} + launchSingleTop + restoreState` 保持各自状态。选型：对比「每页各自加 bottomBar（重复/状态不同步）」与「双 NavHost（back 栈混乱）」后选定
+  - **2. 日历独立页（显示全部记录）**：新增 `ui/calendar/CalendarViewModel`（`allBirthdays = dao.getAll()` 全量无筛选）+ `CalendarScreenPage` 薄壳 + Scaffold（TopAppBar「月历」+ ⚙️ 设置入口 + 44dp FAB）；`CalendarScreen` 入参从 `List<BirthdayDisplay>` 收紧为 `List<Birthday>`（月历只需要 Birthday，`EventCalc.eventsInMonth` 直接接收），内部弹窗/圆点/翻月逻辑不变；HomeScreen 删除 showCalendar 状态与 SegmentedButton。选型：对比「复用 HomeViewModel（被首页筛选污染）」与「Screen 直查库（破坏无状态架构）」后选定
+  - **3. 分类筛选：快捷行 + 底部面板 + 配置驱动**：筛选状态收敛为单一不可变 `data class FilterState(relation="all", type="all", zodiac: String?=null)` 替代散落的 selectedTab/selectedType 两流；`HomeFilter.apply(list, filter, query)` 配置驱动（搜索非空全局查找跳出筛选语义不变；关系/类型/生肖三条件 AND；生肖匹配 `ZodiacUtils.getZodiacName(birthYear)` 零数据库迁移）；UI：一行快捷胶囊（全部/家人/朋友/同事/生日/情侣纪念/缅怀，横向滚动 + 行尾固定「⋯ 更多筛选」不遮挡、右缘淡出）+ `ModalBottomSheet` 面板（关系/类型/生肖三组，组内单选、组间叠加，顶部当前筛选摘要 + 清除/重置）；面板显隐为 Content 内部 UI 态，点选直接回调 VM；扩展新维度 = FilterState 加字段 + 配置加一组，首页永不多出一行。选型：对比「每维度一个 StateFlow + combine（组合爆炸）」与「只改 UI 不动模型（不满足可扩展）」后选定
+  - **4. Hero 聚焦卡**：`ui/home/HeroCard.kt`，HomeContent 内从已排序 birthdays 派生 `firstOrNull { !it.isPaused }`（空/全暂停不显示）；渐变底色按 eventType 四组（生日暖橙/情侣紫/缅怀灰蓝/其他青 + 深色加深变体，Color.kt 新增 HeroGradient 常量）；label「即将到来」/「就是今天」、名称、dateLabel、56sp 大倒计时 + 右侧类型 emoji 水印，点击进详情；@Preview 浅/深 × 各类型。选型：对比「VM 单独暴露 heroBirthday 流（冗余）」后选定
+  - **5. 问候语行**：新增 `util/Greeting.kt`，按年积日从文案池取一句（当天稳定、纯函数可单测）；HomeContent 顶部「8月16日 周六 · 今日问候」。选型：对比「每次随机（重组抖动、不可测）」后选定
+  - **6. 卡片紧凑化**：直接改 `BirthdayCard` 内部布局（签名不变，调用点零改动）：左 4dp 类型色条 + 圆角图标块 46dp（生日首字/其余类型 emoji）+ 名称 + 类型标签（由「关系」改「事件类型」）+ 第二行「dateLabel · relationLabel」+ 右侧 26sp 大倒计时 +「天后」；保留 📌 置顶、已暂停灰显、今天横幅、深色变体；移除 ⏰ 提醒时刻徽标（详情页仍显示）。选型：对比「新建 CompactBirthdayCard 换调用点（旧组件残留）」后选定
+  - **7. FAB 优化**：首页 `LargeFloatingActionButton` → 普通 FAB + `Modifier.size(44.dp)`（Coral500，搜索态隐藏保留）；`LazyColumn contentPadding` 底部加约 64dp（44dp + 间距），保证最后一张卡片滚过 FAB 完全露出；日历页同样加 44dp FAB。选型：对比「保留 Large 56dp（遮挡列表）」后选定
+  - 测试：更新 HomeScreenTest（HomeContent 新签名：filter 对象、Hero 名称/点击回调、快捷胶囊点击、列表头计数）、SharedComponentsTest（新卡片布局断言）、HomeFilterTest（FilterState 签名 + 生肖筛选）、HomeViewModelTest（filter/quickFilter/clearFilters）；新增 CalendarViewModelTest（全量无筛选）、CalendarScreenPage UI 测试（渲染/翻月/点日期弹窗，现状零保护）、GreetingTest
+  - 发版：versionCode 11 / versionName 2.1.8 + Changelog 条目；README 同步；`bash tools/verify-on-emulator.sh` 模拟器实测（tab 切换/日历全量/Hero 点击/面板叠加/生肖/深色/搜索空态回归）
+  - 不做：详情页/添加页/设置页、HomeViewModel 排序与搜索核心语义、滑动删除、数据模型（生肖零迁移）、备份、小组件全部不动
+
 ---
 
 ## P2 — 工程与体验现代化

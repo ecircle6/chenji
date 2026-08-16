@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>辰记 · 分类筛选方案（快捷行 + 扩展面板）</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", -apple-system, sans-serif;
+    background: #EDEAE4;
+    padding: 32px 20px 80px;
+  }
+  h1 { font-size: 22px; text-align: center; color: #2E2A24; margin-bottom: 6px; letter-spacing: 1px; }
+  .sub { text-align: center; color: #8A8378; font-size: 13px; margin-bottom: 34px; }
+  .sub b { color: #E8785A; }
+  .tagline { text-align: center; color: #2E2A24; font-size: 14px; margin-bottom: 26px; line-height: 1.7; }
+  .tagline b { color: #E8785A; }
+
+  .frames { display: flex; flex-wrap: wrap; gap: 44px; justify-content: center; align-items: flex-start; }
+  .frame-label { text-align: center; font-size: 13px; color: #8A8378; margin-bottom: 12px; font-weight: 600; letter-spacing: 2px; }
+
+  /* ============ 手机框 ============ */
+  .phone {
+    width: 380px; height: 780px; border-radius: 36px; overflow: hidden;
+    position: relative; display: flex; flex-direction: column;
+    box-shadow: 0 24px 60px rgba(0,0,0,.28), inset 0 0 0 2px rgba(0,0,0,.10);
+  }
+  .screen { flex: 1; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; padding-bottom: 124px; }
+  .screen::-webkit-scrollbar { display: none; }
+
+  .light .screen { background: #FAF8F5; }
+  .light { --text: #2D2A26; --text2: #8A8580; --text3: #B5B0AA;
+           --card: #FFFFFF; --chip: #FFFFFF; --act: #2D2A26;
+           --sheet: #FFFFFF; --sheetline: rgba(0,0,0,.06); --mask: rgba(0,0,0,.4); }
+  .light .statusbar { color: #2D2A26; }
+
+  .dark .screen { background: #141412; }
+  .dark { --text: #E8E8E6; --text2: #9E9E9C; --text3: #6E6E6C;
+          --card: #242422; --chip: #242422; --act: #E8E8E6;
+          --sheet: #201F1D; --sheetline: rgba(255,255,255,.08); --mask: rgba(0,0,0,.55); }
+  .dark .statusbar { color: #E8E8E6; }
+
+  .statusbar {
+    height: 30px; display: flex; justify-content: space-between; align-items: center;
+    padding: 0 20px; font-size: 11px; font-weight: 600; flex-shrink: 0;
+  }
+
+  .appbar { display: flex; justify-content: space-between; align-items: center; padding: 4px 20px 6px; flex-shrink: 0; }
+  .appbar .title { font-size: 24px; font-weight: 800; letter-spacing: 2px; color: var(--text); }
+  .appbar .title span { color: #FF8A5C; }
+  .appbar .icons { display: flex; gap: 18px; font-size: 17px; color: var(--text2); }
+
+  .datebar { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 22px 12px; flex-shrink: 0; }
+  .datebar .date { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: 1px; }
+  .datebar .greet { font-size: 12px; color: var(--text3); }
+
+  /* Hero 卡（沿用 v2，聚焦分类方案） */
+  .hero-wrap { padding: 0 20px 16px; flex-shrink: 0; }
+  .hero {
+    border-radius: 26px; padding: 22px 24px 20px; position: relative; overflow: hidden;
+    color: #fff; box-shadow: 0 12px 32px rgba(255,138,92,.30); cursor: pointer;
+    background: linear-gradient(135deg, #FFC98A 0%, #FF8A5C 100%);
+  }
+  .dark .hero { background: linear-gradient(135deg, #B06A2E 0%, #C74F2A 100%); }
+  .hero::before { content: ''; position: absolute; top: -50%; right: -18%; width: 190px; height: 190px;
+                  background: rgba(255,255,255,.14); border-radius: 50%; }
+  .hero .label { font-size: 11px; opacity: .92; letter-spacing: 3px; margin-bottom: 6px; position: relative; z-index: 1; }
+  .hero .name { font-size: 21px; font-weight: 700; position: relative; z-index: 1; }
+  .hero .count { display: flex; align-items: baseline; gap: 5px; margin-top: 10px; position: relative; z-index: 1; }
+  .hero .count .num { font-size: 44px; font-weight: 800; line-height: 1; letter-spacing: -2px; }
+  .hero .count .unit { font-size: 14px; font-weight: 500; opacity: .92; }
+  .hero .emoji { position: absolute; right: 22px; top: 50%; transform: translateY(-50%); font-size: 54px; opacity: .16; }
+
+  /* ============ 快捷分类行（单行可横向滚动 + 固定「更多」） ============ */
+  .filter-bar { padding: 0 20px 4px; flex-shrink: 0; display: flex; align-items: center; gap: 10px; }
+  .filter-scroll {
+    flex: 1; min-width: 0; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+    padding: 2px 0 8px;
+    /* 右缘淡出：提示后面还有可滑动的胶囊，不会跟「更多」糊在一起 */
+    -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent);
+            mask-image: linear-gradient(90deg, #000 88%, transparent);
+  }
+  .filter-scroll::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0; padding: 8px 18px; border-radius: 50px; font-size: 13px; font-weight: 500;
+    cursor: pointer; white-space: nowrap; transition: all .2s;
+    background: var(--chip); color: var(--text2); box-shadow: 0 3px 12px rgba(0,0,0,.05);
+  }
+  .chip:hover { transform: translateY(-1px); }
+  .chip.on { background: var(--act); color: #fff; box-shadow: 0 4px 14px rgba(45,42,38,.22); }
+  .chip.summary { background: rgba(255,107,107,.12); color: #FF6B6B; border: 1px solid rgba(255,107,107,.4); box-shadow: none; }
+  /* 行尾固定「更多筛选」，不随胶囊滚动、不占胶囊空间 */
+  .more-btn {
+    flex-shrink: 0; padding: 8px 14px; border-radius: 50px; font-size: 13px; font-weight: 600;
+    cursor: pointer; white-space: nowrap; transition: all .2s;
+    background: var(--chip); color: var(--text2);
+    border: 1px solid rgba(139,134,128,.35); box-shadow: 0 2px 8px rgba(0,0,0,.04);
+  }
+  .more-btn:hover { border-color: #FF6B6B; color: #FF6B6B; }
+
+  /* 列表头 */
+  .list-header { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 22px 12px; flex-shrink: 0; }
+  .list-header .t { font-size: 18px; font-weight: 700; color: var(--text); }
+  .list-header .n { font-size: 12px; color: var(--text3); font-weight: 500; }
+
+  /* 卡片（沿用 v2 紧凑式） */
+  .cards { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; }
+  .card {
+    background: var(--card); border-radius: 20px; padding: 15px 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.05);
+    display: flex; align-items: center; gap: 13px; position: relative; overflow: hidden;
+    cursor: pointer; transition: all .25s;
+  }
+  .card .bar { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+  .card.hidden { display: none; }
+  .card.birthday .bar { background: #FF6B6B; }
+  .card.love .bar { background: #7C6BFF; }
+  .card.memorial .bar { background: #5B6B7A; }
+  .card .icon { width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0;
+                display: flex; align-items: center; justify-content: center; font-size: 21px; font-weight: 700; }
+  .card.birthday .icon { background: rgba(255,107,107,.12); color: #FF6B6B; }
+  .card.love .icon { background: rgba(124,107,255,.12); color: #7C6BFF; }
+  .card.memorial .icon { background: rgba(91,107,122,.12); color: #5B6B7A; }
+  .card .info { flex: 1; min-width: 0; }
+  .card .name-row { display: flex; align-items: center; gap: 6px; }
+  .card .name { font-size: 15px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 9px; flex-shrink: 0; }
+  .card .badge.pin { background: rgba(255,107,107,.14); color: #FF6B6B; }
+  .card .tag { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 9px; }
+  .card.birthday .tag { background: rgba(255,107,107,.12); color: #FF6B6B; }
+  .card.love .tag { background: rgba(124,107,255,.12); color: #7C6BFF; }
+  .card.memorial .tag { background: rgba(91,107,122,.14); color: #8FA0AE; }
+  .card .meta { font-size: 11px; color: var(--text2); margin-top: 3px; }
+  .card .count { text-align: right; flex-shrink: 0; }
+  .card .count .num { font-size: 26px; font-weight: 800; line-height: 1; letter-spacing: -1px; }
+  .card.birthday .count .num { color: #FF6B6B; }
+  .card.love .count .num { color: #7C6BFF; }
+  .card.memorial .count .num { color: #8FA0AE; }
+  .card .count .unit { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+  /* 底部导航 */
+  .bottomnav {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
+    background: var(--navbg, rgba(250,248,245,.94)); backdrop-filter: blur(20px);
+    border-top: 1px solid var(--navline, rgba(0,0,0,.06));
+    display: flex; justify-content: space-around; padding: 8px 0 18px;
+  }
+  .dark .bottomnav { background: rgba(20,20,18,.96); border-top-color: rgba(255,255,255,.08); }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 26px; cursor: pointer; color: var(--text3); }
+  .nav-item .ni { font-size: 20px; }
+  .nav-item .nl { font-size: 11px; font-weight: 500; }
+  .nav-item.active { color: #FF6B6B; }
+
+  .fab {
+    position: absolute; right: 20px; bottom: 92px; width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, #FF8A5C, #FF6B6B); color: #fff; font-size: 24px; font-weight: 300;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    box-shadow: 0 6px 16px rgba(255,107,107,.38); transition: transform .15s; z-index: 10;
+  }
+  .fab:active { transform: scale(.92); }
+
+  /* ============ 底部筛选面板 ============ */
+  .mask {
+    position: absolute; inset: 0; background: var(--mask); z-index: 30;
+    opacity: 0; pointer-events: none; transition: opacity .25s;
+  }
+  .mask.show { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 40;
+    background: var(--sheet); border-radius: 28px 28px 0 0; padding: 18px 22px 22px;
+    transform: translateY(105%); transition: transform .3s cubic-bezier(.32,.72,.28,1);
+    max-height: 78%; overflow-y: auto; scrollbar-width: none;
+  }
+  .sheet::-webkit-scrollbar { display: none; }
+  .sheet.show { transform: translateY(0); }
+  .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .sheet-head .t { font-size: 18px; font-weight: 800; color: var(--text); }
+  .sheet-head .close { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                       font-size: 16px; color: var(--text2); cursor: pointer; }
+  .sheet-head .close:hover { background: rgba(128,128,128,.12); }
+  .active-filters { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 8px 0 4px; }
+  .active-filters .label { font-size: 11px; color: var(--text3); }
+  .af-chip { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 12px;
+             background: rgba(255,107,107,.12); color: #FF6B6B; }
+  .af-clear { font-size: 11px; color: var(--text2); cursor: pointer; text-decoration: underline; padding: 3px 2px; }
+  .sheet-line { border: none; border-top: 1px solid var(--sheetline); margin: 8px 0 14px; }
+
+  .grp { margin-bottom: 16px; }
+  .grp-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .grp-head .gn { font-size: 13px; font-weight: 700; color: var(--text); }
+  .grp-head .gd { font-size: 11px; color: var(--text3); }
+  .grp-opts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .opt {
+    padding: 7px 15px; border-radius: 50px; font-size: 12px; font-weight: 500; cursor: pointer;
+    background: var(--chip); color: var(--text2); box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    border: 1px solid transparent; transition: all .2s;
+  }
+  .opt.on { background: #FF6B6B; color: #fff; box-shadow: 0 4px 12px rgba(255,107,107,.3); }
+  .dark .opt { background: #2B2A28; }
+
+  .sheet-actions { display: flex; gap: 10px; margin-top: 4px; }
+  .btn-primary {
+    flex: 1; text-align: center; padding: 13px 0; border-radius: 16px; cursor: pointer;
+    background: linear-gradient(135deg, #FF8A5C, #FF6B6B); color: #fff;
+    font-size: 14px; font-weight: 700; box-shadow: 0 6px 16px rgba(255,107,107,.32); transition: all .2s;
+  }
+  .btn-primary:active { transform: scale(.98); }
+  .btn-ghost {
+    padding: 13px 18px; border-radius: 16px; cursor: pointer;
+    background: transparent; color: var(--text2); border: 1px solid var(--sheetline);
+    font-size: 14px; font-weight: 600;
+  }
+
+  /* ---------- 方案说明 ---------- */
+  .notes {
+    max-width: 980px; margin: 44px auto 0; background: #fff; border-radius: 20px;
+    padding: 26px 30px; box-shadow: 0 4px 20px rgba(0,0,0,.06);
+  }
+  .notes h2 { font-size: 17px; color: #2E2A24; margin-bottom: 16px; }
+  .notes ul { list-style: none; }
+  .notes li {
+    display: flex; gap: 10px; padding: 8px 0; font-size: 13px; color: #55504A;
+    border-bottom: 1px dashed #EDE8E0; line-height: 1.65;
+  }
+  .notes li:last-child { border-bottom: none; }
+  .notes .idx { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: #FFE3D5; color: #E8785A;
+                font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+  .notes b { color: #2E2A24; }
+  .notes .ok { color: #1E8A5A; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>辰记 · 分类筛选方案（快捷行 + 扩展面板）</h1>
+<div class="sub">在已确认的 v2 首页布局上，只改造分类区 —— 左：浅色 ｜ 右：深色</div>
+<div class="tagline">操作演示：<b>点快捷胶囊</b>单维筛选 → 点行尾「<b>⋯ 更多</b>」弹底部面板 → 面板内<b>分组叠加</b>（关系 ∩ 类型 ∩ 生肖）→ 顶部「<b>查看结果</b>」应用</div>
+
+<div class="frames">
+
+  <!-- ============ 浅色 ============ -->
+  <div>
+    <div class="frame-label">浅色 · 可交互</div>
+    <div class="phone light" id="phoneL">
+      <div class="statusbar"><span>9:41</span><span>▮▮▮▮▯ 📶 🔋</span></div>
+      <div class="screen">
+        <div class="appbar">
+          <div class="title">辰<span>记</span></div>
+          <div class="icons"><span>🔍</span><span>⚙️</span></div>
+        </div>
+        <div class="datebar">
+          <div class="date" id="dateL">8月16日 周六</div>
+          <div class="greet">愿你被时光温柔以待</div>
+        </div>
+
+        <div class="hero-wrap">
+          <div class="hero">
+            <div class="label">即将到来</div>
+            <div class="name">妈妈生日</div>
+            <div class="count"><span class="num">60</span><span class="unit">天后</span></div>
+            <div class="emoji">🎂</div>
+          </div>
+        </div>
+
+        <!-- 快捷分类行：左侧胶囊横向滚动 + 行尾固定「更多筛选」 -->
+        <div class="filter-bar">
+          <div class="filter-scroll" id="filterRowL">
+            <div class="chip on" data-key="all" onclick="quickFilter('L','all')">全部</div>
+            <div class="chip" data-key="family" onclick="quickFilter('L','family')">家人</div>
+            <div class="chip" data-key="friend" onclick="quickFilter('L','friend')">朋友</div>
+            <div class="chip" data-key="colleague" onclick="quickFilter('L','colleague')">同事</div>
+            <div class="chip" data-key="birthday" onclick="quickFilter('L','birthday')">生日</div>
+            <div class="chip" data-key="love" onclick="quickFilter('L','love')">情侣纪念</div>
+            <div class="chip" data-key="memorial" onclick="quickFilter('L','memorial')">缅怀</div>
+          </div>
+          <div class="more-btn" onclick="openSheet('L')">⋯ 更多筛选</div>
+        </div>
+
+        <div class="list-header">
+          <div class="t" id="listTitleL">即将到来</div>
+          <div class="n" id="listCountL">共 4 个日子</div>
+        </div>
+
+        <div class="cards" id="cardsL">
+          <div class="card birthday" data-rel="family" data-type="birthday" data-zodiac="dog">
+            <div class="bar"></div>
+            <div class="icon">妈</div>
+            <div class="info">
+              <div class="name-row"><span class="name">妈妈生日</span><span class="tag">生日</span></div>
+              <div class="meta">农历九月初三 · 家人 · 属狗</div>
+            </div>
+            <div class="count"><div class="num">60</div><div class="unit">天后</div></div>
+          </div>
+          <div class="card love" data-rel="other" data-type="love" data-zodiac="rabbit">
+            <div class="bar"></div>
+            <div class="icon">❤️</div>
+            <div class="info">
+              <div class="name-row"><span class="name">在一起三周年</span><span class="tag">情侣纪念</span></div>
+              <div class="meta">11月8日 · 其他 · 属兔</div>
+            </div>
+            <div class="count"><div class="num">84</div><div class="unit">天后</div></div>
+          </div>
+          <div class="card memorial" data-rel="family" data-type="memorial" data-zodiac="rooster">
+            <div class="bar"></div>
+            <div class="icon">🕯️</div>
+            <div class="info">
+              <div class="name-row"><span class="name">爷爷</span><span class="tag">缅怀</span></div>
+              <div class="meta">农历十月廿六 · 家人 · 属鸡</div>
+            </div>
+            <div class="count"><div class="num">109</div><div class="unit">天后</div></div>
+          </div>
+          <div class="card birthday" data-rel="friend" data-type="birthday" data-zodiac="tiger">
+            <div class="bar"></div>
+            <div class="icon">小</div>
+            <div class="info">
+              <div class="name-row"><span class="name">小明</span><span class="badge pin">📌 置顶</span><span class="tag">生日</span></div>
+              <div class="meta">8月14日 · 朋友 · 属虎</div>
+            </div>
+            <div class="count"><div class="num">364</div><div class="unit">天后</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 遮罩 + 底部筛选面板 -->
+      <div class="mask" id="maskL" onclick="closeSheet('L')"></div>
+      <div class="sheet" id="sheetL">
+        <div class="sheet-head">
+          <div class="t">筛选</div>
+          <div class="close" onclick="closeSheet('L')">✕</div>
+        </div>
+        <div class="active-filters" id="afL">
+          <span class="label">当前：</span>
+          <span class="af-chip" id="afChipL" style="display:none">—</span>
+          <span class="af-clear" id="afClearL" style="display:none" onclick="clearFilters('L')">清除</span>
+          <span class="af-chip" style="background:transparent;color:var(--text3)" id="afEmptyL">无筛选 · 显示全部</span>
+        </div>
+        <hr class="sheet-line">
+
+        <div class="grp">
+          <div class="grp-head"><span class="gn">关系</span><span class="gd">家人 / 朋友 / 同事 / 其他</span></div>
+          <div class="grp-opts" data-grp="rel">
+            <div class="opt" data-val="family" onclick="pick('L','rel','family')">家人</div>
+            <div class="opt" data-val="friend" onclick="pick('L','rel','friend')">朋友</div>
+            <div class="opt" data-val="colleague" onclick="pick('L','rel','colleague')">同事</div>
+            <div class="opt" data-val="other" onclick="pick('L','rel','other')">其他</div>
+          </div>
+        </div>
+
+        <div class="grp">
+          <div class="grp-head"><span class="gn">类型</span><span class="gd">生日 / 情侣纪念 / 缅怀 / 其他</span></div>
+          <div class="grp-opts" data-grp="type">
+            <div class="opt" data-val="birthday" onclick="pick('L','type','birthday')">🎂 生日</div>
+            <div class="opt" data-val="love" onclick="pick('L','type','love')">❤️ 情侣纪念</div>
+            <div class="opt" data-val="memorial" onclick="pick('L','type','memorial')">🕯️ 缅怀</div>
+            <div class="opt" data-val="other" onclick="pick('L','type','other')">📌 其他</div>
+          </div>
+        </div>
+
+        <div class="grp">
+          <div class="grp-head"><span class="gn">生肖</span><span class="gd">新增维度示例 · 由出生年份自动派生，无需改数据库</span></div>
+          <div class="grp-opts" data-grp="zodiac">
+            <div class="opt" data-val="rat" onclick="pick('L','zodiac','rat')">鼠</div>
+            <div class="opt" data-val="ox" onclick="pick('L','zodiac','ox')">牛</div>
+            <div class="opt" data-val="tiger" onclick="pick('L','zodiac','tiger')">虎</div>
+            <div class="opt" data-val="rabbit" onclick="pick('L','zodiac','rabbit')">兔</div>
+            <div class="opt" data-val="dragon" onclick="pick('L','zodiac','dragon')">龙</div>
+            <div class="opt" data-val="snake" onclick="pick('L','zodiac','snake')">蛇</div>
+            <div class="opt" data-val="horse" onclick="pick('L','zodiac','horse')">马</div>
+            <div class="opt" data-val="goat" onclick="pick('L','zodiac','goat')">羊</div>
+            <div class="opt" data-val="monkey" onclick="pick('L','zodiac','monkey')">猴</div>
+            <div class="opt" data-val="rooster" onclick="pick('L','zodiac','rooster')">鸡</div>
+            <div class="opt" data-val="dog" onclick="pick('L','zodiac','dog')">狗</div>
+            <div class="opt" data-val="pig" onclick="pick('L','zodiac','pig')">猪</div>
+          </div>
+        </div>
+
+        <div class="sheet-actions">
+          <div class="btn-ghost" onclick="clearFilters('L')">重置</div>
+          <div class="btn-primary" onclick="applySheet('L')">查看结果</div>
+        </div>
+      </div>
+
+      <div class="bottomnav">
+        <div class="nav-item active"><span class="ni">🏠</span><span class="nl">首页</span></div>
+        <div class="nav-item"><span class="ni">📅</span><span class="nl">日历</span></div>
+      </div>
+      <div class="fab">+</div>
+    </div>
+  </div>
+
+  <!-- ============ 深色（同结构，演示深色面板） ============ -->
+  <div>
+    <div class="frame-label">深色 · 可交互</div>
+    <div class="phone dark" id="phoneD">
+      <div class="statusbar"><span>9:41</span><span>▮▮▮▮▯ 📶 🔋</span></div>
+      <div class="screen">
+        <div class="appbar">
+          <div class="title">辰<span>记</span></div>
+          <div class="icons"><span>🔍</span><span>⚙️</span></div>
+        </div>
+        <div class="datebar">
+          <div class="date" id="dateD">8月16日 周六</div>
+          <div class="greet">每一个日子都值得铭记</div>
+        </div>
+
+        <div class="hero-wrap">
+          <div class="hero">
+            <div class="label">即将到来</div>
+            <div class="name">妈妈生日</div>
+            <div class="count"><span class="num">60</span><span class="unit">天后</span></div>
+            <div class="emoji">🎂</div>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="filter-scroll" id="filterRowD">
+            <div class="chip on" data-key="all" onclick="quickFilter('D','all')">全部</div>
+            <div class="chip" data-key="family" onclick="quickFilter('D','family')">家人</div>
+            <div class="chip" data-key="friend" onclick="quickFilter('D','friend')">朋友</div>
+            <div class="chip" data-key="colleague" onclick="quickFilter('D','colleague')">同事</div>
+            <div class="chip" data-key="birthday" onclick="quickFilter('D','birthday')">生日</div>
+            <div class="chip" data-key="love" onclick="quickFilter('D','love')">情侣纪念</div>
+            <div class="chip" data-key="memorial" onclick="quickFilter('D','memorial')">缅怀</div>
+          </div>
+          <div class="more-btn" onclick="openSheet('D')">⋯ 更多筛选</div>
+        </div>
+
+        <div class="list-header">
+          <div class="t" id="listTitleD">即将到来</div>
+          <div class="n" id="listCountD">共 4 个日子</div>
+        </div>
+
+        <div class="cards" id="cardsD">
+          <div class="card birthday" data-rel="family" data-type="birthday" data-zodiac="dog">
+            <div class="bar"></div>
+            <div class="icon">妈</div>
+            <div class="info">
+              <div class="name-row"><span class="name">妈妈生日</span><span class="tag">生日</span></div>
+              <div class="meta">农历九月初三 · 家人 · 属狗</div>
+            </div>
+            <div class="count"><div class="num">60</div><div class="unit">天后</div></div>
+          </div>
+          <div class="card love" data-rel="other" data-type="love" data-zodiac="rabbit">
+            <div class="bar"></div>
+            <div class="icon">❤️</div>
+            <div class="info">
+              <div class="name-row"><span class="name">在一起三周年</span><span class="tag">情侣纪念</span></div>
+              <div class="meta">11月8日 · 其他 · 属兔</div>
+            </div>
+            <div class="count"><div class="num">84</div><div class="unit">天后</div></div>
+          </div>
+          <div class="card memorial" data-rel="family" data-type="memorial" data-zodiac="rooster">
+            <div class="bar"></div>
+            <div class="icon">🕯️</div>
+            <div class="info">
+              <div class="name-row"><span class="name">爷爷</span><span class="tag">缅怀</span></div>
+              <div class="meta">农历十月廿六 · 家人 · 属鸡</div>
+            </div>
+            <div class="count"><div class="num">109</div><div class="unit">天后</div></div>
+          </div>
+          <div class="card birthday" data-rel="friend" data-type="birthday" data-zodiac="tiger">
+            <div class="bar"></div>
+            <div class="icon">小</div>
+            <div class="info">
+              <div class="name-row"><span class="name">小明</span><span class="badge pin">📌 置顶</span><span class="tag">生日</span></div>
+              <div class="meta">8月14日 · 朋友 · 属虎</div>
+            </div>
+            <div class="count"><div class="num">364</div><div class="unit">天后</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mask" id="maskD" onclick="closeSheet('D')"></div>
+      <div class="sheet" id="sheetD">
+        <div class="sheet-head">
+          <div class="t">筛选</div>
+          <div class="close" onclick="closeSheet('D')">✕</div>
+        </div>
+        <div class="active-filters" id="afD">
+          <span class="label">当前：</span>
+          <span class="af-chip" id="afChipD" style="display:none">—</span>
+          <span class="af-clear" id="afClearD" style="display:none" onclick="clearFilters('D')">清除</span>
+          <span class="af-chip" style="background:transparent;color:var(--text3)" id="afEmptyD">无筛选 · 显示全部</span>
+        </div>
+        <hr class="sheet-line">
+
+        <div class="grp">
+          <div class="grp-head"><span class="gn">关系</span><span class="gd">家人 / 朋友 / 同事 / 其他</span></div>
+          <div class="grp-opts" data-grp="rel">
+            <div class="opt" data-val="family" onclick="pick('D','rel','family')">家人</div>
+            <div class="opt" data-val="friend" onclick="pick('D','rel','friend')">朋友</div>
+            <div class="opt" data-val="colleague" onclick="pick('D','rel','colleague')">同事</div>
+            <div class="opt" data-val="other" onclick="pick('D','rel','other')">其他</div>
+          </div>
+        </div>
+
+        <div class="grp">
+          <div class="grp-head"><span class="gn">类型</span><span class="gd">生日 / 情侣纪念 / 缅怀 / 其他</span></div>
+          <div class="grp-opts" data-grp="type">
+            <div class="opt" data-val="birthday" onclick="pick('D','type','birthday')">🎂 生日</div>
+            <div class="opt" data-val="love" onclick="pick('D','type','love')">❤️ 情侣纪念</div>
+            <div class="opt" data-val="memorial" onclick="pick('D','type','memorial')">🕯️ 缅怀</div>
+            <div class="opt" data-val="other" onclick="pick('D','type','other')">📌 其他</div>
+          </div>
+        </div>
+
+        <div class="grp">
+          <div class="grp-head"><span class="gn">生肖</span><span class="gd">新增维度示例 · 由出生年份自动派生，无需改数据库</span></div>
+          <div class="grp-opts" data-grp="zodiac">
+            <div class="opt" data-val="rat" onclick="pick('D','zodiac','rat')">鼠</div>
+            <div class="opt" data-val="ox" onclick="pick('D','zodiac','ox')">牛</div>
+            <div class="opt" data-val="tiger" onclick="pick('D','zodiac','tiger')">虎</div>
+            <div class="opt" data-val="rabbit" onclick="pick('D','zodiac','rabbit')">兔</div>
+            <div class="opt" data-val="dragon" onclick="pick('D','zodiac','dragon')">龙</div>
+            <div class="opt" data-val="snake" onclick="pick('D','zodiac','snake')">蛇</div>
+            <div class="opt" data-val="horse" onclick="pick('D','zodiac','horse')">马</div>
+            <div class="opt" data-val="goat" onclick="pick('D','zodiac','goat')">羊</div>
+            <div class="opt" data-val="monkey" onclick="pick('D','zodiac','monkey')">猴</div>
+            <div class="opt" data-val="rooster" onclick="pick('D','zodiac','rooster')">鸡</div>
+            <div class="opt" data-val="dog" onclick="pick('D','zodiac','dog')">狗</div>
+            <div class="opt" data-val="pig" onclick="pick('D','zodiac','pig')">猪</div>
+          </div>
+        </div>
+
+        <div class="sheet-actions">
+          <div class="btn-ghost" onclick="clearFilters('D')">重置</div>
+          <div class="btn-primary" onclick="applySheet('D')">查看结果</div>
+        </div>
+      </div>
+
+      <div class="bottomnav">
+        <div class="nav-item active"><span class="ni">🏠</span><span class="nl">首页</span></div>
+        <div class="nav-item"><span class="ni">📅</span><span class="nl">日历</span></div>
+      </div>
+      <div class="fab">+</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ 方案说明 ============ -->
+<div class="notes">
+  <h2>📋 分类筛选方案说明（替代 v2 的两行胶囊）</h2>
+  <ul>
+    <li><span class="idx">1</span><span><b>首页只保留一行快捷胶囊</b>：把高频选项（关系 + 类型按实际数据出现）混编成一排横向滚动，点即筛、直觉操作，不需要理解「维度」概念；行尾「⋯ 更多筛选」进入完整面板。</span></li>
+    <li><span class="idx">2</span><span><b>完整筛选 = 底部弹出面板</b>：面板内按维度分组（关系 / 类型 / 生肖…），组间<b>可叠加</b>（家人 ∩ 生日 ∩ 属虎），组内单选；顶部实时显示当前筛选摘要，可一键清除/重置。</span></li>
+    <li><span class="idx">3</span><span><b>配置驱动、天然可扩展</b>：快捷胶囊与面板各组都由同一份「筛选维度配置列表」生成，新增维度（生肖、月份、自定义标签…）只是<b>配置里加一组</b>，UI 不用改结构、首页不会多出一行。</span></li>
+    <li><span class="idx">4</span><span><b>生肖维度已真实可行</b>：birthday 表已有 birthYear 字段、ZodiacUtils 已能按年份算生肖，<b>无需改数据库、无需迁移</b>——面板加一组「按 birthYear 派生生肖」即完成。演示中「属狗 / 属兔 / 属鸡 / 属虎」即由此生成。</span></li>
+    <li><span class="idx">5</span><span><b>未来真正需要加字段的场景</b>（如自定义标签/分组）：数据层做迁移，但 UI 层同样只是面板加一组配置——扩展成本被隔离在配置之后，首页布局永远只有一行。</span></li>
+    <li><span class="idx">6</span><span><b>状态同步</b>：快捷胶囊与面板共享同一份筛选状态，面板确认后首页出现「已筛选」摘要胶囊；点快捷胶囊 = 单维快速切换（清掉其他维度），点「全部」/「清除」恢复。</span></li>
+    <li><span class="idx">7</span><span><b>与 v2 其余部分的关系</b>：Hero 卡、紧凑卡片、底部双 tab、日历独立页、FAB 全部保持已确认的 v2 方案不变，本次只替换分类区。</span></li>
+    <li><span class="idx">8</span><span class="ok">✓ 实现层面（Kotlin）：HomeViewModel 增加 dims 状态（rel/type/zodiac 等 Map），HomeFilter 改为配置驱动的匹配函数；面板 = ModalBottomSheet；快捷行 = LazyRow。数据模型不动，测试适配。</span></li>
+  </ul>
+</div>
+
+<script>
+  const now = new Date();
+  const week = ['周日','周一','周二','周三','周四','周五','周六'][now.getDay()];
+  const dateStr = (now.getMonth()+1) + '月' + now.getDate() + '日 ' + week;
+  if (document.getElementById('dateL')) document.getElementById('dateL').textContent = dateStr;
+  if (document.getElementById('dateD')) document.getElementById('dateD').textContent = dateStr;
+
+  // 每台手机独立的筛选状态
+  const state = {
+    L: { rel: null, type: null, zodiac: null, quick: 'all' },
+    D: { rel: null, type: null, zodiac: null, quick: 'all' }
+  };
+
+  const ZODIAC_LABEL = { rat:'鼠', ox:'牛', tiger:'虎', rabbit:'兔', dragon:'龙', snake:'蛇',
+                         horse:'马', goat:'羊', monkey:'猴', rooster:'鸡', dog:'狗', pig:'猪' };
+  // 快捷胶囊 → (维度, 值)
+  const QUICK_MAP = {
+    all: null,
+    family: ['rel','family'], friend: ['rel','friend'], colleague: ['rel','colleague'],
+    birthday: ['type','birthday'], love: ['type','love'], memorial: ['type','memorial']
+  };
+
+  // 根据状态过滤某台手机的卡片
+  function applyToCards(key) {
+    const s = state[key];
+    const cards = document.querySelectorAll('#cards' + key + ' .card');
+    let visible = 0;
+    cards.forEach(c => {
+      let ok = true;
+      if (s.rel && c.dataset.rel !== s.rel) ok = false;
+      if (ok && s.type && c.dataset.type !== s.type) ok = false;
+      if (ok && s.zodiac && c.dataset.zodiac !== s.zodiac) ok = false;
+      c.classList.toggle('hidden', !ok);
+      if (ok) visible++;
+    });
+    const title = document.getElementById('listTitle' + key);
+    title.textContent = (s.quick !== 'all' || s.rel || s.type || s.zodiac) ? '筛选结果' : '即将到来';
+    document.getElementById('listCount' + key).textContent = '共 ' + visible + ' 个日子';
+    return visible;
+  }
+
+  // 快捷胶囊高亮
+  function refreshQuickChips(key) {
+    const s = state[key];
+    const chips = document.querySelectorAll('#filterRow' + key + ' .chip[data-key]');
+    chips.forEach(ch => {
+      const k = ch.dataset.key;
+      const isQuickOn = s.quick === k && !(s.rel || s.type || s.zodiac);
+      ch.classList.toggle('on', isQuickOn);
+      // 面板筛选生效时，「全部」不亮，显示摘要
+    });
+    // 摘要胶囊（面板叠加筛选生效时显示）
+    const parts = [];
+    if (s.rel) parts.push(REL_LABEL[s.rel]);
+    if (s.type) parts.push(TYPE_LABEL[s.type]);
+    if (s.zodiac) parts.push(ZODIAC_LABEL[s.zodiac]);
+    const summary = document.querySelector('#filterRow' + key + ' .chip.summary');
+    if (parts.length) {
+      if (!summary) {
+        const el = document.createElement('div');
+        el.className = 'chip summary';
+        el.onclick = () => openSheet(key);
+        document.getElementById('filterRow' + key).appendChild(el);
+        el.textContent = '已筛选 · ' + parts.join(' · ');
+      } else {
+        summary.textContent = '已筛选 · ' + parts.join(' · ');
+      }
+    } else if (summary) {
+      summary.remove();
+    }
+  }
+
+  const REL_LABEL = { family:'家人', friend:'朋友', colleague:'同事', other:'其他' };
+  const TYPE_LABEL = { birthday:'生日', love:'情侣纪念', memorial:'缅怀', other:'其他' };
+
+  // 快捷单维筛选
+  function quickFilter(key, k) {
+    const s = state[key];
+    const map = QUICK_MAP[k];
+    s.rel = s.type = s.zodiac = null;
+    s.quick = k;
+    if (map) {
+      if (map[0] === 'rel') s.rel = map[1];
+      else s.type = map[1];
+    }
+    refreshQuickChips(key);
+    applyToCards(key);
+    syncSheetOptions(key);
+  }
+
+  // 打开面板：同步选项状态
+  function openSheet(key) {
+    const s = state[key];
+    document.getElementById('sheet' + key).classList.add('show');
+    document.getElementById('mask' + key).classList.add('show');
+    syncSheetOptions(key);
+  }
+  function closeSheet(key) {
+    document.getElementById('sheet' + key).classList.remove('show');
+    document.getElementById('mask' + key).classList.remove('show');
+  }
+
+  // 面板选项与当前状态同步高亮
+  function syncSheetOptions(key) {
+    const s = state[key];
+    const sheet = document.getElementById('sheet' + key);
+    sheet.querySelectorAll('.grp-opts').forEach(g => {
+      const grp = g.dataset.grp;
+      g.querySelectorAll('.opt').forEach(o => {
+        o.classList.toggle('on', s[grp] === o.dataset.val);
+      });
+    });
+    // 摘要区
+    const parts = [];
+    if (s.rel) parts.push(REL_LABEL[s.rel]);
+    if (s.type) parts.push(TYPE_LABEL[s.type]);
+    if (s.zodiac) parts.push(ZODIAC_LABEL[s.zodiac]);
+    const chip = document.getElementById('afChip' + key);
+    const clear = document.getElementById('afClear' + key);
+    const empty = document.getElementById('afEmpty' + key);
+    if (parts.length) {
+      chip.style.display = '';
+      chip.textContent = parts.join(' · ');
+      clear.style.display = '';
+      empty.style.display = 'none';
+    } else {
+      chip.style.display = 'none';
+      clear.style.display = 'none';
+      empty.style.display = '';
+    }
+  }
+
+  // 面板内选值（组内单选，可跨组叠加）
+  function pick(key, grp, val) {
+    const s = state[key];
+    s[grp] = s[grp] === val ? null : val;
+    s.quick = 'all';
+    syncSheetOptions(key);
+    refreshQuickChips(key);
+    applyToCards(key);
+  }
+
+  // 面板「查看结果」：应用当前状态并收起
+  function applySheet(key) {
+    refreshQuickChips(key);
+    applyToCards(key);
+    closeSheet(key);
+  }
+
+  // 清除全部筛选
+  function clearFilters(key) {
+    const s = state[key];
+    s.rel = s.type = s.zodiac = null;
+    s.quick = 'all';
+    refreshQuickChips(key);
+    applyToCards(key);
+    syncSheetOptions(key);
+  }
+</script>
+
+</body>
+</html>
