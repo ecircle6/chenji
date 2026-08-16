@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>辰记 · App 整体风格方案对比</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: #e9e7e2; padding: 36px 20px 80px; }
+  h1 { font-size: 24px; text-align: center; color: #2e2a24; margin-bottom: 6px; }
+  .sub { text-align: center; color: #8a8378; font-size: 13px; margin-bottom: 36px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; }
+
+  .scheme { width: 400px; background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 4px 24px rgba(0,0,0,.07); }
+  .scheme-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .scheme-name { font-size: 17px; font-weight: 800; }
+  .scheme-tag { font-size: 11px; padding: 2px 10px; border-radius: 10px; color: #fff; }
+  .scheme-desc { font-size: 12px; color: #8a8378; margin-bottom: 14px; min-height: 34px; line-height: 1.5; }
+
+  /* 色板 */
+  .palette { display: flex; gap: 8px; margin-bottom: 16px; }
+  .palette .sw { width: 34px; height: 34px; border-radius: 10px; border: 1px solid rgba(0,0,0,.06); position: relative; }
+  .palette .sw::after { content: attr(data-n); position: absolute; bottom: -16px; left: 50%; transform: translateX(-50%); font-size: 8px; color: #999; white-space: nowrap; }
+
+  /* 手机框架 */
+  .phone { width: 330px; height: 640px; border-radius: 30px; overflow: hidden; margin: 20px auto 0; position: relative;
+           box-shadow: 0 18px 40px rgba(0,0,0,.25), inset 0 0 0 2px rgba(0,0,0,.08); display: flex; flex-direction: column; }
+  .statusbar { height: 34px; display: flex; justify-content: space-between; align-items: center; padding: 0 18px; font-size: 11px; font-weight: 600; }
+  .appbar { display: flex; justify-content: space-between; align-items: center; padding: 6px 18px 12px; }
+  .appbar .t { font-size: 21px; font-weight: 800; letter-spacing: 1px; }
+  .appbar .icons { display: flex; gap: 12px; font-size: 15px; }
+  .chips { display: flex; gap: 8px; padding: 0 18px 10px; }
+  .chip { font-size: 11px; padding: 5px 14px; border-radius: 16px; }
+  .cardlist { flex: 1; padding: 4px 14px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+  .card { border-radius: 18px; padding: 13px 15px; position: relative; }
+  .card .row1 { display: flex; align-items: center; gap: 10px; }
+  .card .avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+  .card .name { font-size: 14px; font-weight: 700; flex: 1; }
+  .card .pill { font-size: 9px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .card .info { font-size: 10px; margin-top: 5px; margin-left: 44px; opacity: .75; }
+  .card .row2 { display: flex; align-items: baseline; margin-left: 44px; margin-top: 6px; }
+  .card .count { font-size: 21px; font-weight: 800; }
+  .card .unit { font-size: 10px; opacity: .6; margin-left: 3px; }
+  .card .today-banner { margin-left: 44px; margin-top: 6px; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 3px 10px; display: inline-block; }
+  .fab { position: absolute; right: 18px; bottom: 22px; width: 50px; height: 50px; border-radius: 50%;
+         display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 300;
+         box-shadow: 0 8px 18px rgba(0,0,0,.25); }
+  .notes { margin-top: 14px; font-size: 11px; color: #999; line-height: 1.6; }
+
+  /* ============ 方案 1 · 奶油治愈 ============ */
+  .s1 .scheme-tag { background: #F6A88C; }
+  .s1 .phone { background: #FBF7F2; }
+  .s1 .statusbar, .s1 .appbar { color: #5A4A42; }
+  .s1 .chip { background: #F3E9E0; color: #8A7569; }
+  .s1 .chip.on { background: #F6A88C; color: #fff; }
+  .s1 .card { background: #FFFFFF; box-shadow: 0 4px 12px rgba(180,140,110,.12); }
+  .s1 .card.c1 { background: #FFF3EC; }
+  .s1 .card.c2 { background: #FFFFFF; }
+  .s1 .card.c3 { background: #F2F6F2; }
+  .s1 .avatar { background: #FFE3D5; color: #E8785A; }
+  .s1 .pill { background: #FFE9E0; color: #E8785A; }
+  .s1 .count { color: #E8785A; }
+  .s1 .today-banner { background: #FFE9E0; color: #E8785A; }
+  .s1 .fab { background: #F6A88C; color: #fff; }
+
+  /* ============ 方案 2 · 暗夜极光 ============ */
+  .s2 .scheme-tag { background: #66DDAA; }
+  .s2 .phone { background: linear-gradient(160deg, #101828, #141B2C 55%, #1A2338); }
+  .s2 .statusbar, .s2 .appbar { color: #E8EDF5; }
+  .s2 .chip { background: rgba(255,255,255,.06); color: #9FB0C8; border: 1px solid rgba(255,255,255,.08); }
+  .s2 .chip.on { background: rgba(102,221,170,.18); color: #66DDAA; border-color: rgba(102,221,170,.4); }
+  .s2 .card { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); backdrop-filter: blur(12px); }
+  .s2 .card.c1 { background: rgba(102,221,170,.10); border-color: rgba(102,221,170,.22); }
+  .s2 .card.c2 { background: rgba(255,255,255,.06); }
+  .s2 .card.c3 { background: rgba(255,255,255,.05); }
+  .s2 .avatar { background: rgba(102,221,170,.2); color: #66DDAA; }
+  .s2 .name, .s2 .count { color: #E8EDF5; }
+  .s2 .pill { background: rgba(102,221,170,.15); color: #66DDAA; }
+  .s2 .today-banner { background: rgba(102,221,170,.18); color: #66DDAA; }
+  .s2 .fab { background: linear-gradient(135deg, #66DDAA, #66CCFF); color: #0E1420; }
+
+  /* ============ 方案 3 · Bento 便当 ============ */
+  .s3 .scheme-tag { background: #6C7CF5; }
+  .s3 .phone { background: #F3F4F8; }
+  .s3 .statusbar, .s3 .appbar { color: #2A2D3A; }
+  .s3 .chip { background: #fff; color: #6B7080; border: 1px solid #E4E6EF; }
+  .s3 .chip.on { background: #6C7CF5; color: #fff; border-color: #6C7CF5; }
+  .s3 .card { background: #fff; border-radius: 20px; border: 1px solid #ECEEF5; }
+  .s3 .card.c1 { background: linear-gradient(135deg, #FFF0EC, #FFE4DC); }
+  .s3 .card.c2 { background: linear-gradient(135deg, #E8F4FF, #DDF0FF); }
+  .s3 .card.c3 { background: linear-gradient(135deg, #F0F6FF, #E8F0FF); }
+  .s3 .avatar { background: rgba(255,255,255,.8); color: #E8785A; }
+  .s3 .pill { background: rgba(255,255,255,.85); color: #E8785A; }
+  .s3 .count { color: #2A2D3A; }
+  .s3 .info, .s3 .unit { color: #6B7080; }
+  .s3 .today-banner { background: #FF7A59; color: #fff; }
+  .s3 .fab { background: #6C7CF5; color: #fff; }
+
+  /* ============ 方案 4 · 极简杂志 ============ */
+  .s4 .scheme-tag { background: #111; }
+  .s4 .phone { background: #FFFFFF; }
+  .s4 .statusbar, .s4 .appbar { color: #111; }
+  .s4 .chip { background: transparent; color: #999; border: 1px solid #E5E5E5; border-radius: 4px; }
+  .s4 .chip.on { background: #111; color: #fff; border-color: #111; }
+  .s4 .card { background: #fff; border-radius: 0; border-bottom: 1px solid #EFEFEF; box-shadow: none; padding: 14px 6px; }
+  .s4 .avatar { background: #F5F5F5; color: #111; border-radius: 8px; }
+  .s4 .name { font-size: 16px; letter-spacing: 1px; }
+  .s4 .pill { background: #F5F5F5; color: #555; border-radius: 3px; }
+  .s4 .info { color: #888; }
+  .s4 .count { color: #111; font-size: 24px; }
+  .s4 .unit { color: #999; }
+  .s4 .today-banner { background: #111; color: #fff; border-radius: 3px; }
+  .s4 .fab { background: #111; color: #fff; border-radius: 14px; }
+</style>
+</head>
+<body>
+<h1>辰记 · App 整体风格方案（4 款）</h1>
+<div class="sub">每款含色板 + 首页示意（筛选/置顶/今天生日/倒计时卡片）· 看完告诉我选哪个，或混搭意见</div>
+
+<div class="grid">
+
+  <!-- ============ 方案 1 · 奶油治愈 ============ -->
+  <div class="scheme s1">
+    <div class="scheme-head"><span class="scheme-name">① 奶油治愈</span><span class="scheme-tag">温暖柔和</span></div>
+    <div class="scheme-desc">暖米白底 + 马卡龙蜜桃/薄荷/薰衣草三色循环卡片 + 大圆角 + 轻阴影。治愈系，贴合「记录重要日子」的情感温度。</div>
+    <div class="palette">
+      <div class="sw" style="background:#FBF7F2" data-n="底"></div>
+      <div class="sw" style="background:#F6A88C" data-n="主"></div>
+      <div class="sw" style="background:#E8785A" data-n="深"></div>
+      <div class="sw" style="background:#8FD8C2" data-n="次"></div>
+      <div class="sw" style="background:#B8A6E8" data-n="第三"></div>
+      <div class="sw" style="background:#5A4A42" data-n="字"></div>
+    </div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●</span></div>
+      <div class="appbar"><span class="t">辰记</span><span class="icons">🔍 ⚙</span></div>
+      <div class="chips"><span class="chip on">全部</span><span class="chip">家人</span><span class="chip">朋友</span><span class="chip">同事</span></div>
+      <div class="cardlist">
+        <div class="card c1">
+          <div class="row1"><div class="avatar">小</div><span class="name">小明</span><span class="pill">🎂 今天</span></div>
+          <div class="today-banner">🎉 今天 28 岁生日！</div>
+          <div class="info">8月14日 · 属虎 · 28岁</div>
+        </div>
+        <div class="card c2">
+          <div class="row1"><div class="avatar">爷</div><span class="name">爷爷</span><span class="pill">📌 置顶</span></div>
+          <div class="row2"><span class="count">338</span><span class="unit">天后</span></div>
+          <div class="info">农历六月十五 · 属虎 · 76岁 · ⏰ 08:00</div>
+        </div>
+        <div class="card c3">
+          <div class="row1"><div class="avatar">闰</div><span class="name">小闰</span></div>
+          <div class="row2"><span class="count">198</span><span class="unit">天后</span></div>
+          <div class="info">2月29日 · 属鼠 · 30岁 · ⏰ 08:00</div>
+        </div>
+      </div>
+      <div class="fab">＋</div>
+    </div>
+    <div class="notes">同类：小红书笔记流、Calm、滴答清单。大圆角 + 低饱和 + 无边框卡片，亲和力强，适合全年龄段。</div>
+  </div>
+
+  <!-- ============ 方案 2 · 暗夜极光 ============ -->
+  <div class="scheme s2">
+    <div class="scheme-head"><span class="scheme-name">② 暗夜极光</span><span class="scheme-tag">深色高级</span></div>
+    <div class="scheme-desc">深蓝夜色底 + 青绿极光光感 + 毛玻璃卡片 + 克制的发光强调。与分享卡片风格统一，仪式感强。</div>
+    <div class="palette">
+      <div class="sw" style="background:#101828" data-n="底"></div>
+      <div class="sw" style="background:#1A2338" data-n="卡"></div>
+      <div class="sw" style="background:#66DDAA" data-n="青绿"></div>
+      <div class="sw" style="background:#66CCFF" data-n="蓝"></div>
+      <div class="sw" style="background:#AA88FF" data-n="紫"></div>
+      <div class="sw" style="background:#E8EDF5" data-n="字"></div>
+    </div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●</span></div>
+      <div class="appbar"><span class="t">辰记</span><span class="icons">🔍 ⚙</span></div>
+      <div class="chips"><span class="chip on">全部</span><span class="chip">家人</span><span class="chip">朋友</span><span class="chip">同事</span></div>
+      <div class="cardlist">
+        <div class="card c1">
+          <div class="row1"><div class="avatar">小</div><span class="name">小明</span><span class="pill">🎂 今天</span></div>
+          <div class="today-banner">🎉 今天 28 岁生日！</div>
+          <div class="info">8月14日 · 属虎 · 28岁</div>
+        </div>
+        <div class="card c2">
+          <div class="row1"><div class="avatar">爷</div><span class="name">爷爷</span><span class="pill">📌 置顶</span></div>
+          <div class="row2"><span class="count">338</span><span class="unit">天后</span></div>
+          <div class="info">农历六月十五 · 属虎 · 76岁 · ⏰ 08:00</div>
+        </div>
+        <div class="card c3">
+          <div class="row1"><div class="avatar">闰</div><span class="name">小闰</span></div>
+          <div class="row2"><span class="count">198</span><span class="unit">天后</span></div>
+          <div class="info">2月29日 · 属鼠 · 30岁 · ⏰ 08:00</div>
+        </div>
+      </div>
+      <div class="fab">＋</div>
+    </div>
+    <div class="notes">同类：Spotify、Apple Music 深夜模式、各类「高级感」应用。与已选定的分享卡片（极光毛玻璃）视觉同源。</div>
+  </div>
+
+  <!-- ============ 方案 3 · Bento 便当 ============ -->
+  <div class="scheme s3">
+    <div class="scheme-head"><span class="scheme-name">③ Bento 便当</span><span class="scheme-tag">年轻设计感</span></div>
+    <div class="scheme-desc">浅灰底 + 每张卡片一个独立色块的网格拼贴（生日暖橙/纪念蓝/缅怀灰蓝），像 Apple 发布会的 Bento 布局，年轻有设计感。</div>
+    <div class="palette">
+      <div class="sw" style="background:#F3F4F8" data-n="底"></div>
+      <div class="sw" style="background:#6C7CF5" data-n="主"></div>
+      <div class="sw" style="background:#FF7A59" data-n="生日"></div>
+      <div class="sw" style="background:#4E9FFF" data-n="纪念"></div>
+      <div class="sw" style="background:#5B6B7F" data-n="缅怀"></div>
+      <div class="sw" style="background:#2A2D3A" data-n="字"></div>
+    </div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●</span></div>
+      <div class="appbar"><span class="t">辰记</span><span class="icons">🔍 ⚙</span></div>
+      <div class="chips"><span class="chip on">全部</span><span class="chip">家人</span><span class="chip">朋友</span><span class="chip">同事</span></div>
+      <div class="cardlist">
+        <div class="card c1">
+          <div class="row1"><div class="avatar">小</div><span class="name">小明</span><span class="pill">🎂 今天</span></div>
+          <div class="today-banner">🎉 今天 28 岁生日！</div>
+          <div class="info">8月14日 · 属虎 · 28岁</div>
+        </div>
+        <div class="card c2">
+          <div class="row1"><div class="avatar">爷</div><span class="name">爷爷</span><span class="pill">📌 置顶</span></div>
+          <div class="row2"><span class="count">338</span><span class="unit">天后</span></div>
+          <div class="info">农历六月十五 · 属虎 · 76岁 · ⏰ 08:00</div>
+        </div>
+        <div class="card c3">
+          <div class="row1"><div class="avatar">闰</div><span class="name">小闰</span></div>
+          <div class="row2"><span class="count">198</span><span class="unit">天后</span></div>
+          <div class="info">2月29日 · 属鼠 · 30岁 · ⏰ 08:00</div>
+        </div>
+      </div>
+      <div class="fab">＋</div>
+    </div>
+    <div class="notes">同类：Apple Bento 宣传页、Notion、各类新锐工具 App。类型色块让列表一眼可扫，信息密度高又不乱。</div>
+  </div>
+
+  <!-- ============ 方案 4 · 极简杂志 ============ -->
+  <div class="scheme s4">
+    <div class="scheme-head"><span class="scheme-name">④ 极简杂志</span><span class="scheme-tag">克制高级</span></div>
+    <div class="scheme-desc">纯白底 + 黑色大字 + 细分割线替代卡片 + 无阴影无圆角装饰。Apple / 无印良品式，极致克制。</div>
+    <div class="palette">
+      <div class="sw" style="background:#FFFFFF" data-n="底"></div>
+      <div class="sw" style="background:#111111" data-n="主"></div>
+      <div class="sw" style="background:#555555" data-n="副"></div>
+      <div class="sw" style="background:#EFEFEF" data-n="线"></div>
+      <div class="sw" style="background:#E8785A" data-n="强调"></div>
+      <div class="sw" style="background:#5B6B7F" data-n="缅怀"></div>
+    </div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●</span></div>
+      <div class="appbar"><span class="t">辰记</span><span class="icons">🔍 ⚙</span></div>
+      <div class="chips"><span class="chip on">全部</span><span class="chip">家人</span><span class="chip">朋友</span><span class="chip">同事</span></div>
+      <div class="cardlist">
+        <div class="card c1">
+          <div class="row1"><div class="avatar">小</div><span class="name">小明</span><span class="pill">今天</span></div>
+          <div class="today-banner">今天 28 岁生日</div>
+          <div class="info">8月14日 · 属虎 · 28岁</div>
+        </div>
+        <div class="card c2">
+          <div class="row1"><div class="avatar">爷</div><span class="name">爷爷</span><span class="pill">置顶</span></div>
+          <div class="row2"><span class="count">338</span><span class="unit">天后</span></div>
+          <div class="info">农历六月十五 · 属虎 · 76岁 · 08:00</div>
+        </div>
+        <div class="card c3">
+          <div class="row1"><div class="avatar">闰</div><span class="name">小闰</span></div>
+          <div class="row2"><span class="count">198</span><span class="unit">天后</span></div>
+          <div class="info">2月29日 · 属鼠 · 30岁 · 08:00</div>
+        </div>
+      </div>
+      <div class="fab">＋</div>
+    </div>
+    <div class="notes">同类：Apple 官网、无印良品、各类艺术杂志 App。信息层次靠字号与留白，最不容易过时，但需要精致排版功底。</div>
+  </div>
+</div>
+</body>
+</html>
