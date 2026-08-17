@@ -293,7 +293,7 @@ private fun previewCalendarBirthdays(): List<Birthday> = listOf(
     )
 )
 
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true, locale = "zh-rCN", name = "月历 · 浅色")
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, locale = "zh-rCN", name = "日历 · 浅色")
 @androidx.compose.runtime.Composable
 private fun CalendarScreenPreview() {
     BirthAppTheme {
@@ -305,7 +305,7 @@ private fun CalendarScreenPreview() {
     showBackground = true,
     locale = "zh-rCN",
     uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES,
-    name = "月历 · 深色"
+    name = "日历 · 深色"
 )
 @androidx.compose.runtime.Composable
 private fun CalendarScreenPreviewDark() {

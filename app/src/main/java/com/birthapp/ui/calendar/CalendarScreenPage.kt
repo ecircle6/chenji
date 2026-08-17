@@ -44,13 +44,8 @@ fun CalendarScreenPage(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        "月历",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp
-                    )
-                },
+                // 页内已有「YYYY年M月」大标题（含农历），顶部标题栏不再重复放标题
+                title = {},
                 actions = {
                     IconButton(onClick = onSettingsClick) {
                         Icon(Icons.Default.Settings, contentDescription = "设置")
