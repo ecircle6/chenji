@@ -4,6 +4,8 @@ import com.birthapp.data.Birthday
 import com.birthapp.data.EventType
 import com.birthapp.ui.detail.DetailUiState
 import com.birthapp.ui.home.BirthdayDisplay
+import com.birthapp.util.EventCalc
+import java.time.LocalDate
 
 /**
  * 各页面 @Preview 与 UI 测试共用的样例数据。
@@ -37,8 +39,14 @@ object PreviewData {
         pinned = pinned
     )
 
-    fun display(b: Birthday, countdown: Int = 100, isToday: Boolean = false, isPaused: Boolean = false) =
-        BirthdayDisplay(
+    fun display(b: Birthday, countdown: Int = 100, isToday: Boolean = false, isPaused: Boolean = false): BirthdayDisplay {
+        val today = LocalDate.now()
+        val nextDate = EventCalc.nextSolarDate(b, today)
+        val displayEmoji = b.emoji.ifBlank {
+            if (b.eventType == EventType.BIRTHDAY) b.name.first().toString()
+            else EventType.emoji(b.eventType)
+        }
+        return BirthdayDisplay(
             birthday = b,
             countdown = countdown,
             age = 27,
@@ -64,8 +72,12 @@ object PreviewData {
             typeEmoji = EventType.emoji(b.eventType),
             isSolemn = EventType.isSolemn(b.eventType),
             infoLine = "生日 · 农历七月十五",
-            todayBanner = ""
+            todayBanner = "",
+            displayEmoji = displayEmoji,
+            nextEventYear = nextDate.year,
+            nextEventMonth = nextDate.month
         )
+    }
 
     /** 首页列表样例：置顶生日 + 情侣纪念 + 缅怀各一条（id 必须不同，LazyColumn key 用） */
     fun birthdays(): List<BirthdayDisplay> = listOf(

@@ -29,6 +29,9 @@ data class Birthday(
     val isActive: Boolean = true,
     // v3 新增：置顶记录固定在首页列表顶部（暂停的置顶记录仍置顶，只是灰显）
     val pinned: Boolean = false,
+    // v4 新增：每条记录的专属 Emoji 头像（空=自动：生日→姓名首字，其他→类型 emoji）
+    @ColumnInfo(defaultValue = "")
+    val emoji: String = "",
     val nextReminderDate: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()

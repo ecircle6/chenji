@@ -93,7 +93,8 @@ class BirthWidget : GlanceAppWidget() {
             filtered.map {
                 WidgetItem(
                     name = it.name,
-                    emoji = EventType.emoji(it.eventType),
+                    // v4: 优先展示记录的专属 Emoji，空值时退回类型 Emoji
+                    emoji = it.emoji.ifBlank { EventType.emoji(it.eventType) },
                     countdown = EventCalc.countdown(it),
                     isSolemn = EventType.isSolemn(it.eventType)
                 )

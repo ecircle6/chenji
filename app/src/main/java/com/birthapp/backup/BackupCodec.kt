@@ -27,9 +27,10 @@ object BackupCodec {
     /**
      * 格式版本。字段增删时 +1，decode 里按版本做兼容：
      * v1 的 advanceDays 是单个整数；v2 起是多级数组 + pinned；
-     * v3 起附带 settings（主题设置）
+     * v3 起附带 settings（主题设置）；
+     * v4 起含 emoji（每条记录的专属 Emoji 头像）
      */
-    const val FORMAT_VERSION = 3
+    const val FORMAT_VERSION = 4
 
     /** 门牌标记，认文件用，跟包名保持一致 */
     private const val APP_MARK = "com.birthapp"
@@ -55,6 +56,7 @@ object BackupCodec {
                 put("notes", b.notes)
                 put("isActive", b.isActive)
                 put("pinned", b.pinned)
+                put("emoji", b.emoji)
             })
         }
         val root = JSONObject().apply {
@@ -126,7 +128,8 @@ object BackupCodec {
                     eventType = o.optString("eventType").ifEmpty { EventType.BIRTHDAY },
                     notes = o.optString("notes"),
                     isActive = o.optBoolean("isActive", true),
-                    pinned = o.optBoolean("pinned", false)
+                    pinned = o.optBoolean("pinned", false),
+                    emoji = o.optString("emoji")
                 )
             )
         }

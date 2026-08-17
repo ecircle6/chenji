@@ -211,7 +211,7 @@
   - 验证：`./gradlew testDebugUnitTest` 全绿 + `assembleDebug` 通过；`bash tools/verify-on-emulator.sh` 模拟器实测清单：底部 tab 切换（含切走再切回状态保持）、日历页全量记录（含暂停）、Hero 卡点击进详情、面板叠加筛选（家人∩生日∩属虎）、生肖筛选、快捷胶囊单维切换、列表底卡片不被 FAB 遮挡、深色模式、搜索/空态回归
   - 不做：详情页/添加页/设置页、HomeViewModel 排序与搜索核心语义、滑动删除、数据模型（生肖零迁移）、备份、小组件全部不动
 
-- [ ] **首页卡片体系按 time_memory_home.html 重构：类型配色 + 三层卡片 + 专属 Emoji 头像 + 月份分组/远景折叠**（2026-08-17 规划，待实现）
+- [x] **首页卡片体系按 time_memory_home.html 重构：类型配色 + 三层卡片 + 专属 Emoji 头像 + 月份分组/远景折叠**（2026-08-17 完成）
   - 背景：用户反馈——①生日与情侣纪念同色（都是橙红）②同一类型只有一种颜色，生日居多导致首页一片同色单调。已确认按根目录 `time_memory_home.html` 设计稿方向重构（定稿：生日暖橙/纪念紫/缅怀灰蓝；紧急卡进度条「已过去 X 天」；专属 Emoji 头像；月份分组+远景迷你行）
   - **设计决策（与现状的关系）**：Hero 卡保留在顶部；置顶记录→标准卡置顶显示；暂停记录→灰显标准卡沉底；搜索态保持普通卡片列表不分层（聚焦结果）；筛选态照常分层；`SwipeToDeleteBox` 滑删对三层均保留；分享卡是定稿规范不动
   - **改动一：类型固定配色（修「生日/情侣同色」）**——`ui/common/EventTypeStyle.kt` 的 `eventAccent()`：生日保持 `Coral500`（品牌主色、最常见类型）；`LOVE → Violet500`（与 Hero 情侣渐变 HeroLove、MARRIAGE 的紫一致）；缅怀 `SlateInk`、其他 `SunnyYellow700` 不变；`eventBannerColors()` LOVE 分支同步改 violet 系（今天横幅与色条同色）。类型选择器/详情页共用该函数自动跟随

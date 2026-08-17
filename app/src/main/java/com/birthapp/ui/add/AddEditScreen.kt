@@ -55,6 +55,7 @@ fun AddEditScreen(
         onBack = onBack,
         onUpdateEventType = { viewModel.updateEventType(it) },
         onUpdateName = { viewModel.updateName(it) },
+        onUpdateEmoji = { viewModel.updateEmoji(it) },
         onUpdateCalendarType = { viewModel.updateCalendarType(it) },
         onUpdateBirthYear = { viewModel.updateBirthYear(it) },
         onUpdateBirthMonth = { viewModel.updateBirthMonth(it) },
@@ -79,6 +80,7 @@ fun AddEditContent(
     onBack: () -> Unit,
     onUpdateEventType: (String) -> Unit,
     onUpdateName: (String) -> Unit,
+    onUpdateEmoji: (String) -> Unit,
     onUpdateCalendarType: (String) -> Unit,
     onUpdateBirthYear: (Int) -> Unit,
     onUpdateBirthMonth: (Int) -> Unit,
@@ -187,6 +189,28 @@ fun AddEditContent(
                     focusedLabelColor = Coral500
                 )
             )
+
+            // Emoji 头像选择器：空 = 自动（生日→姓名首字，其他→类型 emoji）
+            SectionLabel("头像 Emoji（可选，留空自动）")
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // 「自动」chip（清除手动选择）
+                EmojiChip(
+                    emoji = "🏷️ 自动",
+                    isSelected = state.emoji.isEmpty(),
+                    onClick = { onUpdateEmoji("") }
+                )
+                EMOJI_OPTIONS.forEach { emoji ->
+                    EmojiChip(
+                        emoji = emoji,
+                        isSelected = state.emoji == emoji,
+                        onClick = { onUpdateEmoji(emoji) }
+                    )
+                }
+            }
 
             // Calendar type toggle
             val isBirthdayLike = EventType.usesAge(state.eventType)
@@ -606,6 +630,44 @@ private fun SectionLabel(text: String) {
     )
 }
 
+// ==================== Emoji Chip ====================
+
+/** 预设 Emoji 头像选项：人/家人/朋友/宠物/物品/符号 */
+private val EMOJI_OPTIONS = listOf(
+    "\uD83D\uDC67", "\uD83D\uDC68", "\uD83D\uDC69",  // 👧👨👩
+    "\uD83D\uDC74", "\uD83D\uDC75", "\uD83D\uDC66",  // 👴👵👦
+    "\uD83D\uDC67", "\uD83D\uDC76",                   // 👧👶
+    "\uD83E\uDDD1", "\uD83D\uDC6D", "\uD83D\uDC64",  // 🧑🤝🧑 🤝 👤
+    "\uD83D\uDC31", "\uD83D\uDC36", "\uD83D\uDC39",  // 🐱🐶🐹
+    "\uD83D\uDC8D", "\uD83C\uDF81", "\uD83D\uDC8D",  // 💍🎁💍
+    "\u2764\uFE0F", "\uD83D\uDD6F\uFE0F", "\uD83D\uDCCC" // ❤️🕯️📌
+)
+
+@Composable
+private fun EmojiChip(
+    emoji: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = if (isSelected) Teal500 else MaterialTheme.colorScheme.surface,
+        border = if (isSelected) null
+        else androidx.compose.foundation.BorderStroke(
+            1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+        )
+    ) {
+        Text(
+            text = emoji,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            fontSize = 16.sp,
+            color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+            else MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
 // ==================== Solar Date Picker Section ====================
 
 @Composable
@@ -873,7 +935,7 @@ private fun AddEditContentPreview() {
     BirthAppTheme {
         AddEditContent(
             state = AddEditUiState(name = "小明", reminderHour = 8, reminderMinute = 30),
-            onBack = {}, onUpdateEventType = {}, onUpdateName = {}, onUpdateCalendarType = {},
+            onBack = {}, onUpdateEventType = {}, onUpdateName = {}, onUpdateEmoji = {}, onUpdateCalendarType = {},
             onUpdateBirthYear = {}, onUpdateBirthMonth = {}, onUpdateBirthDay = {},
             onUpdateLeapMonth = {}, onToggleAdvanceDay = {}, onAddCustomAdvanceDay = {},
             onRemoveAdvanceDay = {}, onUpdateReminderTime = { _, _ -> },
@@ -892,7 +954,7 @@ private fun AddEditContentPreviewDark() {
                 calendarType = "lunar", birthYear = 1945, birthMonth = 7, birthDay = 15,
                 advanceDays = listOf(0, 3), isEditMode = true
             ),
-            onBack = {}, onUpdateEventType = {}, onUpdateName = {}, onUpdateCalendarType = {},
+            onBack = {}, onUpdateEventType = {}, onUpdateName = {}, onUpdateEmoji = {}, onUpdateCalendarType = {},
             onUpdateBirthYear = {}, onUpdateBirthMonth = {}, onUpdateBirthDay = {},
             onUpdateLeapMonth = {}, onToggleAdvanceDay = {}, onAddCustomAdvanceDay = {},
             onRemoveAdvanceDay = {}, onUpdateReminderTime = { _, _ -> },

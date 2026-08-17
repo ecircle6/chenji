@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.birthapp.data.EventType
 import com.birthapp.ui.theme.BirthAppTheme
 import org.junit.Assert.assertEquals
@@ -45,6 +46,7 @@ class AddEditScreenTest {
                     onBack = {},
                     onUpdateEventType = onUpdateEventType,
                     onUpdateName = onUpdateName,
+                    onUpdateEmoji = {},
                     onUpdateCalendarType = onUpdateCalendarType,
                     onUpdateBirthYear = {},
                     onUpdateBirthMonth = {},
@@ -89,7 +91,8 @@ class AddEditScreenTest {
     fun `提前提醒_点击预设chip触发回调`() {
         var day: Int? = null
         render(onToggleAdvanceDay = { day = it })
-        compose.onNodeWithText("3天").performClick()
+        // Emoji 区块导致表单变长，"3天" 可能需要滚动才能可见
+        compose.onNodeWithText("3天").performScrollTo().performClick()
         assertEquals(3, day)
     }
 

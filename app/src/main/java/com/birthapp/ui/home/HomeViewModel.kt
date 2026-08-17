@@ -42,7 +42,12 @@ data class BirthdayDisplay(
     val typeEmoji: String,
     val isSolemn: Boolean,
     val infoLine: String,
-    val todayBanner: String
+    val todayBanner: String,
+    // v4 新增：展示用 Emoji（空字符串时自动：生日→姓名首字，其他→类型 emoji）
+    val displayEmoji: String,
+    // 下一次事件的阳历（年,月）：远景分层按月分组用
+    val nextEventYear: Int,
+    val nextEventMonth: Int
 )
 
 class HomeViewModel @JvmOverloads constructor(
@@ -175,6 +180,9 @@ class HomeViewModel @JvmOverloads constructor(
             "${birthMonth}月${birthDay}日"
         }
 
+        // 下一次事件的阳历日期：远景行月份分组用（只算一次）
+        val nextDate = EventCalc.nextSolarDate(this, today)
+
         return BirthdayDisplay(
             birthday = this,
             countdown = countdown,
@@ -198,7 +206,14 @@ class HomeViewModel @JvmOverloads constructor(
                 zodiac = zodiac,
                 age = age
             ),
-            todayBanner = EventTextUtils.cardBanner(eventType, name, age)
+            todayBanner = EventTextUtils.cardBanner(eventType, name, age),
+            // v4 新增字段
+            displayEmoji = emoji.ifBlank {
+                if (eventType == EventType.BIRTHDAY) name.first().toString()
+                else EventType.emoji(eventType)
+            },
+            nextEventYear = nextDate.year,
+            nextEventMonth = nextDate.month
         )
     }
 }

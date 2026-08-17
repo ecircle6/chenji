@@ -42,7 +42,7 @@ class MigrationTest {
         }
 
         val roomDb = Room.databaseBuilder(context, AppDatabase::class.java, "migration-v1.db")
-            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4)
             .build()
 
         roomDb.openHelper.writableDatabase.query("SELECT * FROM birthdays").use { cursor ->
@@ -57,6 +57,8 @@ class MigrationTest {
             assertEquals("3", cursor.getString(cursor.getColumnIndexOrThrow("advanceDays")))
             // v3 新增置顶列默认 0
             assertEquals(0, cursor.getInt(cursor.getColumnIndexOrThrow("pinned")))
+            // v4 新增 emoji 列默认空字符串（自动头像）
+            assertEquals("", cursor.getString(cursor.getColumnIndexOrThrow("emoji")))
         }
         roomDb.close()
     }
@@ -74,7 +76,7 @@ class MigrationTest {
         }
 
         val roomDb = Room.databaseBuilder(context, AppDatabase::class.java, "migration-v2.db")
-            .addMigrations(AppDatabase.MIGRATION_2_3)
+            .addMigrations(AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4)
             .build()
 
         roomDb.openHelper.writableDatabase.query("SELECT * FROM birthdays").use { cursor ->
@@ -85,6 +87,8 @@ class MigrationTest {
             // 旧单值 3 原样转成 TEXT "3"（多级列表 [3] 的存储形态）
             assertEquals("3", cursor.getString(cursor.getColumnIndexOrThrow("advanceDays")))
             assertEquals(0, cursor.getInt(cursor.getColumnIndexOrThrow("pinned")))
+            // v4 新增 emoji 列默认空字符串
+            assertEquals("", cursor.getString(cursor.getColumnIndexOrThrow("emoji")))
         }
         roomDb.close()
     }
@@ -93,7 +97,7 @@ class MigrationTest {
     fun v1空库迁移到v3_表结构校验通过() {
         createDatabase("migration-empty.db", 1)
         val roomDb = Room.databaseBuilder(context, AppDatabase::class.java, "migration-empty.db")
-            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4)
             .build()
         roomDb.openHelper.writableDatabase.query("SELECT COUNT(*) FROM birthdays").use { cursor ->
             assertTrue(cursor.moveToFirst())

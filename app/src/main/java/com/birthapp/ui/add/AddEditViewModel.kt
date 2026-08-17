@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 data class AddEditUiState(
     val id: Long = 0,
     val name: String = "",
+    val emoji: String = "",          // 专属 Emoji 头像（空=自动）
     val birthYear: Int = 2000,
     val birthMonth: Int = 1,
     val birthDay: Int = 1,
@@ -65,6 +66,7 @@ class AddEditViewModel @JvmOverloads constructor(
             _uiState.value = AddEditUiState(
                 id = b.id,
                 name = b.name,
+                emoji = b.emoji,
                 birthYear = b.birthYear,
                 birthMonth = b.birthMonth,
                 birthDay = b.birthDay,
@@ -83,6 +85,7 @@ class AddEditViewModel @JvmOverloads constructor(
     }
 
     fun updateName(name: String) { _uiState.value = _uiState.value.copy(name = name.take(MAX_NAME_LENGTH)) }
+    fun updateEmoji(emoji: String) { _uiState.value = _uiState.value.copy(emoji = emoji) }
     fun updateBirthYear(year: Int) { _uiState.value = _uiState.value.copy(birthYear = year) }
     fun updateBirthMonth(month: Int) { _uiState.value = _uiState.value.copy(birthMonth = month) }
     fun updateBirthDay(day: Int) { _uiState.value = _uiState.value.copy(birthDay = day) }
@@ -155,6 +158,7 @@ class AddEditViewModel @JvmOverloads constructor(
             val birthday = Birthday(
                 id = state.id,
                 name = state.name.trim(),
+                emoji = state.emoji,
                 birthYear = state.birthYear,
                 birthMonth = state.birthMonth,
                 birthDay = state.birthDay,

@@ -36,12 +36,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.birthapp.data.Birthday
 import com.birthapp.data.EventType
 import com.birthapp.ui.common.BirthdayCard
+import com.birthapp.ui.common.DistantRow
 import com.birthapp.ui.common.EmptyBirthdayList
 import com.birthapp.ui.common.EmptySearchResult
 import com.birthapp.ui.common.SwipeToDeleteBox
+import com.birthapp.ui.common.UrgentCard
 import com.birthapp.ui.preview.previewBirthdays
 import com.birthapp.ui.theme.BirthAppTheme
 import com.birthapp.ui.theme.Coral500
+import com.birthapp.ui.theme.LocalDarkTheme
 import com.birthapp.ui.theme.LocalDarkTheme
 import com.birthapp.util.Greeting
 import java.time.LocalDate
@@ -276,6 +279,9 @@ fun HomeContent(
                     EmptyBirthdayList(onAddClick = onAddClick)
                 }
             } else {
+                // 搜索态：普通卡片列表（不分层）；非搜索态：三层化（紧急/标准/远景）
+                val items: List<HomeListItem>? =
+                    if (isSearching) null else HomeTier.buildRows(birthdays)
                 LazyColumn(
                     state = listState,
                     modifier = Modifier
@@ -289,18 +295,60 @@ fun HomeContent(
                             HeroCard(birthdays = birthdays, onItemClick = onItemClick)
                         }
                     }
-                    itemsIndexed(birthdays, key = { _, item -> item.birthday.id }) { index, display ->
-                        SwipeToDeleteBox(
-                            // 系统 SwipeToDismissBox 的水平手势会跟列表滚动抢触摸，下滑常被误判成左滑；
-                            // 自绘容器做了方向锁定：横向占优才启动左滑，且滑过半屏才弹删除确认
-                            onDelete = { deleteTargetId = display.birthday.id }
-                        ) {
-                            BirthdayCard(
-                                display = display,
-                                index = index,
-                                onClick = { onItemClick(display.birthday.id) },
-                                darkTheme = isDark
-                            )
+
+                    if (items != null) {
+                        // 分层渲染：MonthHeader / UrgentCard / BirthdayCard(标准) / DistantRow
+                        items(items.size, key = { idx ->
+                            when (val li = items[idx]) {
+                                is HomeListItem.MonthHeader -> "header-${li.label}"
+                                is HomeListItem.Card -> li.display.birthday.id
+                            }
+                        }) { idx ->
+                            when (val li = items[idx]) {
+                                is HomeListItem.MonthHeader ->
+                                    MonthHeaderRow(label = li.label)
+
+                                is HomeListItem.Card ->
+                                    SwipeToDeleteBox(
+                                        onDelete = { deleteTargetId = li.display.birthday.id }
+                                    ) {
+                                        when (li.tier) {
+                                            CardTier.URGENT ->
+                                                UrgentCard(
+                                                    display = li.display,
+                                                    onClick = { onItemClick(li.display.birthday.id) }
+                                                )
+
+                                            CardTier.NORMAL ->
+                                                BirthdayCard(
+                                                    display = li.display,
+                                                    index = idx,
+                                                    onClick = { onItemClick(li.display.birthday.id) },
+                                                    darkTheme = isDark
+                                                )
+
+                                            CardTier.DISTANT ->
+                                                DistantRow(
+                                                    display = li.display,
+                                                    onClick = { onItemClick(li.display.birthday.id) }
+                                                )
+                                        }
+                                    }
+                            }
+                        }
+                    } else {
+                        // 搜索态：普通列表（不分层）
+                        itemsIndexed(birthdays, key = { _, item -> item.birthday.id }) { index, display ->
+                            SwipeToDeleteBox(
+                                onDelete = { deleteTargetId = display.birthday.id }
+                            ) {
+                                BirthdayCard(
+                                    display = display,
+                                    index = index,
+                                    onClick = { onItemClick(display.birthday.id) },
+                                    darkTheme = isDark
+                                )
+                            }
                         }
                     }
                 }
@@ -598,6 +646,19 @@ private fun EmptyFilterResult() {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
+}
+
+/** 远景层月份分隔标题：「10 月」或「2027 年」 */
+@Composable
+private fun MonthHeaderRow(label: String) {
+    Text(
+        text = label,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        letterSpacing = 1.sp,
+        modifier = Modifier.padding(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 8.dp)
+    )
 }
 
 @Preview(showBackground = true, locale = "zh-rCN", name = "首页 · 浅色")

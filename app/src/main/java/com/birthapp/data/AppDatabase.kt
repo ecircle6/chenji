@@ -10,7 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 // exportSchema = true：把 schema 版本产物（app/src/test/assets/）纳入版本库，
 // 配合 MigrationTest 迁移测试，schema 变更不再裸奔
-@Database(entities = [Birthday::class], version = 3, exportSchema = true)
+@Database(entities = [Birthday::class], version = 4, exportSchema = true)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -87,13 +87,23 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v3 -> v4：新增 emoji 列（每条记录的专属 Emoji 头像）。
+         * 增量升级，空字符串默认值 = 自动（生日→姓名首字、其他→类型 emoji）。
+         */
+        internal val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE birthdays ADD COLUMN emoji TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "birthapp.db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .build().also { INSTANCE = it }
             }
         }
