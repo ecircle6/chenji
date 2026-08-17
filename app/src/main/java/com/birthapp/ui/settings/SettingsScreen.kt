@@ -441,7 +441,15 @@ fun SettingsContent(
             onDismissRequest = { importPreview = null },
             title = { Text("导入预览（${preview.items.size} 条）", fontWeight = FontWeight.Bold) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(
+                    // 条目多时会撑出屏幕：M3 AlertDialog 内容默认不可滚动，
+                    // 限制高度 + verticalScroll 才能在有限空间内滑到每一条（与版本更新说明对话框同一写法）
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                     if (duplicateCount > 0) {
                         Text(
                             "发现 $duplicateCount 条与现有记录重复，默认跳过",

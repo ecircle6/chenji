@@ -72,14 +72,10 @@ class HomeViewModel @JvmOverloads constructor(
         _birthdays.map { HomeFilter.availableTypes(it) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    init {
-        // 选中的类型被删光时自动回到"全部"：胶囊会随之隐藏，
-        // 不能让列表停在一个看不见、也取消不掉的筛选上
-        viewModelScope.launch {
-            combine(availableTypes, _filter) { types, filter -> filter.type != "all" && filter.type !in types }
-                .collect { stale -> if (stale) _filter.update { it.copy(type = "all") } }
-        }
-    }
+    // 不做「选中类型被删光时自动回退到全部」：面板里点选一个当前没有卡片的类型时，
+    // 这种回退会把刚选中的类型瞬间重置回「全部」，让按钮看起来"点了没反应"。
+    // 类型行行为与关系/生肖保持一致：选中即保持，空列表由「这个筛选下没有记录」
+    // 空态说明，用户随时可用快捷行「全部」胶囊或面板「清除」恢复，无需自动兜底。
 
     val displayBirthdays: StateFlow<List<BirthdayDisplay>> =
         combine(_birthdays, _filter, _searchQuery) { list, filter, query ->

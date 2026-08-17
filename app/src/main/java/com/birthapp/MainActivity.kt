@@ -13,6 +13,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -270,7 +273,14 @@ fun BirthAppNav(
 
     NavHost(
         navController = navController,
-        startDestination = "home"
+        startDestination = "home",
+        // 不配转场时默认是 700ms 淡入淡出：退出动画期间被退出的页面仍在组合里可交互，
+        // 从新建页返回时快速点击会误中「提醒时间」等控件。统一压到 200ms，
+        // 关闭利落，误点窗口从 700ms 缩到 200ms（覆盖 add/detail/settings 全屏页与 tab 切换）
+        enterTransition = { fadeIn(tween(200)) },
+        exitTransition = { fadeOut(tween(200)) },
+        popEnterTransition = { fadeIn(tween(200)) },
+        popExitTransition = { fadeOut(tween(200)) }
     ) {
         // 底部「首页/日历」双 tab：两个 tab 各自 Scaffold 内传 bottomBar，
         // detail/add/edit/settings 不传 → 全屏压栈，返回时不被底栏干扰

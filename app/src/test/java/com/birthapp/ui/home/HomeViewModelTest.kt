@@ -89,11 +89,30 @@ class HomeViewModelTest {
         )
         val vm = HomeViewModel(app, db)
         vm.displayBirthdays.awaitValue({ it.size == 2 }, "列表加载")
-        assertEquals(listOf("birthday", "love"), vm.availableTypes.value)
+        // availableTypes 是 WhileSubscribed 的 stateIn，无人订阅时停在初始值，
+        // 要先订阅等它激活上游（awaitValue 内部会订阅）
+        val types = vm.availableTypes.awaitValue(
+            { it.containsAll(listOf("birthday", "love")) },
+            "类型集合"
+        )
+        assertEquals(listOf("birthday", "love"), types)
 
         vm.quickFilter(FilterDim.TYPE, EventType.LOVE)
         val list = vm.displayBirthdays.awaitValue({ it.size == 1 && it.first().eventType == EventType.LOVE }, "类型筛选")
         assertEquals("情侣纪念", list.first().birthday.name)
+    }
+
+    @Test
+    fun `面板筛选_选中无卡片类型保持选中显示空态`() {
+        insertAll(birthday("小明")) // 库里只有生日类型，没有情侣纪念
+        val vm = HomeViewModel(app, db)
+        vm.displayBirthdays.awaitValue({ it.size == 1 }, "列表加载")
+
+        // 面板点选库里不存在的类型：选中要保持住，不能被自动重置回「全部」
+        vm.updateFilter(FilterDim.TYPE, EventType.LOVE)
+        val list = vm.displayBirthdays.awaitValue({ it.isEmpty() }, "无卡片类型筛选")
+        assertTrue(list.isEmpty())
+        assertEquals(EventType.LOVE, vm.filter.value.type)
     }
 
     @Test
