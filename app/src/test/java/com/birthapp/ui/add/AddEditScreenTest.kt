@@ -34,6 +34,7 @@ class AddEditScreenTest {
         state: AddEditUiState = AddEditUiState(),
         onUpdateEventType: (String) -> Unit = {},
         onUpdateName: (String) -> Unit = {},
+        onUpdateEmoji: (String) -> Unit = {},
         onUpdateCalendarType: (String) -> Unit = {},
         onToggleAdvanceDay: (Int) -> Unit = {},
         onSave: () -> Unit = {},
@@ -46,7 +47,7 @@ class AddEditScreenTest {
                     onBack = {},
                     onUpdateEventType = onUpdateEventType,
                     onUpdateName = onUpdateName,
-                    onUpdateEmoji = {},
+                    onUpdateEmoji = onUpdateEmoji,
                     onUpdateCalendarType = onUpdateCalendarType,
                     onUpdateBirthYear = {},
                     onUpdateBirthMonth = {},
@@ -109,5 +110,44 @@ class AddEditScreenTest {
         render(onUpdateEventType = { type = it })
         compose.onNodeWithText("🕯️ 缅怀").performClick()
         assertEquals(EventType.MEMORIAL, type)
+    }
+
+    // ===================== Emoji 面板 =====================
+
+    @Test
+    fun `Emoji面板_点击选择按钮弹出全量选项`() {
+        render()
+        compose.onNodeWithText("选择 Emoji").performClick()
+        compose.onNodeWithText("选择头像 Emoji").assertIsDisplayed()
+        compose.onNodeWithText("🏷️ 自动").assertIsDisplayed()
+        // 面板里能看到部分选项（如 🐶）
+        compose.onNodeWithText("🐶").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `Emoji面板_点选一个Emoji触发回调`() {
+        var picked: String? = null
+        render(onUpdateEmoji = { picked = it })
+        compose.onNodeWithText("选择 Emoji").performClick()
+        compose.onNodeWithText("🐶").performScrollTo().performClick()
+        assertEquals("🐶", picked)
+    }
+
+    @Test
+    fun `Emoji面板_点自动清空为自动头像`() {
+        var picked: String? = "🐶"
+        render(state = AddEditUiState(name = "小明", emoji = "🐶"), onUpdateEmoji = { picked = it })
+        compose.onNodeWithText("选择 Emoji").performClick()
+        compose.onNodeWithText("🏷️ 自动").performScrollTo().performClick()
+        assertEquals("", picked)
+    }
+
+    @Test
+    fun `Emoji_恢复自动入口与空状态文字`() {
+        // 空 emoji 时显示「自动头像」，点击后回调空字符串
+        var cleared: String? = "x"
+        render(onUpdateEmoji = { cleared = it })
+        compose.onNodeWithText("自动头像").performClick()
+        assertEquals("", cleared)
     }
 }

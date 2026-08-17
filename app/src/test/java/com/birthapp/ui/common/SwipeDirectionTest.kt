@@ -1,6 +1,7 @@
 package com.birthapp.ui.common
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -52,5 +53,38 @@ class SwipeDirectionTest {
     fun `自定义触摸阈值参与判定`() {
         assertEquals(SwipeDirection.Undecided, decide(5f, 5f, slop = 8f))
         assertEquals(SwipeDirection.Horizontal, decide(-10f, 6f, slop = 8f))
+    }
+
+    // ===================== 删除图标显隐（deleteIconAlpha）=====================
+
+    @Test
+    fun `静止时图标完全隐藏_透明远景行不透出`() {
+        // 回归：远景迷你行透明背景，图标必须 opacity 0，否则从左滑容器里露出来
+        assertEquals(0f, deleteIconAlpha(offset = 0f, width = 1000f), 0.001f)
+    }
+
+    @Test
+    fun `宽未量到_一律隐藏_首帧不闪图标`() {
+        assertEquals(0f, deleteIconAlpha(offset = -100f, width = 0f), 0.001f)
+    }
+
+    @Test
+    fun `左滑超过三分之一宽度_图标全显`() {
+        assertEquals(1f, deleteIconAlpha(offset = -340f, width = 1000f), 0.001f)
+        assertEquals(1f, deleteIconAlpha(offset = -1000f, width = 1000f), 0.001f)
+    }
+
+    @Test
+    fun `左滑中途_图标按进度线性淡入`() {
+        // 滑 1/6 宽度 → 淡入到半透明
+        assertEquals(0.5f, deleteIconAlpha(offset = -166.67f, width = 1000f), 0.01f)
+        // 滑 1/10 → 刚起步
+        val a = deleteIconAlpha(offset = -100f, width = 1000f)
+        assertTrue(a in 0.2f..0.4f)
+    }
+
+    @Test
+    fun `右滑或负位移被钳制为不显示`() {
+        assertEquals(0f, deleteIconAlpha(offset = 100f, width = 1000f), 0.001f)
     }
 }

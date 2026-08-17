@@ -64,6 +64,18 @@
   - 配套：补 `HomeTierTest`（分层/进度/跨年分组 key 唯一等 8 用例）与 `HomeScreenTest` 跨年双分组渲染用例；顺带补齐 a26398d 测试计划里遗漏的 `EventTypeStyleTest`（类型配色）、`BackupCodecTest` emoji 编解码、`MigrationTest` v3→v4、`AddEditViewModelTest` emoji 保存/编辑用例，并清理 Emoji 选项重复项（👧/💍）与重复 import
   - 验收：✅ 全量单测 173 用例 / 24 测试类全绿；模拟器注入两条跨年远景记录实测：两个「2027 年」分组头正常渲染、滚动不崩
 
+- [x] **首页远景迷你行透出删除图标**（2026-08-17 用户实测反馈并修复）
+  - 现象：远景迷你行（透明背景）右侧常驻一个红色垃圾桶图标，露在行上很碍眼
+  - 根因：`SwipeToDeleteBox` 底层删除图标常驻、靠卡片不透明白底遮挡（v2.1.7 只对不透明卡片生效）；远景行无底色，图标直接透出
+  - 方案：图标改「静止时 alpha=0、随左滑进度淡入，滑过 1/3 宽即全显」（抽 `deleteIconAlpha` 纯函数 + 5 个单测）；对三层卡片行为统一，静止时均不露图标
+  - 验收：✅ 全量单测 182 用例 / 24 测试类绿；模拟器像素级验证远景行右侧图标位 0 个珊瑚色像素
+
+- [x] **Emoji 头像选择器改底部面板（表单被 24 个图标撑满）**（2026-08-17 用户实测反馈并优化）
+  - 现象：添加/编辑页 25 个 Emoji 方块平铺在表单里，页面被撑得很长、视觉杂乱
+  - 方案：表单只留「当前头像预览 + 自动/恢复自动 + 选择 Emoji 按钮」一行；全量选项收纳进 `ModalBottomSheet`（与筛选项面板同款交互），点选即生效并收起；预览圆片实时按自动规则展示（与首页卡片一致）
+  - 测试：新增 4 个 AddEditScreenTest 用例（弹出/点选回调/清空/恢复自动入口）
+  - 验收：✅ 全量单测 182 用例 / 24 测试类绿；模拟器实测点选 🐶 后面板收起、预览更新、按钮转「恢复自动」
+
 ---
 
 ## P1 — 功能对齐竞品（差异化收益最高）
@@ -230,7 +242,7 @@
     - `Birthday` 加 `emoji: String = ""`（`@ColumnInfo(defaultValue = "")`；空=自动：生日→姓名首字、其他→类型 emoji）
     - 数据库 v3→v4：`ALTER TABLE birthdays ADD COLUMN emoji TEXT NOT NULL DEFAULT ''`；补 `app/src/test/assets/4.json` schema + `MigrationTest` v3→v4 用例
     - 备份 `FORMAT_VERSION 3→4`：`encode` 加 `put("emoji")`，`decode` 加 `optString("emoji")`（老 v3 备份缺字段→默认空）；补编解码测试
-    - 添加/编辑页新增「头像 Emoji」区块：约 28 个预设 Emoji 的 FlowRow（👩👨👵👴👦👧👶🐱🐶💍🎂🎁🌹❤️🕯️等）+「自动」chip 清空，点选高亮（类型色描边）；`AddEditUiState` 加 emoji + `updateEmoji` + `loadBirthday`/`save` 带出带入
+    - 添加/编辑页「头像 Emoji」改**底部面板选择**（用户实测反馈表单被 24 个图标撑满后优化）：表单只有「当前头像预览 + 自动/恢复自动 + 选择 Emoji 按钮」一行，全量 24 个预设进 `ModalBottomSheet` 网格（与筛选项面板同款交互，点选即生效并收起），预览圆片按自动规则实时展示（与首页卡片一致）；约 28 个预设 Emoji 已去重为 24 个，+「自动」chip 清空，点选高亮（类型色描边）
     - 首页三层卡片头像统一取 `emoji.ifBlank { 自动 }`，头像底 = 类型色 10% tint
     - 桌面小组件：`WidgetItem.emoji` 改取 `emoji.ifBlank { EventType.emoji(eventType) }`（一行）
     - 详情页现无头像位不动；分享卡是定稿规范不动

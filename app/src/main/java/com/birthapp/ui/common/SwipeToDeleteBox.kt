@@ -22,6 +22,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.onSizeChanged
@@ -43,6 +44,23 @@ internal fun swipeDirection(totalX: Float, totalY: Float, slop: Float): SwipeDir
     if (abs(totalX) < slop && abs(totalY) < slop) return SwipeDirection.Undecided
     // 两轴相等时按垂直处理，偏保守：宁可滚不动也不能误删
     return if (abs(totalX) > abs(totalY)) SwipeDirection.Horizontal else SwipeDirection.Vertical
+}
+
+/**
+ * 删除图标的显隐进度：静止（offset=0）时完全隐藏，左滑时随位移淡入。
+ *
+ * 不用「图标常驻、靠卡片不透明遮挡」的方案——远景迷你行是透明背景，
+ * 常驻图标会从行里透出来（v2.1.7 只对不透明卡片生效）；
+ * 改成透明度跟随滑动，任何层级的卡片静止时都不露出图标。
+ *
+ * @param offset 卡片当前位移（0=静止，负数=左滑）
+ * @param width  容器宽度；未量到 0 时一律隐藏（首帧不闪一下）
+ * @return 图标 alpha 0..1，滑过 1/3 宽度即全显
+ */
+internal fun deleteIconAlpha(offset: Float, width: Float): Float {
+    if (width <= 0f) return 0f
+    val reveal = (-offset / width).coerceIn(0f, 1f)
+    return (reveal / 0.33f).coerceIn(0f, 1f)
 }
 
 /**
@@ -71,9 +89,8 @@ fun SwipeToDeleteBox(
     val scope = rememberCoroutineScope()
 
     Box(modifier = modifier.onSizeChanged { widthPx = it.width.toFloat() }) {
-        // 底层：右侧删除图标，卡片左滑时露出（视觉与旧 SwipeToDismissBox 保持一致）。
-        // 必须用 matchParentSize 而非 fillMaxSize：列表项是无限高度约束，
-        // fillMaxSize 会塌缩成图标自身高度、贴顶对齐，图标从卡片右上角透出来
+        // 底层：右侧删除图标，随左滑进度淡入。静止时 alpha=0，透明背景的远景行也透不出来；
+        // 视觉与旧 SwipeToDismissBox 一致，但不再依赖卡片不透明来隐藏
         Row(
             modifier = Modifier
                 .matchParentSize()
@@ -81,7 +98,12 @@ fun SwipeToDeleteBox(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Delete, contentDescription = "删除", tint = Coral500)
+            Icon(
+                Icons.Default.Delete,
+                contentDescription = "删除",
+                tint = Coral500,
+                modifier = Modifier.alpha(deleteIconAlpha(offsetPx, widthPx))
+            )
         }
         // 顶层：卡片本体，跟随手指横向移动
         Box(

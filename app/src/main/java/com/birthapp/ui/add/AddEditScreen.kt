@@ -1,7 +1,10 @@
 package com.birthapp.ui.add
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -13,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -99,6 +103,7 @@ fun AddEditContent(
     var showTimePicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showCustomDaysDialog by remember { mutableStateOf(false) }
+    var showEmojiSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -190,25 +195,51 @@ fun AddEditContent(
                 )
             )
 
-            // Emoji 头像选择器：空 = 自动（生日→姓名首字，其他→类型 emoji）
+            // Emoji 头像选择器：表单只留预览 + 两个入口，全量选项放进底部面板，
+            // 避免 24 个方块平铺在表单里显得杂乱；空 = 自动（生日→姓名首字，其他→类型 emoji）
             SectionLabel("头像 Emoji（可选，留空自动）")
-            FlowRow(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // 「自动」chip（清除手动选择）
-                EmojiChip(
-                    emoji = "🏷️ 自动",
-                    isSelected = state.emoji.isEmpty(),
-                    onClick = { onUpdateEmoji("") }
-                )
-                EMOJI_OPTIONS.forEach { emoji ->
-                    EmojiChip(
-                        emoji = emoji,
-                        isSelected = state.emoji == emoji,
-                        onClick = { onUpdateEmoji(emoji) }
+                // 当前头像预览：空时按自动规则实时预览（与首页卡片一致）
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(eventAccent(state.eventType).copy(alpha = 0.10f))
+                        .border(1.dp, eventAccent(state.eventType).copy(alpha = 0.20f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = state.emoji.ifBlank {
+                            if (state.eventType == EventType.BIRTHDAY) {
+                                state.name.firstOrNull()?.toString() ?: "?"
+                            } else EventType.emoji(state.eventType)
+                        },
+                        fontSize = 22.sp
                     )
+                }
+                // 恢复自动
+                TextButton(
+                    onClick = { onUpdateEmoji("") },
+                    contentPadding = PaddingValues(horizontal = 10.dp)
+                ) {
+                    Text(
+                        if (state.emoji.isEmpty()) "自动头像" else "恢复自动",
+                        color = if (state.emoji.isEmpty()) Teal500 else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = if (state.emoji.isEmpty()) FontWeight.Bold else FontWeight.Medium
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                // 打开底部面板选 Emoji
+                Button(
+                    onClick = { showEmojiSheet = true },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Teal500)
+                ) {
+                    Text("选择 Emoji", fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -593,6 +624,55 @@ fun AddEditContent(
             },
             shape = RoundedCornerShape(24.dp)
         )
+    }
+
+    // Emoji 头像底部面板：全量选项收纳于此，点选即生效并收起（与首页筛选面板同款交互）
+    if (showEmojiSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showEmojiSheet = false },
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    "选择头像 Emoji",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                // 「自动」chip（清除手动选择，恢复自动头像）
+                EmojiChip(
+                    emoji = "🏷️ 自动",
+                    isSelected = state.emoji.isEmpty(),
+                    onClick = {
+                        onUpdateEmoji("")
+                        showEmojiSheet = false
+                    }
+                )
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    EMOJI_OPTIONS.forEach { emoji ->
+                        EmojiChip(
+                            emoji = emoji,
+                            isSelected = state.emoji == emoji,
+                            onClick = {
+                                onUpdateEmoji(emoji)
+                                showEmojiSheet = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
     }
 
     // Delete confirmation dialog
