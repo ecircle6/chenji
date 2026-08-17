@@ -14,7 +14,13 @@ enum class CardTier { URGENT, NORMAL, DISTANT }
 
 /** 首页列表的异构行：月份标题或卡片 */
 sealed class HomeListItem {
-    data class MonthHeader(val label: String) : HomeListItem()
+    /**
+     * 月份分组标题。yearMonth 是分组的稳定唯一标识（年×100+月），
+     * label 只是展示文案：跨年时所有月份都显示「YYYY 年」，
+     * 但 LazyColumn 的 key 必须用 yearMonth，否则同一年不同月份的
+     * 两个分组会因 label 相同而 key 碰撞、组合期直接崩溃
+     */
+    data class MonthHeader(val label: String, val yearMonth: Int) : HomeListItem()
     data class Card(val display: BirthdayDisplay, val tier: CardTier) : HomeListItem()
 }
 
@@ -76,7 +82,10 @@ object HomeTier {
             val key = display.nextEventYear * 100 + display.nextEventMonth
             if (key != lastYearMonth) {
                 result.add(
-                    HomeListItem.MonthHeader(monthLabel(display.nextEventYear, display.nextEventMonth, today))
+                    HomeListItem.MonthHeader(
+                        label = monthLabel(display.nextEventYear, display.nextEventMonth, today),
+                        yearMonth = key
+                    )
                 )
                 lastYearMonth = key
             }

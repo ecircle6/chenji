@@ -86,6 +86,40 @@ class AddEditViewModelTest {
     }
 
     @Test
+    fun `保存_专属Emoji头像随记录写入`() {
+        val vm = AddEditViewModel(app, db)
+        vm.updateName("小白")
+        vm.updateBirthMonth(8)
+        vm.updateBirthDay(14)
+        vm.updateEmoji("🐶")
+        vm.save()
+        vm.uiState.awaitValue({ it.saved }, "保存完成")
+
+        val saved = runBlocking { db.birthdayDao().getAllOnce() }.first()
+        assertEquals("🐶", saved.emoji)
+    }
+
+    @Test
+    fun `编辑_清空Emoji回退自动`() {
+        val id = runBlocking {
+            db.birthdayDao().insert(
+                Birthday(
+                    name = "小花",
+                    birthYear = 1999, birthMonth = 5, birthDay = 20,
+                    calendarType = "solar", emoji = "🌹"
+                )
+            )
+        }
+        val vm = AddEditViewModel(app, db)
+        vm.loadBirthday(id)
+        vm.uiState.awaitValue({ it.isEditMode }, "编辑加载")
+        assertEquals("🌹", vm.uiState.value.emoji)
+        // 清空 → 自动头像
+        vm.updateEmoji("")
+        assertEquals("", vm.uiState.value.emoji)
+    }
+
+    @Test
     fun `编辑_加载已有记录进入编辑模式`() {
         val id = runBlocking {
             db.birthdayDao().insert(

@@ -57,6 +57,13 @@
   - 方案：该 Column 加 `Modifier.fillMaxWidth().heightIn(max = 420.dp).verticalScroll(rememberScrollState())`——条目多时在有限高度内滚动，标题与「导入/取消」按钮始终可见；同文件「版本更新说明」对话框（513 行附近）已有 verticalScroll 先例可参照
   - 验收：✅ 模拟器导入 40 条备份实测：预览可逐屏上滑、最末「滚动测试记录40号」可达，标题「导入预览（40 条）」与「导入/取消」按钮全程可见
 
+- [x] **首页远景行跨年月份分组崩溃（LazyColumn 重复 key）**（2026-08-17 审核 a26398d 时发现并修复）
+  - 现象：远期记录（>30 天）落在未来年份的**不同月份**时，首页 LazyColumn 组合期抛 `IllegalArgumentException: Key "header-2027 年" was already used` 直接崩溃。复现：明年 1 月与 12 月各一条远景记录
+  - 根因：`HomeTier.buildRows` 给同一未来年份的不同月份各生成一个分组标题，但 `HomeTier.monthLabel` 跨年一律显示「YYYY 年」→ `HomeScreen` 用分组标题的 label 做 LazyColumn key（`"header-${li.label}"`），不同月份组的 label 相同 → key 碰撞
+  - 方案：`HomeListItem.MonthHeader` 增加稳定唯一标识 `yearMonth`（年×100+月），LazyColumn key 改用 `"header-${li.yearMonth}"`；label 保持「YYYY 年」展示语义不变
+  - 配套：补 `HomeTierTest`（分层/进度/跨年分组 key 唯一等 8 用例）与 `HomeScreenTest` 跨年双分组渲染用例；顺带补齐 a26398d 测试计划里遗漏的 `EventTypeStyleTest`（类型配色）、`BackupCodecTest` emoji 编解码、`MigrationTest` v3→v4、`AddEditViewModelTest` emoji 保存/编辑用例，并清理 Emoji 选项重复项（👧/💍）与重复 import
+  - 验收：✅ 全量单测 173 用例 / 24 测试类全绿；模拟器注入两条跨年远景记录实测：两个「2027 年」分组头正常渲染、滚动不崩
+
 ---
 
 ## P1 — 功能对齐竞品（差异化收益最高）

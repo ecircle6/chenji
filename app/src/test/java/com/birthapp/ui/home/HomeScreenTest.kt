@@ -152,4 +152,25 @@ class HomeScreenTest {
         compose.onNodeWithContentDescription("退出搜索").performClick()
         assertEquals(true, exited)
     }
+
+    @Test
+    fun `远景_跨年两个月份分组_不崩溃且标题可渲染`() {
+        // 复现跨年远景行的分组 key 碰撞场景：明年第 1 月与第 12 月各一条远景记录，
+        // 会生成两个 label 相同的「YYYY 年」分组标题。LazyColumn key 必须唯一，否则组合期崩溃
+        val nextYear = java.time.LocalDate.now().year + 1
+        val list = listOf(
+            com.birthapp.ui.preview.PreviewData.display(
+                com.birthapp.ui.preview.PreviewData.birthday(id = 11, name = "明年一月生日"),
+                countdown = 120
+            ).copy(nextEventYear = nextYear, nextEventMonth = 1),
+            com.birthapp.ui.preview.PreviewData.display(
+                com.birthapp.ui.preview.PreviewData.birthday(id = 12, name = "明年十二月生日"),
+                countdown = 300
+            ).copy(nextEventYear = nextYear, nextEventMonth = 12)
+        )
+        render(birthdays = list)
+        // 两个分组标题应同时渲染（一个在下个月之前，一个更远）
+        compose.onAllNodesWithText("$nextYear 年").assertCountEquals(2)
+        compose.onNodeWithText("明年一月生日").assertIsDisplayed()
+    }
 }

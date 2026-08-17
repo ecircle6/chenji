@@ -31,14 +31,14 @@ class BackupCodecTest {
     @Test
     fun `编码再解码_用户字段原样保留`() {
         val original = listOf(
-            // 覆盖各种边角：农历闰月、缅怀类型、已暂停、自定义提醒时间、多级提醒、置顶和备注
+            // 覆盖各种边角：农历闰月、缅怀类型、已暂停、自定义提醒时间、多级提醒、置顶、专属 Emoji 和备注
             Birthday(
                 name = "王奶奶",
                 birthYear = 1944, birthMonth = 4, birthDay = 12,
                 calendarType = "lunar", isLeapMonth = true,
                 advanceDays = listOf(0, 3), reminderHour = 20, reminderMinute = 30,
                 relation = "family", eventType = EventType.MEMORIAL,
-                notes = "每年回老家", isActive = false, pinned = true,
+                notes = "每年回老家", isActive = false, pinned = true, emoji = "🕯️",
             ),
             sample(name = "李四", eventType = EventType.LOVE),
         )
@@ -62,6 +62,8 @@ class BackupCodecTest {
             assertEquals(a.notes, b.notes)
             assertEquals(a.isActive, b.isActive)
             assertEquals(a.pinned, b.pinned)
+            // v4：专属 Emoji 头像原样往返
+            assertEquals(a.emoji, b.emoji)
             // 运行时状态不进备份：导入方数据库重新分配 id、重算提醒
             assertEquals(0L, b.id)
             assertEquals(null, b.nextReminderDate)
@@ -195,6 +197,27 @@ class BackupCodecTest {
             ]}
         """.trimIndent()
         assertEquals(listOf(0), BackupCodec.decode(empty).single().advanceDays)
+    }
+
+    @Test
+    fun `v3老备份缺emoji字段_解码为自动空字符串`() {
+        // 模拟 v3 时代导出的备份：记录里没有 emoji 键，导入后应回落到空（自动头像）
+        val old = """
+            {"app":"com.birthapp","format":4,"records":[
+              {"name":"丙","birthYear":1992,"birthMonth":3,"birthDay":8,"calendarType":"solar"}
+            ]}
+        """.trimIndent()
+        assertEquals("", BackupCodec.decode(old).single().emoji)
+    }
+
+    @Test
+    fun `v4格式_专属Emoji头像往返保留`() {
+        val original = Birthday(
+            name = "丁", birthYear = 2001, birthMonth = 8, birthDay = 1,
+            calendarType = "solar", emoji = "🐶"
+        )
+        val decoded = BackupCodec.decode(BackupCodec.encode(listOf(original))).single()
+        assertEquals("🐶", decoded.emoji)
     }
 
     // ==================== settings（备份含主题设置，v3）====================

@@ -106,6 +106,35 @@ class MigrationTest {
         roomDb.close()
     }
 
+    @Test
+    fun v3迁移到v4_emoji列默认空字符串_老数据完整() {
+        createDatabase("migration-v3.db", 3) { db ->
+            db.execSQL(
+                "INSERT INTO birthdays (name, birthYear, birthMonth, birthDay, calendarType," +
+                    " isLeapMonth, advanceDays, reminderHour, reminderMinute, relation, eventType," +
+                    " notes, isActive, pinned, nextReminderDate, createdAt, updatedAt)" +
+                    " VALUES ('小红', 2001, 7, 15, 'solar', 0, '0,3', 8, 0, 'friend', 'birthday'," +
+                    " 'v3数据校验', 1, 1, NULL, 1000, 1000)"
+            )
+        }
+
+        val roomDb = Room.databaseBuilder(context, AppDatabase::class.java, "migration-v3.db")
+            .addMigrations(AppDatabase.MIGRATION_3_4)
+            .build()
+
+        roomDb.openHelper.writableDatabase.query("SELECT * FROM birthdays").use { cursor ->
+            assertTrue("迁移后应有 1 条记录", cursor.moveToFirst())
+            assertEquals("小红", cursor.getString(cursor.getColumnIndexOrThrow("name")))
+            assertEquals("v3数据校验", cursor.getString(cursor.getColumnIndexOrThrow("notes")))
+            // v3 的老字段原样保留
+            assertEquals("0,3", cursor.getString(cursor.getColumnIndexOrThrow("advanceDays")))
+            assertEquals(1, cursor.getInt(cursor.getColumnIndexOrThrow("pinned")))
+            // v4 新增 emoji 列默认空字符串（自动头像）
+            assertEquals("", cursor.getString(cursor.getColumnIndexOrThrow("emoji")))
+        }
+        roomDb.close()
+    }
+
     /**
      * 按指定版本 schema JSON 里的建表 SQL 建库（每次全新，避免残留旧库影响校验）
      */

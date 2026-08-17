@@ -632,14 +632,15 @@ private fun SectionLabel(text: String) {
 
 // ==================== Emoji Chip ====================
 
-/** 预设 Emoji 头像选项：人/家人/朋友/宠物/物品/符号 */
+/** 预设 Emoji 头像选项：人/家人/朋友/宠物/物品/符号（每项唯一，供点选不重复） */
 private val EMOJI_OPTIONS = listOf(
-    "\uD83D\uDC67", "\uD83D\uDC68", "\uD83D\uDC69",  // 👧👨👩
-    "\uD83D\uDC74", "\uD83D\uDC75", "\uD83D\uDC66",  // 👴👵👦
-    "\uD83D\uDC67", "\uD83D\uDC76",                   // 👧👶
-    "\uD83E\uDDD1", "\uD83D\uDC6D", "\uD83D\uDC64",  // 🧑🤝🧑 🤝 👤
-    "\uD83D\uDC31", "\uD83D\uDC36", "\uD83D\uDC39",  // 🐱🐶🐹
-    "\uD83D\uDC8D", "\uD83C\uDF81", "\uD83D\uDC8D",  // 💍🎁💍
+    "\uD83D\uDC67", "\uD83D\uDC68", "\uD83D\uDC69",     // 👧👨👩
+    "\uD83D\uDC74", "\uD83D\uDC75", "\uD83D\uDC66",     // 👴👵👦
+    "\uD83D\uDC76", "\uD83E\uDDD2", "\uD83D\uDC78",     // 👶🧒👸
+    "\uD83E\uDDD1\u200D\uD83E\uDD1D\u200D\uD83E\uDDD1", "\uD83E\uDD1D", "\uD83D\uDC64", // 🧑🤝🧑🤝👤
+    "\uD83D\uDC31", "\uD83D\uDC36", "\uD83D\uDC39",     // 🐱🐶🐹
+    "\uD83D\uDC30", "\uD83E\uDD81", "\uD83D\uDC3C",     // 🐰🦁🐼
+    "\uD83D\uDC8D", "\uD83C\uDF81", "\uD83C\uDF39",     // 💍🎁🌹
     "\u2764\uFE0F", "\uD83D\uDD6F\uFE0F", "\uD83D\uDCCC" // ❤️🕯️📌
 )
 

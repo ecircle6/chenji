@@ -45,7 +45,6 @@ import com.birthapp.ui.preview.previewBirthdays
 import com.birthapp.ui.theme.BirthAppTheme
 import com.birthapp.ui.theme.Coral500
 import com.birthapp.ui.theme.LocalDarkTheme
-import com.birthapp.ui.theme.LocalDarkTheme
 import com.birthapp.util.Greeting
 import java.time.LocalDate
 
@@ -300,7 +299,9 @@ fun HomeContent(
                         // 分层渲染：MonthHeader / UrgentCard / BirthdayCard(标准) / DistantRow
                         items(items.size, key = { idx ->
                             when (val li = items[idx]) {
-                                is HomeListItem.MonthHeader -> "header-${li.label}"
+                                // 分组标题必须用 yearMonth 做 key：跨年时多个月份 label 都是「YYYY 年」，
+                                // 用 label 会导致重复 key，LazyColumn 组合期抛异常
+                                is HomeListItem.MonthHeader -> "header-${li.yearMonth}"
                                 is HomeListItem.Card -> li.display.birthday.id
                             }
                         }) { idx ->
