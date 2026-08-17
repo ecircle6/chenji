@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -46,11 +47,27 @@ import com.birthapp.alarm.AlarmScheduler
 import com.birthapp.settings.Changelog
 import com.birthapp.settings.ThemeMode
 import com.birthapp.ui.add.AddEditScreen
+import com.birthapp.ui.calendar.CalendarScreenPage
 import com.birthapp.ui.detail.DetailScreen
 import com.birthapp.ui.home.HomeScreen
+import com.birthapp.ui.navigation.MainNavigationBar
 import com.birthapp.ui.settings.SettingsScreen
 import com.birthapp.ui.theme.BirthAppTheme
 import java.util.Locale
+
+/**
+ * 底部 tab 切换策略：
+ * popUpTo 起始目标并 saveState —— 从「首页」切到「日历」再切回，
+ * 各自列表滚动/搜索状态不丢；launchSingleTop 防止连点重复入栈；
+ * restoreState 恢复之前保存的页面状态
+ */
+private fun androidx.navigation.NavController.navigateToTab(route: String) {
+    navigate(route) {
+        popUpTo(graph.findStartDestination().id) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
 
 class MainActivity : ComponentActivity() {
 
@@ -255,12 +272,33 @@ fun BirthAppNav(
         navController = navController,
         startDestination = "home"
     ) {
+        // 底部「首页/日历」双 tab：两个 tab 各自 Scaffold 内传 bottomBar，
+        // detail/add/edit/settings 不传 → 全屏压栈，返回时不被底栏干扰
         composable("home") {
             HomeScreen(
                 onAddClick = { navController.navigate("add") },
                 // 点卡片先进只读详情页，避免一不小心在表单里改到数据
                 onItemClick = { id -> navController.navigate("detail/$id") },
-                onSettingsClick = { navController.navigate("settings") }
+                onSettingsClick = { navController.navigate("settings") },
+                bottomBar = {
+                    MainNavigationBar(
+                        currentRoute = "home",
+                        onTabSelected = { route -> navController.navigateToTab(route) }
+                    )
+                }
+            )
+        }
+        composable("calendar") {
+            CalendarScreenPage(
+                onAddClick = { navController.navigate("add") },
+                onItemClick = { id -> navController.navigate("detail/$id") },
+                onSettingsClick = { navController.navigate("settings") },
+                bottomBar = {
+                    MainNavigationBar(
+                        currentRoute = "calendar",
+                        onTabSelected = { route -> navController.navigateToTab(route) }
+                    )
+                }
             )
         }
         composable("settings") {

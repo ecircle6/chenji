@@ -15,7 +15,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * 共享组件 Compose UI 测试：BirthdayCard 与两种空态。
+ * 共享组件 Compose UI 测试：BirthdayCard（紧凑布局）与两种空态。
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], qualifiers = "w411dp-h891dp", application = android.app.Application::class)
@@ -26,18 +26,20 @@ class SharedComponentsTest {
     val compose = createComposeRule()
 
     @Test
-    fun `生日卡片_显示名字置顶标记与倒计时`() {
-        // previewBirthdays 第一条是置顶的小明
+    fun `生日卡片_显示名字类型标签日期关系与倒计时`() {
+        // previewBirthdays 第一条是置顶的小明（8月14日·家人，364 天后）
         val display = previewBirthdays()[0]
         compose.setContent {
             BirthAppTheme { BirthdayCard(display = display, index = 0, onClick = {}) }
         }
         compose.onNodeWithText("小明").assertIsDisplayed()
-        // emoji 字形在 Robolectric 下节点尺寸为 0，改用存在性断言；
-        // 「 天后」带前导空格，需 substring 匹配
-        compose.onNodeWithText("📌 置顶").assertExists()
+        // emoji 字形在 Robolectric 下节点尺寸为 0，改用存在性断言
+        compose.onNodeWithText("📌").assertExists()
+        compose.onNodeWithText("生日").assertExists()          // 类型标签
+        compose.onNodeWithText("8月14日 · 家人", substring = true).assertExists()
         compose.onNodeWithText("364").assertIsDisplayed()
-        compose.onNodeWithText("天后", substring = true).assertExists()
+        // 紧凑版移除了 ⏰ 提醒时刻徽标
+        compose.onNodeWithText("⏰", substring = true).assertDoesNotExist()
     }
 
     @Test

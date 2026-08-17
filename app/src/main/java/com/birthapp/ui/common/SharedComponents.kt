@@ -1,5 +1,6 @@
 package com.birthapp.ui.common
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -8,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -18,10 +20,11 @@ import com.birthapp.ui.home.BirthdayDisplay
 import com.birthapp.ui.preview.previewBirthdays
 import com.birthapp.ui.theme.*
 
-/** 卡片柔色背景循环 */
-private val cardColors = listOf(CardPeach, CardMint, CardLavender)
-private val cardColorsDark = listOf(CardPeachDark, CardMintDark, CardLavenderDark)
-
+/**
+ * 列表卡片（紧凑版，首页改版效果图基准）：
+ * 左 4dp 类型色条 → 圆角图标块 → 名称/类型标签 + 日期·关系 → 右侧大倒计时。
+ * 移除 ⏰ 提醒时刻徽标与 infoLine（详情页仍展示）；头像圈改圆角方块。
+ */
 @Composable
 fun BirthdayCard(
     display: BirthdayDisplay,
@@ -34,202 +37,150 @@ fun BirthdayCard(
     // 暂停的记录整体压暗，但「已暂停」标记本身不降透明度，不然标记也跟着看不清了
     val contentAlpha = if (isPaused) 0.5f else 1f
 
-    val bgColor = if (isPaused) {
-        // 暂停用中性灰，跟六种类型的配色都不冲突，一眼看出这条不工作
-        if (darkTheme) CardPausedDark else CardPaused
-    } else if (display.isSolemn) {
-        // 缅怀不跟三色循环，也不用“今天”的暖黄，固定用素净的灰蓝
-        if (darkTheme) CardSlateDark else CardSlate
-    } else if (display.isToday) {
-        if (darkTheme) CardTodayDark else CardToday
-    } else {
-        val palette = if (darkTheme) cardColorsDark else cardColors
-        palette[index % palette.size]
-    }
-
-    val tagColor = if (display.isSolemn) {
-        SlateInk
-    } else when (display.birthday.relation) {
-        "family" -> Coral500
-        "friend" -> Teal500
-        "colleague" -> SunnyYellow700
-        else -> Coral400
-    }
-
-    // 头像圈：生日用姓名首字，其余类型用类型 emoji，一眼分辨
-    val isBirthday = display.eventType == EventType.BIRTHDAY
-    val avatarColor = if (isBirthday) tagColor else eventAccent(display.eventType)
-    // 缅怀的倒计时数字不用亮青色，避免显得轻快
-    val countdownColor = if (isPaused) {
+    val accentColor = if (isPaused) {
         MaterialTheme.colorScheme.onSurfaceVariant
     } else if (display.isSolemn) {
-        if (darkTheme) SlateInkLight else SlateInk
+        SlateInk
     } else {
-        MaterialTheme.colorScheme.secondary
+        eventAccent(display.eventType)
     }
+
+    // 头像/图标块内容：生日用姓名首字，其余类型用 emoji，一眼分辨
+    val isBirthday = display.eventType == EventType.BIRTHDAY
 
     Card(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .padding(horizontal = 16.dp, vertical = 5.dp)
             .shadow(
-                elevation = if (isPaused) 0.dp else 4.dp,
-                shape = RoundedCornerShape(24.dp),
-                ambientColor = bgColor,
-                spotColor = bgColor
+                elevation = if (isPaused) 0.dp else 3.dp,
+                shape = RoundedCornerShape(20.dp),
+                ambientColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                spotColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
             ),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = bgColor)
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
-        Column(modifier = Modifier.padding(18.dp)) {
-            // Row 1: Name + relation tag
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 14.dp)
+                .alpha(contentAlpha),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 左色条：类型强调色，4dp 圆角竖条
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(42.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(accentColor)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+
+            // 圆角图标块（46dp）：eventAccent 12% 底色
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(accentColor.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.alpha(contentAlpha)
-                ) {
-                    // Avatar circle
-                    Surface(
-                        shape = CircleShape,
-                        color = avatarColor.copy(alpha = 0.2f),
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = if (isBirthday) display.birthday.name.first().toString()
-                                else display.typeEmoji,
-                                fontWeight = FontWeight.Bold,
-                                color = avatarColor,
-                                fontSize = if (isBirthday) 16.sp else 15.sp
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = if (isBirthday) display.birthday.name.first().toString()
+                    else display.typeEmoji,
+                    fontWeight = FontWeight.Bold,
+                    color = accentColor,
+                    fontSize = if (isBirthday) 17.sp else 16.sp
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // 中间：名称行（名称 + 置顶/暂停/类型标签）+ 日期·关系小字
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = display.birthday.name,
-                        style = MaterialTheme.typography.titleLarge,
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1
                     )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
                     if (display.isPinned) {
-                        // 置顶徽标：固定在列表顶部，主题色描边区分
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = Coral500.copy(alpha = 0.15f)
-                        ) {
-                            Text(
-                                text = "📌 置顶",
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Coral500
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("📌", fontSize = 11.sp)
                     }
                     if (isPaused) {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        ) {
-                            Text(
-                                text = "已暂停",
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.surface
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(6.dp))
-                    }
-                    // Relation tag pill
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = tagColor.copy(alpha = 0.15f),
-                        modifier = Modifier.alpha(contentAlpha)
-                    ) {
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = display.relationLabel,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = tagColor
+                            text = "已暂停",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    // 类型标签：soft 底 + eventAccent 色
+                    Text(
+                        text = EventType.label(display.eventType),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = accentColor,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(accentColor.copy(alpha = 0.12f))
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
                 }
+                Spacer(modifier = Modifier.height(5.dp))
+                Text(
+                    text = "${display.dateLabel} · ${display.relationLabel}",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
+                )
             }
+            Spacer(modifier = Modifier.width(10.dp))
 
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Row 2: 类型 + 日期 + 年龄或周年
-            Text(
-                text = display.infoLine,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.alpha(contentAlpha)
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Row 3: Countdown or today highlight
+            // 右侧：倒计时 / 今天横幅
             if (display.isToday) {
                 val (bannerBg, bannerFg) = eventBannerColors(display.eventType, darkTheme)
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = bannerBg,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .alpha(contentAlpha)
+                    color = bannerBg
                 ) {
                     Text(
                         text = "  ${display.todayBanner}",
-                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 12.dp),
-                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 10.dp),
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = bannerFg
+                        color = bannerFg,
+                        maxLines = 2
                     )
                 }
             } else {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .alpha(contentAlpha),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Column(horizontalAlignment = Alignment.End) {
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
                             text = "${display.countdown}",
-                            fontSize = 40.sp,
+                            fontSize = 26.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = countdownColor,
-                            lineHeight = 40.sp
-                        )
-                        Text(
-                            text = " 天后",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 6.dp)
+                            color = accentColor,
+                            lineHeight = 26.sp
                         )
                     }
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = (if (display.isSolemn) SlateInk else Teal500).copy(alpha = 0.1f)
-                    ) {
-                        Text(
-                            text = "  ⏰ ${String.format("%02d:%02d", display.birthday.reminderHour, display.birthday.reminderMinute)}  ",
-                            modifier = Modifier.padding(vertical = 4.dp, horizontal = 6.dp),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = countdownColor
-                        )
-                    }
+                    Text(
+                        text = " 天后",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }

@@ -1,4 +1,4 @@
-package com.birthapp.ui.home
+package com.birthapp.ui.calendar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,7 +40,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.birthapp.data.Birthday
+import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
+import com.birthapp.ui.theme.BirthAppTheme
 import com.birthapp.ui.theme.Coral500
 import com.birthapp.ui.theme.SlateInk
 import com.birthapp.ui.theme.Teal500
@@ -54,11 +57,11 @@ import java.time.YearMonth
  * - 周一起始，每天标注农历日子
  * - 有事件的日子标圆点（最多 3 个 +「+N」）
  * - 点日期弹窗列出当日事件，可点击进详情
- * - 数据复用 HomeViewModel 的筛选结果，落月映射走 EventCalc（处理农历跨年）
+ * - 独立页展示全部记录（含暂停），不做任何筛选；落月映射走 EventCalc（处理农历跨年）
  */
 @Composable
 fun CalendarScreen(
-    birthdays: List<BirthdayDisplay>,
+    birthdays: List<Birthday>,
     onItemClick: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -66,11 +69,11 @@ fun CalendarScreen(
     val today = LocalDate.now()
 
     val eventsByDay = remember(displayedMonth, birthdays) {
-        EventCalc.eventsInMonth(birthdays.map { it.birthday }, displayedMonth)
+        EventCalc.eventsInMonth(birthdays, displayedMonth)
     }
 
     // 点开的日期：pair(day, 当日事件列表)
-    var selectedDay by remember { mutableStateOf<Pair<Int, List<com.birthapp.data.Birthday>>?>(null) }
+    var selectedDay by remember { mutableStateOf<Pair<Int, List<Birthday>>?>(null) }
 
     Column(
         modifier = modifier
@@ -168,12 +171,12 @@ fun CalendarScreen(
                                 .padding(10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(com.birthapp.data.EventType.emoji(e.eventType), fontSize = 18.sp)
+                            Text(EventType.emoji(e.eventType), fontSize = 18.sp)
                             Spacer(modifier = Modifier.width(8.dp))
                             Column {
                                 Text(e.name, fontWeight = FontWeight.SemiBold)
                                 Text(
-                                    com.birthapp.data.EventType.label(e.eventType),
+                                    EventType.label(e.eventType),
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                 )
@@ -201,7 +204,7 @@ private fun lunarMonthName(month: YearMonth): String = runCatching {
 private fun RowScope.DayCell(
     date: LocalDate?,
     isToday: Boolean,
-    events: List<com.birthapp.data.Birthday>,
+    events: List<Birthday>,
     onDayClick: (LocalDate) -> Unit
 ) {
     val dim = date == null
@@ -261,7 +264,7 @@ private fun RowScope.DayCell(
                             .clip(CircleShape)
                             .background(
                                 // 缅怀固定灰蓝，其余用青色，与列表卡片配色一致
-                                if (com.birthapp.data.EventType.isSolemn(e.eventType)) SlateInk
+                                if (EventType.isSolemn(e.eventType)) SlateInk
                                 else Teal500
                             )
                     )
@@ -282,11 +285,19 @@ private val WEEKDAYS = listOf("一", "二", "三", "四", "五", "六", "日")
 
 // ==================== Previews ====================
 
+private fun previewCalendarBirthdays(): List<Birthday> = listOf(
+    com.birthapp.ui.preview.PreviewData.birthday(id = 1, name = "小明"),
+    com.birthapp.ui.preview.PreviewData.birthday(
+        id = 2, name = "在一起三周年",
+        eventType = EventType.LOVE, relation = "other", year = 2023
+    )
+)
+
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true, locale = "zh-rCN", name = "月历 · 浅色")
 @androidx.compose.runtime.Composable
 private fun CalendarScreenPreview() {
-    com.birthapp.ui.theme.BirthAppTheme {
-        CalendarScreen(birthdays = com.birthapp.ui.preview.previewBirthdays(), onItemClick = {})
+    BirthAppTheme {
+        CalendarScreen(birthdays = previewCalendarBirthdays(), onItemClick = {})
     }
 }
 
@@ -298,7 +309,7 @@ private fun CalendarScreenPreview() {
 )
 @androidx.compose.runtime.Composable
 private fun CalendarScreenPreviewDark() {
-    com.birthapp.ui.theme.BirthAppTheme(darkTheme = true) {
-        CalendarScreen(birthdays = com.birthapp.ui.preview.previewBirthdays(), onItemClick = {})
+    BirthAppTheme(darkTheme = true) {
+        CalendarScreen(birthdays = previewCalendarBirthdays(), onItemClick = {})
     }
 }

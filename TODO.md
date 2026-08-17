@@ -64,7 +64,10 @@
   - 零第三方依赖：农历标注走 `LunarCalendar.solarToLunar` + 新增 `lunarDayName`
   - 验收：✅ 模拟器验证 2026-08 农历标注（8/13 初一）、8/14 小明圆点、弹窗进详情、切月（9月·农历八月初一）
 
-- [ ] **首页改版：底部双 tab + 分类筛选面板 + Hero 卡 + 紧凑卡片 + FAB 优化**（方案已确认 2026-08-16，待实施）
+- [x] **首页改版：底部双 tab + 分类筛选面板 + Hero 卡 + 紧凑卡片 + FAB 优化**（2026-08-17 完成）
+  - 实现摘要：`MainNavigationBar` 底部「首页/日历」双 tab（各自 Scaffold 内传 bottomBar，detail/add/edit/settings 全屏不变）；日历独立成页（`ui/calendar/CalendarViewModel` + `CalendarScreenPage`，全量含暂停）；`FilterState` 三维筛选（关系/类型/生肖，零迁移）+ `quickFilter`（快捷单维切换）/`updateFilter`（面板叠加）；`HeroCard` 渐变聚焦卡（countdown 最小=最近事件）+ `Greeting` 问候语；`BirthdayCard` 紧凑化（类型色条/类型标签/日期·关系）；FAB 44dp
+  - 测试：新增 CalendarViewModelTest/CalendarScreenTest/GreetingTest + 更新 HomeFilter/HomeViewModel/HomeScreen/SharedComponents 测试，全量 **152 用例 / 22 测试类全绿**；versionCode 11 / v2.1.8 + Changelog 已加
+  - 待补：`tools/verify-on-emulator.sh` 模拟器实测清单（底部 tab 切换/日历全量/Hero 点击/面板叠加/生肖筛选等）
   - 背景：参考根目录 `date_reminder_app_ui.html` 排版（Hero 聚焦卡 + 分类胶囊 + 紧凑倒计时卡片 + 底部导航），适配辰记现有功能；已确认效果图：`home-redesign-mockup.html`（v2 底部导航版）、`home-filter-mockup.html`（v3 分类面板版，含「快捷行 + 扩展面板」交互演示），实现时以这两份效果图为视觉基准
   - 已确认决策：底部「首页/日历」双 tab；日历独立页显示**全部记录**；卡片第二行 =「日期 · 关系」；移除 ⏰ 提醒时刻徽标（详情页仍显示）；生肖筛选维度**本期实现**；FAB 收窄 44dp
   - 调研结论：全库无 NavigationBar/bottomBar 代码（零冲突引入）；FAB 仅首页 1 处 Large 型；月历无 UI 测试保护（独立成页需新增测试）；`ZodiacUtils.getZodiacName(year)` 已存在（生肖零迁移）；Detail/AddEdit/Settings 均为「topBar 纯 Scaffold + padding(paddingValues)」标准模式，加底栏不遮挡；material-icons-extended 已在依赖（Home/CalendarMonth 图标可用）；navigation-compose 2.8.5、Compose BOM 2024.12.01

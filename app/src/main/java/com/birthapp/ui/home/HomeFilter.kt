@@ -2,14 +2,30 @@ package com.birthapp.ui.home
 
 import com.birthapp.data.Birthday
 import com.birthapp.data.EventType
+import com.birthapp.util.ZodiacUtils
+
+/**
+ * 首页筛选状态：关系 / 类型 / 生肖三个维度，单一不可变对象。
+ * 三维组合语义：组内互斥、组间叠加（家人 ∩ 生日 ∩ 属虎）。
+ * 日后要加新维度（如地区）只需加一个字段，HomeViewModel/UI/测试同步小改。
+ */
+data class FilterState(
+    val relation: String = "all",   // "all" | family / friend / colleague / other
+    val type: String = "all",       // "all" | EventType 常量
+    val zodiac: String? = null      // null = 不限 | 生肖中文名（鼠/牛/…/猪）
+) {
+    /** 是否有任一维度处于非默认筛选（用于空态判断：筛选为空 ≠ 数据为空） */
+    val isActive: Boolean
+        get() = relation != "all" || type != "all" || zodiac != null
+}
 
 /**
  * 首页列表的筛选规则，抽成纯函数方便单元测试。
  *
- * 三个维度的优先级：
- * - 搜索关键词非空时是全局查找，关系/类型筛选都不叠加——
+ * 维度优先级：
+ * - 搜索关键词非空时是全局查找，三个筛选维度都不叠加——
  *   用户搜名字时不该因为停在某个标签上而搜不到人
- * - 平时关系标签和类型标签是"与"的关系，可以叠加（家人 + 缅怀）
+ * - 平时关系 / 类型 / 生肖是"与"的关系，可以叠加（家人 + 生日 + 属虎）
  */
 object HomeFilter {
 
@@ -30,8 +46,7 @@ object HomeFilter {
 
     fun apply(
         list: List<Birthday>,
-        tab: String,
-        type: String,
+        filter: FilterState,
         keyword: String
     ): List<Birthday> {
         val kw = keyword.trim()
@@ -42,7 +57,8 @@ object HomeFilter {
             }
         }
         return list
-            .filter { tab == "all" || it.relation == tab }
-            .filter { type == "all" || it.eventType == type }
+            .filter { filter.relation == "all" || it.relation == filter.relation }
+            .filter { filter.type == "all" || it.eventType == filter.type }
+            .filter { filter.zodiac == null || ZodiacUtils.getZodiacName(it.birthYear) == filter.zodiac }
     }
 }

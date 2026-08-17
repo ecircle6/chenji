@@ -59,3 +59,25 @@ val CardTodayDark = Color(0xFF3A3520)
 // 已暂停的卡片：纯中性灰，不能用 surfaceVariant（它被设成了暖棕）
 val CardPaused = Color(0xFFEBEBEB)
 val CardPausedDark = Color(0xFF262626)
+
+// === Hero 聚焦卡渐变（效果图 home-redesign-mockup.html 定稿值）===
+// 浅色/深色各一对：start → end。缅怀用冷灰蓝（不走暖调），其余按类型区分
+val HeroBirthdayStart = Color(0xFFFFC98A)
+val HeroBirthdayEnd = Color(0xFFFF8A5C)
+val HeroBirthdayDarkStart = Color(0xFFB06A2E)
+val HeroBirthdayDarkEnd = Color(0xFFC74F2A)
+
+val HeroLoveStart = Color(0xFFB5ACFF)
+val HeroLoveEnd = Color(0xFF7C6BFF)
+val HeroLoveDarkStart = Color(0xFF6A5BC4)
+val HeroLoveDarkEnd = Color(0xFF4A3B9E)
+
+val HeroMemorialStart = Color(0xFF8E9EAB)
+val HeroMemorialEnd = Color(0xFF5B6B7A)
+val HeroMemorialDarkStart = Color(0xFF4A545E)
+val HeroMemorialDarkEnd = Color(0xFF31383F)
+
+val HeroOtherStart = Color(0xFF5EEAD4)
+val HeroOtherEnd = Color(0xFF00BFA5)
+val HeroOtherDarkStart = Color(0xFF1E7A6E)
+val HeroOtherDarkEnd = Color(0xFF0F5F54)
