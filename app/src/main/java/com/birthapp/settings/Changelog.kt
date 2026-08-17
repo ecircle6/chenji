@@ -25,6 +25,13 @@ object Changelog {
     /** 全部版本说明，最新在前。发版时在头部插入新条目。 */
     val all = listOf(
         ChangelogEntry(
+            version = "2.1.11",
+            title = "界面细节优化",
+            items = listOf(
+                "日历页去掉顶部重复标题：正文已有「YYYY年M月 · 农历」月份标题，界面更清爽"
+            )
+        ),
+        ChangelogEntry(
             version = "2.1.10",
             title = "首页聚焦卡规则优化",
             items = listOf(
