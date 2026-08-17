@@ -76,7 +76,8 @@ fun HeroCard(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
-        Box(
+        // 用 Column 垂直排列：Box 的子组件是叠放的，进度条会被叠到文本行上
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(heroGradient(hero.eventType, isDark))
@@ -143,7 +144,8 @@ fun HeroCard(
                     countdown = hero.countdown,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 16.dp)
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 16.dp)
                 )
             }
         }
