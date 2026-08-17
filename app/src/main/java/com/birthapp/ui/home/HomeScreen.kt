@@ -278,9 +278,14 @@ fun HomeContent(
                     EmptyBirthdayList(onAddClick = onAddClick)
                 }
             } else {
-                // 搜索态：普通卡片列表（不分层）；非搜索态：三层化（紧急/标准/远景）
+                // Hero 只聚焦「最近日期里的庆祝事件」（heroCandidate），且那条记录不再出现在列表
+                // （每条记录只出现一次：Hero 大卡 + 列表卡重复展示同一事件是冗余）；
+                // 搜索态无 Hero、不分层（搜索聚焦结果，保持普通列表）
+                val hero = if (isSearching) null else heroCandidate(birthdays)
+                val listBirthdays = if (hero != null)
+                    birthdays.filterNot { it.birthday.id == hero.birthday.id } else birthdays
                 val items: List<HomeListItem>? =
-                    if (isSearching) null else HomeTier.buildRows(birthdays)
+                    if (isSearching) null else HomeTier.buildRows(listBirthdays)
                 LazyColumn(
                     state = listState,
                     modifier = Modifier
@@ -288,11 +293,9 @@ fun HomeContent(
                         .animateContentSize(),
                     contentPadding = PaddingValues(bottom = 72.dp)
                 ) {
-                    // Hero 聚焦卡：只放列表首项，不参与滚动懒加载的索引语义
+                    // Hero 聚焦卡：只放列表首项，不参与滚动懒加载的索引语义；null 时不渲染
                     item(key = "hero") {
-                        if (!isSearching) {
-                            HeroCard(birthdays = birthdays, onItemClick = onItemClick)
-                        }
+                        HeroCard(hero = hero, onItemClick = onItemClick)
                     }
 
                     if (items != null) {

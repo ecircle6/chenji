@@ -252,7 +252,7 @@
   - 验收：全量单测绿 + assembleDebug 通过；模拟器实测清单——类型面板无卡片可点、紧急卡进度条宽度/「已过去 X 天」、Emoji 头像选择与三层展示、月份分组/远景折叠、返回动画提速、导入预览滚动、深色模式、筛选/搜索/置顶/暂停回归
   - 发版：versionCode 11→12、versionName 2.1.8→2.1.9；`Changelog.kt` 头部加 v2.1.9 条目（首页分层卡片/专属 Emoji 头像/紧急进度条/类型配色区分/月份分组/筛选面板修复/导入预览滚动/返回动画提速）；README 更新功能与测试统计
 
-- [ ] **Hero 聚焦卡规则重构：列表去重 + 缅怀不放大 + ≤7 天 Hero 带进度条（含同日多卡处理矩阵）**（2026-08-17 规划中，待实现；效果图：`hero-redesign-mockup.html` 7 场景）
+- [x] **Hero 聚焦卡规则重构：列表去重 + 缅怀不放大 + ≤7 天 Hero 带进度条（含同日多卡处理矩阵）**（2026-08-17 完成；效果图：`hero-redesign-mockup.html` 7 场景）
   - 动因（用户实测反馈）：① 最近记录在 Hero 与列表各出现一次（同一记录两个卡片）；② 进度条只在 0-7 天 UrgentCard 有、Hero 没有，造成「有的卡片有点的没有」；③ 缅怀若恰为最近，会被庆祝式大卡放大（即将到来+大字），与「悼念不该被放大」矛盾
   - **已确认方向（用户拍板）**：列表去重（每条记录只出现一次）＋ 最近全是缅怀则隐藏整个 Hero ＋ 同日缅怀与庆典并存时，Hero 让位给同天的庆祝事件
   - **核心规则（`heroCandidate` 一条算法覆盖全部情形）**：
@@ -285,6 +285,7 @@
   - **改动文件（实现时）**：`HeroCard.kt`（`heroBirthday`→`heroCandidate` + 进度条块）、`HomeScreen.kt`（非搜索态计算一次 hero、传给 HeroCard 与列表去重过滤）、`HomeTier.kt` 不动（去重在其上游）
   - **测试（实现时）**：新增 `HeroCandidateTest`（庆典最近 >7/≤7→该庆典；最近全缅怀→null；同日缅怀+庆典→庆典；同日多条庆祝→排序第一条；全暂停→null）；更新 `HomeScreenTest`（「在一起三周年」出现 2→1 次、hero 点击不变、全暂停/全缅怀断言无 Hero、≤7 天 Hero 进度条断言）；`HomeTierTest` 不动 + `SwipeDirectionTest` 不动
   - 验收：全量单测绿 + `assembleDebug` 通过；模拟器按 `hero-redesign-mockup.html` 的 7 个场景逐一实测对照
+  - **实现与验收**（2026-08-17）：`heroCandidate` 纯函数（活跃→最近日期组→组内第一条非缅怀）落地于 `HeroCard.kt`，替换旧 `heroBirthday`（只排暂停+取最小）；`HeroCard` 签名改为 `(hero: BirthdayDisplay?, ...)` 纯展示，候选逻辑收敛到调用方；`HomeScreen` 非搜索态计算一次 hero、对列表 `filterNot` 去重（buildRows 之前）、搜索态保持无 Hero 不分层；Hero 卡 `countdown <= 7` 时底部加进度条（复用 `HomeTier.progressOf/elapsedDays`，白字白条与渐变底融合，与紧急卡进度语义一致）；新增 `HeroCandidateTest` 11 用例（空/全暂停→null、非置顶当选、>7/≤7 均当选、最近全缅怀→null、更远庆祝不救场、同日缅怀+庆典取庆典、同日多庆祝取排序第一条、暂停不参与、情侣纪念也是庆祝）+ `HomeScreenTest` 更新（去重计数 2→1、全缅怀无 Hero、进度条有/无、同日缅怀+庆典聚焦庆典且缅怀留列表）；跨年分组 key 崩溃测试改用缅怀数据构造（缅怀不进 Hero 不被去重，保留两分组验证意图）。全量 **198 用例 / 26 测试类全绿** + `assembleDebug` 通过；模拟器 7 场景实测对照效果图；versionCode 13 / v2.1.10 + Changelog 已加
 
 ---
 
