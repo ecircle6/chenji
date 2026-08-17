@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>时光纪 - 生日提醒</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #FAF8F5;
+            --bg-elevated: #FFFFFF;
+            --text-primary: #2D2A26;
+            --text-secondary: #8A8580;
+            --text-muted: #B5B0AA;
+            --border: #EDEAE6;
+
+            /* 生日主题色 */
+            --birthday: #E8943A;
+            --birthday-light: rgba(232, 148, 58, 0.10);
+            --birthday-medium: rgba(232, 148, 58, 0.18);
+            --birthday-soft: rgba(232, 148, 58, 0.06);
+
+            /* 纪念日主题色 */
+            --anniversary: #A855F7;
+            --anniversary-light: rgba(168, 85, 247, 0.10);
+
+            /* 缅怀日主题色 */
+            --memorial: #64748B;
+            --memorial-light: rgba(100, 116, 139, 0.10);
+
+            --shadow-soft: 0 2px 12px rgba(0,0,0,0.05);
+            --shadow-medium: 0 4px 20px rgba(0,0,0,0.08);
+            --radius-sm: 10px;
+            --radius-md: 16px;
+            --radius-lg: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            padding-bottom: 90px;
+        }
+
+        /* 顶部 */
+        .header {
+            padding: 16px 20px 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .app-title {
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+        .app-title span {
+            font-weight: 300;
+            color: var(--text-secondary);
+        }
+        .settings-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        .settings-btn:active { transform: scale(0.92); }
+
+        .status-bar {
+            padding: 0 20px 12px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* 分类筛选 */
+        .category-bar {
+            padding: 0 20px 14px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .category-bar::-webkit-scrollbar { display: none; }
+
+        .chip {
+            flex-shrink: 0;
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1.5px solid var(--border);
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+        }
+        .chip.active {
+            background: var(--text-primary);
+            color: #fff;
+            border-color: var(--text-primary);
+            box-shadow: 0 3px 12px rgba(45,42,38,0.18);
+        }
+        .chip:active { transform: scale(0.95); }
+
+        /* 列表头部 */
+        .list-header {
+            padding: 6px 20px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .list-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .list-count {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* ========== 紧急大卡片 (0-7天) ========== */
+        .card-urgent {
+            background: var(--bg-elevated);
+            border: 2px solid var(--birthday);
+            border-radius: var(--radius-md);
+            padding: 18px;
+            margin: 0 20px 14px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: var(--shadow-soft);
+            animation: breathe-border 2.8s ease-in-out infinite;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card-urgent::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background: var(--birthday);
+        }
+        .card-urgent:active {
+            transform: scale(0.98);
+        }
+        .card-urgent:hover {
+            box-shadow: var(--shadow-medium);
+        }
+
+        @keyframes breathe-border {
+            0%, 100% { border-color: rgba(232, 148, 58, 0.5); box-shadow: 0 2px 12px rgba(232,148,58,0.08); }
+            50% { border-color: rgba(232, 148, 58, 1); box-shadow: 0 4px 20px rgba(232,148,58,0.18); }
+        }
+
+        .urgent-top {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .urgent-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: var(--birthday-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+            border: 2px solid var(--birthday-medium);
+        }
+        .urgent-info { flex: 1; min-width: 0; }
+        .urgent-name {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .urgent-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .urgent-countdown {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .urgent-days {
+            font-size: 38px;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--birthday);
+            letter-spacing: -1px;
+            font-variant-numeric: tabular-nums;
+        }
+        .urgent-unit {
+            font-size: 12px;
+            color: var(--birthday);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .urgent-progress-wrap {
+            margin-top: 14px;
+        }
+        .urgent-progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+        .urgent-progress-bar {
+            height: 5px;
+            background: var(--birthday-soft);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .urgent-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--birthday), #F0A85C);
+            border-radius: 3px;
+            transition: width 0.6s ease;
+        }
+
+        /* ========== 标准卡片 (8-30天) ========== */
+        .card-normal {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 20px;
+            background: var(--bg-elevated);
+            margin: 0 20px 10px;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-soft);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border);
+        }
+        .card-normal::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 12px;
+            bottom: 12px;
+            width: 3px;
+            background: var(--birthday);
+            border-radius: 0 2px 2px 0;
+        }
+        .card-normal:active { transform: scale(0.98); }
+        .card-normal:hover { box-shadow: var(--shadow-medium); }
+
+        .normal-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--birthday-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .normal-info { flex: 1; min-width: 0; }
+        .normal-name {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .normal-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .tag {
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+            background: var(--birthday-light);
+            color: var(--birthday);
+        }
+        .normal-count {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .normal-days {
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--birthday);
+            letter-spacing: -1px;
+            font-variant-numeric: tabular-nums;
+        }
+        .normal-unit {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ========== 远景迷你行 (30天以上) ========== */
+        .month-divider {
+            padding: 16px 20px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .row-distant {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            margin: 0 20px;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s;
+            opacity: 0.55;
+        }
+        .row-distant:hover { 
+            opacity: 1; 
+            background: var(--bg-elevated);
+        }
+        .row-distant:active { opacity: 0.4; }
+
+        .distant-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--birthday);
+            flex-shrink: 0;
+            opacity: 0.5;
+        }
+        .distant-name {
+            font-size: 14px;
+            color: var(--text-secondary);
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .distant-days {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+            font-weight: 500;
+        }
+
+        /* 底部导航 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(250, 248, 245, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            padding: 6px 0 22px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            padding: 4px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .nav-item.active { color: var(--text-primary); }
+        .nav-item svg {
+            width: 22px;
+            height: 22px;
+            stroke-width: 1.8;
+        }
+
+        /* FAB */
+        .fab {
+            position: fixed;
+            bottom: 84px;
+            right: 20px;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: var(--text-primary);
+            color: #fff;
+            border: none;
+            font-size: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(45,42,38,0.2);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 100;
+        }
+        .fab:active { transform: scale(0.9) rotate(45deg); }
+        .fab:hover { 
+            box-shadow: 0 6px 20px rgba(45,42,38,0.3);
+            transform: translateY(-2px);
+        }
+
+        /* 响应式 */
+        @media (min-width: 768px) {
+            body {
+                max-width: 414px;
+                margin: 0 auto;
+                border-left: 1px solid var(--border);
+                border-right: 1px solid var(--border);
+                min-height: 100vh;
+            }
+            .bottom-nav, .fab {
+                max-width: 414px;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            .fab { transform: translateX(-50%); }
+            .fab:hover { transform: translateX(-50%) translateY(-2px); }
+            .fab:active { transform: translateX(-50%) scale(0.9) rotate(45deg); }
+        }
+
+        /* 入场动画 */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in {
+            animation: slideUp 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            opacity: 0;
+        }
+        .d1 { animation-delay: 0.05s; }
+        .d2 { animation-delay: 0.12s; }
+        .d3 { animation-delay: 0.19s; }
+        .d4 { animation-delay: 0.26s; }
+        .d5 { animation-delay: 0.33s; }
+        .d6 { animation-delay: 0.40s; }
+        .d7 { animation-delay: 0.47s; }
+        .d8 { animation-delay: 0.54s; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="app-title">时光<span>纪</span></div>
+        <div class="settings-btn">⚙️</div>
+    </div>
+
+    <div class="status-bar">8月17日 周日 · 每一个日子都值得铭记</div>
+
+    <!-- 分类筛选 -->
+    <div class="category-bar">
+        <div class="chip active" data-filter="all" onclick="filterEvents(this)">全部</div>
+        <div class="chip" data-filter="birthday" onclick="filterEvents(this)">🎂 生日</div>
+        <div class="chip" data-filter="anniversary" onclick="filterEvents(this)">💕 纪念日</div>
+        <div class="chip" data-filter="memorial" onclick="filterEvents(this)">🕯️ 缅怀日</div>
+    </div>
+
+    <div class="list-header">
+        <div class="list-title">即将到来</div>
+        <div class="list-count" id="listCount">共 8 个日子</div>
+    </div>
+
+    <!-- ===== 紧急层：0-7天 ===== -->
+    <div class="card-urgent animate-in d1" data-type="birthday" onclick="showDetail('妈妈生日')">
+        <div class="urgent-top">
+            <div class="urgent-avatar">👩</div>
+            <div class="urgent-info">
+                <div class="urgent-name">妈妈生日</div>
+                <div class="urgent-meta">8月20日 · 农历七月初八 · 58岁</div>
+            </div>
+            <div class="urgent-countdown">
+                <div class="urgent-days">3</div>
+                <div class="urgent-unit">天后</div>
+            </div>
+        </div>
+        <div class="urgent-progress-wrap">
+            <div class="urgent-progress-label">
+                <span>提醒进度</span>
+                <span>已过去 4 天</span>
+            </div>
+            <div class="urgent-progress-bar">
+                <div class="urgent-progress-fill" style="width: 57%"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-urgent animate-in d2" data-type="birthday" onclick="showDetail('爸爸生日')">
+        <div class="urgent-top">
+            <div class="urgent-avatar">👨</div>
+            <div class="urgent-info">
+                <div class="urgent-name">爸爸生日</div>
+                <div class="urgent-meta">8月22日 · 农历七月初十 · 60岁</div>
+            </div>
+            <div class="urgent-countdown">
+                <div class="urgent-days">5</div>
+                <div class="urgent-unit">天后</div>
+            </div>
+        </div>
+        <div class="urgent-progress-wrap">
+            <div class="urgent-progress-label">
+                <span>提醒进度</span>
+                <span>已过去 2 天</span>
+            </div>
+            <div class="urgent-progress-bar">
+                <div class="urgent-progress-fill" style="width: 29%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 标准层：8-30天 ===== -->
+    <div class="card-normal animate-in d3" data-type="birthday" onclick="showDetail('好友小明')">
+        <div class="normal-avatar">🧑</div>
+        <div class="normal-info">
+            <div class="normal-name">好友小明</div>
+            <div class="normal-meta">
+                <span class="tag">生日</span>
+                <span>9月4日 · 29岁</span>
+            </div>
+        </div>
+        <div class="normal-count">
+            <div class="normal-days">18</div>
+            <div class="normal-unit">天后</div>
+        </div>
+    </div>
+
+    <div class="card-normal animate-in d4" data-type="birthday" onclick="showDetail('表妹小雨')">
+        <div class="normal-avatar">👧</div>
+        <div class="normal-info">
+            <div class="normal-name">表妹小雨</div>
+            <div class="normal-meta">
+                <span class="tag">生日</span>
+                <span>9月11日 · 22岁</span>
+            </div>
+        </div>
+        <div class="normal-count">
+            <div class="normal-days">25</div>
+            <div class="normal-unit">天后</div>
+        </div>
+    </div>
+
+    <div class="card-normal animate-in d5" data-type="anniversary" onclick="showDetail('结婚纪念日')">
+        <div class="normal-avatar" style="background: var(--anniversary-light); font-size: 18px;">💍</div>
+        <div class="normal-info">
+            <div class="normal-name">结婚三周年</div>
+            <div class="normal-meta">
+                <span class="tag" style="background: var(--anniversary-light); color: var(--anniversary);">纪念日</span>
+                <span>9月28日</span>
+            </div>
+        </div>
+        <div class="normal-count">
+            <div class="normal-days" style="color: var(--anniversary);">42</div>
+            <div class="normal-unit">天后</div>
+        </div>
+    </div>
+
+    <!-- ===== 远景层：30天以上 ===== -->
+    <div class="month-divider animate-in d6">10 月</div>
+
+    <div class="row-distant animate-in d6" data-type="birthday" onclick="showDetail('外公生日')">
+        <div class="distant-dot"></div>
+        <div class="distant-name">外公生日 · 10月15日 · 82岁</div>
+        <div class="distant-days">59 天后</div>
+    </div>
+
+    <div class="month-divider animate-in d7">2027 年</div>
+
+    <div class="row-distant animate-in d7" data-type="birthday" onclick="showDetail('同事小张')">
+        <div class="distant-dot"></div>
+        <div class="distant-name">同事小张 · 1月20日</div>
+        <div class="distant-days">156 天后</div>
+    </div>
+
+    <div class="row-distant animate-in d8" data-type="memorial" onclick="showDetail('爷爷忌日')">
+        <div class="distant-dot" style="background: var(--memorial);"></div>
+        <div class="distant-name">爷爷忌日 · 12月3日</div>
+        <div class="distant-days">108 天后</div>
+    </div>
+
+    <div class="row-distant animate-in d8" data-type="birthday" onclick="showDetail('大学同学')">
+        <div class="distant-dot"></div>
+        <div class="distant-name">大学同学阿强 · 3月8日</div>
+        <div class="distant-days">203 天后</div>
+    </div>
+
+    <!-- 底部导航 -->
+    <div class="bottom-nav">
+        <div class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span>首页</span>
+        </div>
+        <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>日历</span>
+        </div>
+        <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <span>故事</span>
+        </div>
+        <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>我的</span>
+        </div>
+    </div>
+
+    <button class="fab" onclick="addEvent()">+</button>
+
+    <script>
+        // 分类筛选
+        function filterEvents(chip) {
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+
+            const filter = chip.dataset.filter;
+            const allItems = document.querySelectorAll('[data-type]');
+            let count = 0;
+
+            allItems.forEach(item => {
+                const type = item.dataset.type;
+                const isMatch = filter === 'all' || type === filter;
+
+                if (isMatch) {
+                    item.style.display = item.classList.contains('row-distant') ? 'flex' : 
+                                        item.classList.contains('card-normal') ? 'flex' : 'block';
+                    count++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // 处理月份分隔符的显示
+            document.querySelectorAll('.month-divider').forEach(div => {
+                div.style.display = filter === 'all' || filter === 'birthday' ? 'block' : 'none';
+            });
+
+            document.getElementById('listCount').textContent = '共 ' + count + ' 个日子';
+        }
+
+        function showDetail(name) {
+            // 模拟点击反馈
+            console.log('查看详情：' + name);
+        }
+
+        function addEvent() {
+            const btn = document.querySelector('.fab');
+            btn.style.transform = 'scale(0.85) rotate(45deg)';
+            setTimeout(() => {
+                btn.style.transform = '';
+                alert('打开添加纪念日页面');
+            }, 200);
+        }
+
+        // 底部导航交互
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

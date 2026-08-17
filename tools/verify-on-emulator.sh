@@ -22,11 +22,17 @@ echo_error() { echo "❌ $*" >&2; exit 1; }
 # ---------- 1. 定位 Android SDK 与 adb ----------
 SDK_DIR=""
 if [ -f local.properties ]; then
-    SDK_DIR="$(grep -E '^sdk\.dir=' local.properties | head -1 | cut -d= -f2)"
+    # local.properties 是 Java 属性格式：sdk.dir=C\:\\Users\\...
+    # \: 是转义冒号，\\ 是转义反斜杠，行尾可能有 \r —— 用 python 一次还原
+    SDK_DIR="$(python -c "
+import re, pathlib
+raw = pathlib.Path('local.properties').read_text().splitlines()[0].split('=', 1)[1]
+step1 = raw.replace(chr(92)+chr(58), chr(58))   # \: -> :
+pattern = chr(92)+chr(92)+r'(.)'
+print(re.sub(pattern, r'\\1', step1))
+" 2>/dev/null)"
 fi
 [ -z "$SDK_DIR" ] && SDK_DIR="$HOME/AppData/Local/Android/Sdk"
-# 去掉可能的引号/尾斜杠
-SDK_DIR="${SDK_DIR//\"/}"
 SDK_DIR="${SDK_DIR%/}"
 
 ADB="$SDK_DIR/platform-tools/adb.exe"
