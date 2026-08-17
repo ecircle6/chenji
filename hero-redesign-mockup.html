@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>辰记 · Hero 聚焦卡新规则效果图</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F8F7F4; --surface:#FFFFFF; --border:#EDEAE6;
+    --text:#2D2D2D; --text2:#8E8E8E; --text3:#B5B0AA;
+    --coral:#FF6B6B; --coral-g1:#FFC98A; --coral-g2:#FF8A5C;
+    --violet:#7C6BFF; --violet-g1:#B5ACFF;
+    --slate:#5B6B7A; --slate-light:#EDF1F5; --slate-g1:#8E9EAB;
+    --yellow:#E6C235;
+    --teal:#00BFA5; --teal-g1:#5EEAD4;
+    --radius-sm:10px; --radius-md:16px; --radius-lg:20px;
+    --shadow:0 2px 12px rgba(0,0,0,0.05);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,sans-serif;
+    background:#ECE9E4; color:var(--text); padding:28px 12px 60px;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .stage{width:100%; max-width:414px;}
+  .doc-title{font-size:20px;font-weight:600;margin-bottom:6px;text-align:center;}
+  .doc-sub{font-size:13px;color:#6e6a65;text-align:center;margin-bottom:14px;line-height:1.6;}
+  .doc-sub b{color:var(--coral);}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;}
+  .tab{
+    border:1.5px solid var(--border);background:#fff;color:#6e6a65;
+    padding:7px 12px;border-radius:50px;font-size:12.5px;font-weight:500;cursor:pointer;
+    transition:all .2s;
+  }
+  .tab.active{background:var(--coral);border-color:var(--coral);color:#fff;box-shadow:0 3px 10px rgba(255,107,107,.3);}
+  .tab:active{transform:scale(.95);}
+
+  .phone{
+    background:var(--bg);border-radius:28px;overflow:hidden;
+    box-shadow:0 12px 40px rgba(0,0,0,.18);
+    border:1px solid #dcd8d2; position:relative;
+  }
+  /* 状态栏 */
+  .statusbar{height:26px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);}
+
+  .appbar{display:flex;align-items:center;justify-content:space-between;padding:6px 18px 2px;}
+  .app-title{font-size:20px;font-weight:600;} .app-title i{font-style:normal;font-weight:300;color:var(--text2);}
+  .icon-circle{width:32px;height:32px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;}
+  .greeting{padding:8px 18px 10px;font-size:12px;color:var(--text3);}
+  .chips{display:flex;gap:6px;padding:0 18px 12px;overflow:hidden;}
+  .chip{flex-shrink:0;padding:6px 13px;border-radius:50px;font-size:12px;font-weight:500;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);}
+  .chip.active{background:var(--text);color:#fff;border-color:var(--text);}
+  .chip.dim{opacity:.6;}
+  .chips .more{margin-left:auto;color:var(--text3);font-size:12px;display:flex;align-items:center;gap:2px;}
+  .content{padding:0 0 8px;}
+
+  /* 顶部备注条（效果图专用：说明本场景规则） */
+  .scn-note{
+    margin:0 18px 10px;padding:8px 12px;border-radius:10px;font-size:11.5px;line-height:1.6;
+    background:#FFF9EC;border:1px dashed #E8D9AE;color:#8A6D3B;
+  }
+  .scn-note b{color:#6b5226;}
+
+  /* ===== Hero（渐变大卡）===== */
+  .hero{
+    margin:0 16px 14px;border-radius:24px;color:#fff;position:relative;overflow:hidden;
+    cursor:pointer;box-shadow:var(--shadow);animation:slideUp .4s ease forwards;opacity:0;
+  }
+  .hero-inner{display:flex;align-items:center;gap:10px;padding:18px 20px;}
+  .hero-left{flex:1;min-width:0;}
+  .hero-label{font-size:13px;font-weight:500;color:rgba(255,255,255,.85);}
+  .hero-name{font-size:20px;font-weight:700;margin:6px 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .hero-date{font-size:13px;color:rgba(255,255,255,.8);}
+  .hero-count{display:flex;align-items:flex-end;margin-top:12px;}
+  .hero-num{font-size:56px;font-weight:800;line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums;}
+  .hero-unit{font-size:15px;color:rgba(255,255,255,.85);padding-bottom:8px;margin-left:4px;}
+  .hero-emoji{
+    font-size:40px;flex-shrink:0;border-radius:16px;background:rgba(255,255,255,.12);
+    padding:12px;display:flex;align-items:center;justify-content:center;min-width:64px;min-height:64px;
+  }
+  .dedup-badge{
+    position:absolute;top:12px;right:-28px;transform:rotate(45deg);
+    background:rgba(0,0,0,.22);color:#fff;font-size:10px;font-weight:500;
+    padding:3px 30px;letter-spacing:.5px;
+  }
+  /* Hero 进度条 */
+  .hero-progress{margin:0 20px 16px;padding-top:0;}
+  .hero-progress .plabel{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.85);margin-bottom:5px;}
+  .hero-progress .pbar{height:5px;border-radius:3px;background:rgba(255,255,255,.22);overflow:hidden;}
+  .hero-progress .pfill{height:100%;border-radius:3px;background:linear-gradient(90deg,#fff,rgba(255,255,255,.6));}
+
+  /* ===== 紧急卡（0-7天，含进度条）===== */
+  .card-urgent{
+    margin:0 16px 12px;border-radius:16px;background:var(--surface);border:2px solid var(--coral);
+    box-shadow:var(--shadow);position:relative;overflow:hidden;cursor:pointer;animation:slideUp .4s ease forwards;opacity:0;
+  }
+  .card-urgent::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--coral);}
+  .cu-inner{display:flex;align-items:center;gap:13px;padding:16px 18px;}
+  .cu-avatar{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;border:2px solid;}
+  .cu-info{flex:1;min-width:0;}
+  .cu-name{font-size:17px;font-weight:600;margin-bottom:3px;}
+  .cu-meta{font-size:12px;color:var(--text2);}
+  .cu-num{text-align:right;flex-shrink:0;}
+  .cu-days{font-size:38px;font-weight:700;line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums;}
+  .cu-unit{font-size:12px;font-weight:500;margin-top:2px;text-align:right;}
+  .cu-progress{margin:0 18px 14px;}
+  .cu-progress .plabel{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:5px;}
+  .cu-progress .pbar{height:5px;border-radius:3px;background:var(--track);overflow:hidden;}
+  .cu-progress .pfill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+
+  /* ===== 标准卡（8-30天）===== */
+  .card-normal{
+    margin:0 16px 10px;border-radius:16px;background:var(--surface);box-shadow:var(--shadow);
+    display:flex;align-items:center;gap:14px;padding:13px 16px;position:relative;overflow:hidden;cursor:pointer;animation:slideUp .4s ease forwards;opacity:0;
+  }
+  .card-normal::before{content:'';position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 2px 2px 0;background:var(--accent);}
+  .cn-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;background:var(--avatar-bg);}
+  .cn-info{flex:1;min-width:0;}
+  .cn-name{font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px;}
+  .cn-tag{font-size:10.5px;font-weight:500;padding:2px 8px;border-radius:20px;}
+  .cn-meta{font-size:11.5px;color:var(--text2);margin-top:4px;}
+  .cn-count{text-align:right;flex-shrink:0;}
+  .cn-days{font-size:24px;font-weight:700;line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums;}
+  .cn-unit{font-size:11px;color:var(--text3);margin-top:2px;}
+
+  /* ===== 远景迷你行（>30天）===== */
+  .month-divider{padding:14px 20px 8px;font-size:12px;font-weight:600;color:var(--text3);letter-spacing:1px;}
+  .row-distant{display:flex;align-items:center;gap:10px;padding:9px 18px;margin:0 14px;cursor:pointer;border-radius:8px;opacity:.55;animation:slideUp .4s ease forwards;opacity:.55;}
+  .rd-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--accent);opacity:.5;}
+  .rd-name{font-size:13.5px;color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .rd-days{font-size:12.5px;color:var(--text3);font-variant-numeric:tabular-nums;}
+
+  .list-end{padding:6px 0 22px;text-align:center;font-size:11px;color:var(--text3);}
+
+  /* 底部导航 + FAB */
+  .bottom-nav{
+    display:flex;justify-content:space-around;align-items:center;padding:8px 0 10px;
+    background:rgba(248,247,244,.94);border-top:1px solid var(--border);margin-top:6px;
+  }
+  .nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--text3);font-size:10.5px;font-weight:500;}
+  .nav-item.active{color:var(--text);}
+  .nav-item svg{width:20px;height:20px;stroke-width:1.8;}
+  .fab-area{position:relative;}
+  .fab{
+    position:absolute;right:16px;bottom:54px;width:44px;height:44px;border-radius:50%;
+    background:var(--coral);color:#fff;border:none;font-size:22px;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 14px rgba(255,107,107,.4);z-index:5;
+  }
+
+  .scenario{display:none;}
+  .scenario.show{display:block;}
+
+  @keyframes slideUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .d1{animation-delay:.05s}.d2{animation-delay:.12s}.d3{animation-delay:.19s}.d4{animation-delay:.26s}.d5{animation-delay:.33s}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="doc-title">辰记 · Hero 聚焦卡新规则效果图</div>
+  <div class="doc-sub">规则：Hero 只聚焦「最近日期里的<b>庆祝事件</b>」；该记录<b>不再重复</b>出现在列表；<br>最近全是缅怀则<b>不显示 Hero</b>；≤7 天时 Hero 自带<b>进度条</b>；<br><b>同日</b>多变体处理见 ⑤⑥⑦（含同日处理矩阵，见 TODO）</div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-s="1">① 庆典 &gt;7天</button>
+    <button class="tab" data-s="2">② 庆典 ≤7天·进度条</button>
+    <button class="tab" data-s="3">③ 最近全是缅怀</button>
+    <button class="tab" data-s="4">④ 同日缅怀+庆典</button>
+    <button class="tab" data-s="5">⑤ 同天多个缅怀</button>
+    <button class="tab" data-s="6">⑥ 同天多个生日</button>
+    <button class="tab" data-s="7">⑦ 同天生日+纪念</button>
+  </div>
+
+  <div class="phone">
+    <div class="statusbar">9:41</div>
+    <div class="appbar">
+      <div class="app-title">辰记<i> · 首页</i></div>
+      <div class="icon-circle">⚙️</div>
+    </div>
+    <div class="greeting">8月17日 周一 · 珍惜当下，铭记过往</div>
+    <div class="chips">
+      <span class="chip active">全部</span><span class="chip">家人</span><span class="chip">朋友</span>
+      <span class="chip">同事</span><span class="chip dim">🎂 生日</span><span class="chip dim">❤️ 情侣纪念</span><span class="chip dim">🕯️ 缅怀</span>
+      <span class="more">⋯ 更多筛选</span>
+    </div>
+
+    <!-- ============ 场景一：最近是庆典且 >7 天 ============ -->
+    <div class="scenario show" id="scn1">
+      <div class="scn-note"><b>场景一</b> 最近事件是「妈妈生日 · 18 天后」（标准层）→ Hero 放大展示，标记去重；列表不再重复出现「妈妈」</div>
+      <div class="hero" style="background:linear-gradient(120deg,var(--coral-g1),var(--coral-g2));">
+        <div class="dedup-badge">列表已去重</div>
+        <div class="hero-inner">
+          <div class="hero-left">
+            <div class="hero-label">即将到来</div>
+            <div class="hero-name">妈妈生日</div>
+            <div class="hero-date">9月4日 · 农历七月廿二</div>
+            <div class="hero-count"><span class="hero-num">18</span><span class="hero-unit">天后</span></div>
+          </div>
+          <div class="hero-emoji">🎂</div>
+        </div>
+      </div>
+      <div class="card-normal d2" style="--accent:var(--teal);--avatar-bg:rgba(0,191,165,.10);">
+        <div class="cn-avatar">👵</div>
+        <div class="cn-info">
+          <div class="cn-name">外婆生日<span class="cn-tag" style="background:rgba(0,191,165,.12);color:var(--teal);">生日</span></div>
+          <div class="cn-meta">9月15日 · 家人</div>
+        </div>
+        <div class="cn-count"><div class="cn-days" style="color:var(--teal);">29</div><div class="cn-unit">天后</div></div>
+      </div>
+      <div class="month-divider">10 月</div>
+      <div class="row-distant d3" style="--accent:var(--violet);">
+        <div class="rd-dot"></div><div class="rd-name">结婚三周年 · 10月28日</div><div class="rd-days">72 天后</div>
+      </div>
+      <div class="month-divider">2027 年</div>
+      <div class="row-distant d4" style="--accent:var(--slate);">
+        <div class="rd-dot"></div><div class="rd-name">爷爷 · 离开的日子 · 12月3日</div><div class="rd-days">108 天后</div>
+      </div>
+      <div class="list-end">……</div>
+    </div>
+
+    <!-- ============ 场景二：最近是庆典且 ≤7 天（Hero 带进度条）============ -->
+    <div class="scenario" id="scn2">
+      <div class="scn-note"><b>场景二</b> 最近事件是「妈妈生日 · 5 天后」（紧急层）→ Hero 放大并<b>自带进度条</b>（已过去 2/7 天）；列表去重，不再出现第二张紧急卡</div>
+      <div class="hero" style="background:linear-gradient(120deg,var(--coral-g1),var(--coral-g2));">
+        <div class="dedup-badge">列表已去重</div>
+        <div class="hero-inner">
+          <div class="hero-left">
+            <div class="hero-label">即将到来</div>
+            <div class="hero-name">妈妈生日</div>
+            <div class="hero-date">8月22日 · 农历七月初十 · 60岁</div>
+            <div class="hero-count"><span class="hero-num">5</span><span class="hero-unit">天后</span></div>
+          </div>
+          <div class="hero-emoji">🎂</div>
+        </div>
+      </div>
+      <div class="hero-progress" style="margin:-8px 20px 14px;">
+        <div class="plabel"><span>提醒进度</span><span>已过去 2 天</span></div>
+        <div class="pbar"><div class="pfill" style="width:29%"></div></div>
+      </div>
+      <div class="card-normal d2" style="--accent:var(--teal);--avatar-bg:rgba(0,191,165,.10);">
+        <div class="cn-avatar">👵</div>
+        <div class="cn-info">
+          <div class="cn-name">外婆生日<span class="cn-tag" style="background:rgba(0,191,165,.12);color:var(--teal);">生日</span></div>
+          <div class="cn-meta">9月15日 · 家人</div>
+        </div>
+        <div class="cn-count"><div class="cn-days" style="color:var(--teal);">29</div><div class="cn-unit">天后</div></div>
+      </div>
+      <div class="row-distant d3" style="--accent:var(--slate);">
+        <div class="rd-dot"></div><div class="rd-name">爷爷 · 离开的日子 · 12月3日</div><div class="rd-days">108 天后</div>
+      </div>
+      <div class="list-end">……</div>
+    </div>
+
+    <!-- ============ 场景三：最近全是缅怀 => 无 Hero ============ -->
+    <div class="scenario" id="scn3">
+      <div class="scn-note"><b>场景三</b> 最近日期里<b>只有缅怀</b>（爷爷 · 5 天后）→ <b>不显示 Hero</b>，悼念不被放大；列表首项即灰蓝肃穆的缅怀卡（紧急卡文案/配色均不庆祝）</div>
+      <div class="card-urgent d1" style="--accent:var(--slate);--accent2:#7E8C99;--track:rgba(91,107,122,.10);border-color:var(--slate);">
+        <div class="cu-inner">
+          <div class="cu-avatar" style="background:rgba(91,107,122,.10);border-color:rgba(91,107,122,.2);">🕯️</div>
+          <div class="cu-info">
+            <div class="cu-name">爷爷</div>
+            <div class="cu-meta">12月3日 · 离开的日子</div>
+          </div>
+          <div class="cu-num"><div class="cu-days" style="color:var(--slate);">5</div><div class="cu-unit" style="color:var(--slate);">天后</div></div>
+        </div>
+        <div class="cu-progress">
+          <div class="plabel"><span>提醒进度</span><span>已过去 2 天</span></div>
+          <div class="pbar"><div class="pfill" style="width:29%"></div></div>
+        </div>
+      </div>
+      <div class="card-normal d2" style="--accent:var(--coral);--avatar-bg:rgba(255,107,107,.10);">
+        <div class="cn-avatar">🧑</div>
+        <div class="cn-info">
+          <div class="cn-name">小明生日<span class="cn-tag" style="background:rgba(255,107,107,.12);color:var(--coral);">生日</span></div>
+          <div class="cn-meta">9月17日 · 家人</div>
+        </div>
+        <div class="cn-count"><div class="cn-days" style="color:var(--coral);">31</div><div class="cn-unit">天后</div></div>
+      </div>
+      <div class="list-end">……</div>
+    </div>
+
+    <!-- ============ 场景四：同日缅怀 + 庆典 => Hero 显示同天庆祝事件 ============ -->
+    <div class="scenario" id="scn4">
+      <div class="scn-note"><b>场景四</b> 爷爷缅怀与二叔生日<b>同日</b>（都还有 5 天）→ Hero 聚焦同天的<b>庆祝事件</b>（二叔生日），缅怀不被放大但留在列表；同天多条庆祝时按排序取第一条</div>
+      <div class="hero" style="background:linear-gradient(120deg,var(--violet-g1),var(--violet));">
+        <div class="dedup-badge">列表已去重</div>
+        <div class="hero-inner">
+          <div class="hero-left">
+            <div class="hero-label">即将到来</div>
+            <div class="hero-name">二叔生日</div>
+            <div class="hero-date">8月22日 · 农历七月初十</div>
+            <div class="hero-count"><span class="hero-num">5</span><span class="hero-unit">天后</span></div>
+          </div>
+          <div class="hero-emoji">👨</div>
+        </div>
+      </div>
+      <div class="hero-progress" style="margin:-8px 20px 14px;">
+        <div class="plabel"><span>提醒进度</span><span>已过去 2 天</span></div>
+        <div class="pbar"><div class="pfill" style="width:29%"></div></div>
+      </div>
+      <div class="card-urgent d2" style="--accent:var(--slate);--accent2:#7E8C99;--track:rgba(91,107,122,.10);border-color:var(--slate);">
+        <div class="cu-inner">
+          <div class="cu-avatar" style="background:rgba(91,107,122,.10);border-color:rgba(91,107,122,.2);">🕯️</div>
+          <div class="cu-info">
+            <div class="cu-name">爷爷</div>
+            <div class="cu-meta">8月22日 · 离开的日子</div>
+          </div>
+          <div class="cu-num"><div class="cu-days" style="color:var(--slate);">5</div><div class="cu-unit" style="color:var(--slate);">天后</div></div>
+        </div>
+        <div class="cu-progress">
+          <div class="plabel"><span>提醒进度</span><span>已过去 2 天</span></div>
+          <div class="pbar"><div class="pfill" style="width:29%"></div></div>
+        </div>
+      </div>
+      <div class="row-distant d3" style="--accent:var(--teal);">
+        <div class="rd-dot"></div><div class="rd-name">外婆生日 · 9月15日</div><div class="rd-days">29 天后</div>
+      </div>
+      <div class="list-end">……</div>
+    </div>
+
+    <!-- ============ 场景五：同天多个缅怀（无同天庆祝）=> 无 Hero，两张灰蓝卡相邻 ============ -->
+    <div class="scenario" id="scn5">
+      <div class="scn-note"><b>场景五</b> 同天<b>多个缅怀</b>（爷爷、奶奶都在 5 天后，该天没有庆祝事件）→ 无 Hero，悼念不放大；列表按倒计时相邻呈现两张灰蓝缅怀卡（本期同天记录不做分组标题，每卡自带日期）</div>
+      <div class="card-urgent d1" style="--accent:var(--slate);--accent2:#7E8C99;--track:rgba(91,107,122,.10);border-color:var(--slate);">
+        <div class="cu-inner">
+          <div class="cu-avatar" style="background:rgba(91,107,122,.10);border-color:rgba(91,107,122,.2);">🕯️</div>
+          <div class="cu-info"><div class="cu-name">爷爷</div><div class="cu-meta">8月22日 · 离开的日子</div></div>
+          <div class="cu-num"><div class="cu-days" style="color:var(--slate);">5</div><div class="cu-unit" style="color:var(--slate);">天后</div></div>
+        </div>
+        <div class="cu-progress"><div class="plabel"><span>提醒进度</span><span>已过去 2 天</span></div><div class="pbar"><div class="pfill" style="width:29%"></div></div></div>
+      </div>
+      <div class="card-urgent d2" style="--accent:var(--slate);--accent2:#7E8C99;--track:rgba(91,107,122,.10);border-color:var(--slate);">
+        <div class="cu-inner">
+          <div class="cu-avatar" style="background:rgba(91,107,122,.10);border-color:rgba(91,107,122,.2);">🌼</div>
+          <div class="cu-info"><div class="cu-name">奶奶</div><div class="cu-meta">8月22日 · 离开的日子</div></div>
+          <div class="cu-num"><div class="cu-days" style="color:var(--slate);">5</div><div class="cu-unit" style="color:var(--slate);">天后</div></div>
+        </div>
+        <div class="cu-progress"><div class="plabel"><span>提醒进度</span><span>已过去 2 天</span></div><div class="pbar"><div class="pfill" style="width:29%"></div></div></div>
+      </div>
+      <div class="card-normal d3" style="--accent:var(--coral);--avatar-bg:rgba(255,107,107,.10);">
+        <div class="cn-avatar">🧑</div>
+        <div class="cn-info">
+          <div class="cn-name">小明生日<span class="cn-tag" style="background:rgba(255,107,107,.12);color:var(--coral);">生日</span></div>
+          <div class="cn-meta">9月17日 · 家人</div>
+        </div>
+        <div class="cn-count"><div class="cn-days" style="color:var(--coral);">31</div><div class="cn-unit">天后</div></div>
+      </div>
+      <div class="list-end">……</div>
+    </div>
+
+    <!-- ============ 场景六：同天多个生日 => Hero 聚焦排序第一条，其余仍在列表 ============ -->
+    <div class="scenario" id="scn6">
+      <div class="scn-note"><b>场景六</b> 同天<b>多个生日</b>（小明、小红都剩 18 天）→ Hero 聚焦排序靠前的小明；去重只去掉 Hero 那条，<b>小红仍在列表</b>（同天多条庆祝不合并、不丢信息）</div>
+      <div class="hero" style="background:linear-gradient(120deg,var(--coral-g1),var(--coral-g2));">
+        <div class="dedup-badge">列表已去重</div>
+        <div class="hero-inner">
+          <div class="hero-left">
+            <div class="hero-label">即将到来</div>
+            <div class="hero-name">小明生日</div>
+            <div class="hero-date">9月4日 · 农历七月廿二</div>
+            <div class="hero-count"><span class="hero-num">18</span><span class="hero-unit">天后</span></div>
+          </div>
+          <div class="hero-emoji">🎂</div>
+        </div>
+      </div>
+      <div class="card-normal d2" style="--accent:var(--coral);--avatar-bg:rgba(255,107,107,.10);">
+        <div class="cn-avatar">👧</div>
+        <div class="cn-info">
+          <div class="cn-name">小红生日<span class="cn-tag" style="background:rgba(255,107,107,.12);color:var(--coral);">生日</span></div>
+          <div class="cn-meta">9月4日 · 朋友</div>
+        </div>
+        <div class="cn-count"><div class="cn-days" style="color:var(--coral);">18</div><div class="cn-unit">天后</div></div>
+      </div>
+      <div class="row-distant d3" style="--accent:var(--teal);">
+        <div class="rd-dot"></div><div class="rd-name">外婆生日 · 9月15日</div><div class="rd-days">29 天后</div>
+      </div>
+      <div class="list-end">……</div>
+    </div>
+
+    <!-- ============ 场景七：同天生日 + 结婚/情侣纪念 => Hero 聚焦一条，另一条仍在列表 ============ -->
+    <div class="scenario" id="scn7">
+      <div class="scn-note"><b>场景七</b> 同天<b>生日 + 纪念日</b>（妈妈生日🎂、结婚三周年💍都剩 18 天，同为庆祝类）→ Hero 聚焦排序靠前的妈妈生日；结婚三周年（紫色）保留在列表</div>
+      <div class="hero" style="background:linear-gradient(120deg,var(--coral-g1),var(--coral-g2));">
+        <div class="dedup-badge">列表已去重</div>
+        <div class="hero-inner">
+          <div class="hero-left">
+            <div class="hero-label">即将到来</div>
+            <div class="hero-name">妈妈生日</div>
+            <div class="hero-date">9月4日 · 农历七月廿二</div>
+            <div class="hero-count"><span class="hero-num">18</span><span class="hero-unit">天后</span></div>
+          </div>
+          <div class="hero-emoji">🎂</div>
+        </div>
+      </div>
+      <div class="card-normal d2" style="--accent:var(--violet);--avatar-bg:rgba(124,107,255,.10);">
+        <div class="cn-avatar">💍</div>
+        <div class="cn-info">
+          <div class="cn-name">结婚三周年<span class="cn-tag" style="background:rgba(124,107,255,.12);color:var(--violet);">纪念日</span></div>
+          <div class="cn-meta">9月4日 · 家人</div>
+        </div>
+        <div class="cn-count"><div class="cn-days" style="color:var(--violet);">18</div><div class="cn-unit">天后</div></div>
+      </div>
+      <div class="list-end">……</div>
+    </div>
+
+    <!-- 底部导航 + FAB -->
+    <div class="fab-area">
+      <button class="fab" onclick="alert('效果图预览，交互见实际 App')">＋</button>
+      <div class="bottom-nav">
+        <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>首页</span></div>
+        <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>日历</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="doc-sub" style="margin-top:14px;color:#8a8580;">左上角斜角标签「列表已去重」为效果图标注，仅说明 Hero 那条不再重复出现在列表</div>
+</div>
+
+<script>
+  var tabs = document.querySelectorAll('.tab');
+  var scns = document.querySelectorAll('.scenario');
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){
+      tabs.forEach(function(x){x.classList.remove('active');});
+      t.classList.add('active');
+      scns.forEach(function(s){s.classList.remove('show');});
+      document.getElementById('scn' + t.dataset.s).classList.add('show');
+    });
+  });
+</script>
+</body>
+</html>
