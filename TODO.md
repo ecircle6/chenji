@@ -37,6 +37,26 @@
   - 修复：改用 Box 的 `matchParentSize()`（铺满实际卡片尺寸），图标回到右侧垂直居中、被卡片完全盖住，仅左滑时露出
   - 验收：✅ 全量单测 140 用例通过（Compose 探针验证图标 bounds 从右上角 y=192 回到卡片中线 y=268）
 
+- [ ] **首页筛选面板「类型」行：无卡片类型点击无效果**（2026-08-17 发现，待修）
+  - 现象：「更多筛选」面板里点选当前没有对应卡片的类型（如「情侣纪念」），选中瞬间被重置回「全部」，表现成"点了没反应"；「关系」「生肖」行无此问题（无卡片也能点，显示空态）
+  - 根因：`HomeViewModel.init` 里 `combine(availableTypes, _filter)` 的自动回退——`filter.type` 不在 `availableTypes`（数据里实际出现的类型）时立即 `_filter.type = "all"`。面板点选一个当前无卡片的类型正好命中该条件，刚选中就被重置；关系/生肖没有这层回退
+  - 方案：删除该自动回退块，类型行行为与关系/生肖对齐：点选→保持选中→列表空态「这个筛选下没有记录」→「全部」胶囊/面板「清除」可恢复
+  - 为什么可以不删则删：它防的是「选中类型被删光后快捷胶囊消失、取消不掉」，但快捷行永远有「全部」、面板能看见选中态，实际可恢复；而它对"用户主动选无卡片类型"造成破坏性体验
+  - 验收：单测补「面板 updateFilter 选无卡片类型后 filter.type 保持选中、displayBirthdays 为空」；模拟器面板实测
+
+- [ ] **新建页退出慢、退出动画期间可误点**（2026-08-17 发现，待修）
+  - 现象：点「+」新建再返回，关闭较慢；若返回后立刻快速点击，可能点中新加页里的控件（如「提醒时间」）弹出 TimePicker
+  - 根因：`MainActivity` 的 NavHost 未配置转场 → 用 navigation-compose 2.8.5 默认 `fadeIn/fadeOut(tween(700))`（700ms）。退出淡出期间被退出的 AddEditScreen 仍在组合中且完全可交互，快速点击落在其控件上；弹出的 Dialog 属于该页面，随页面销毁消失，但会干扰本次点击
+  - 方案：NavHost 显式配 4 个转场参数，统一 `fadeIn/fadeOut(tween(200))`（enterTransition/exitTransition/popEnterTransition/popExitTransition）。关闭感知快 3.5 倍，误点窗口缩到 200ms；一处 API 覆盖 add/detail/settings 全部全屏页，顺带提速首页/日历 tab 切换
+  - 备选（不用）：转场期间屏蔽输入（需观察 transition 状态+pointerInput，侵入所有页面）；pop 用 tween(0)（无过渡生硬）
+  - 验收：模拟器返回新建页实测关闭明显变快、快速点击不触发「提醒时间」
+
+- [ ] **导入备份预览无法滚动**（2026-08-17 发现，待修）
+  - 现象：新装 App「导入备份」弹出「导入预览（N 条）」后无法下滑，条目多时最下方记录看不到
+  - 根因：`SettingsScreen.kt` 导入预览 AlertDialog 的 `text` 槽是普通 `Column`，无 `verticalScroll`；M3 AlertDialog 内容默认不可滚动，超高内容被直接裁剪
+  - 方案：该 Column 加 `Modifier.fillMaxWidth().heightIn(max = 420.dp).verticalScroll(rememberScrollState())`——条目多时在有限高度内滚动，标题与「导入/取消」按钮始终可见；同文件「版本更新说明」对话框（513 行附近）已有 verticalScroll 先例可参照
+  - 验收：模拟器导入含 30+ 条备份实测可滚动至最后一条
+
 ---
 
 ## P1 — 功能对齐竞品（差异化收益最高）
@@ -190,6 +210,28 @@
   - 发版：versionCode 10 → 11、versionName 2.1.7 → 2.1.8；`Changelog.kt` 头部加 v2.1.8 条目（首页改版/双 tab/分类面板/生肖筛选/卡片紧凑化/Hero 卡）；README 更新功能与测试统计
   - 验证：`./gradlew testDebugUnitTest` 全绿 + `assembleDebug` 通过；`bash tools/verify-on-emulator.sh` 模拟器实测清单：底部 tab 切换（含切走再切回状态保持）、日历页全量记录（含暂停）、Hero 卡点击进详情、面板叠加筛选（家人∩生日∩属虎）、生肖筛选、快捷胶囊单维切换、列表底卡片不被 FAB 遮挡、深色模式、搜索/空态回归
   - 不做：详情页/添加页/设置页、HomeViewModel 排序与搜索核心语义、滑动删除、数据模型（生肖零迁移）、备份、小组件全部不动
+
+- [ ] **首页卡片体系按 time_memory_home.html 重构：类型配色 + 三层卡片 + 专属 Emoji 头像 + 月份分组/远景折叠**（2026-08-17 规划，待实现）
+  - 背景：用户反馈——①生日与情侣纪念同色（都是橙红）②同一类型只有一种颜色，生日居多导致首页一片同色单调。已确认按根目录 `time_memory_home.html` 设计稿方向重构（定稿：生日暖橙/纪念紫/缅怀灰蓝；紧急卡进度条「已过去 X 天」；专属 Emoji 头像；月份分组+远景迷你行）
+  - **设计决策（与现状的关系）**：Hero 卡保留在顶部；置顶记录→标准卡置顶显示；暂停记录→灰显标准卡沉底；搜索态保持普通卡片列表不分层（聚焦结果）；筛选态照常分层；`SwipeToDeleteBox` 滑删对三层均保留；分享卡是定稿规范不动
+  - **改动一：类型固定配色（修「生日/情侣同色」）**——`ui/common/EventTypeStyle.kt` 的 `eventAccent()`：生日保持 `Coral500`（品牌主色、最常见类型）；`LOVE → Violet500`（与 Hero 情侣渐变 HeroLove、MARRIAGE 的紫一致）；缅怀 `SlateInk`、其他 `SunnyYellow700` 不变；`eventBannerColors()` LOVE 分支同步改 violet 系（今天横幅与色条同色）。类型选择器/详情页共用该函数自动跟随
+  - **改动二：卡片三层化（按倒计时分层）**
+    - 紧急层 0-7 天 `UrgentCard`（新组件）：2dp 类型色边框 + 呼吸光晕（`rememberInfiniteTransition` 边框 alpha 0.5↔1，2.8s）+ 左 5dp 类型色竖条；52dp 圆形 Emoji 头像（类型色 10% 底 + 20% 描边）；名称 17sp + meta 小字（复用 `EventTextUtils.infoLine`：日历/日期/属相·岁数）；右侧 38sp 大倒计时（countdown 0 →「今天」）；**底部进度条**：label「提醒进度 · 已过去 X 天」+ 5dp 进度条（fill=类型色渐变），`已过去 = 7 - countdown`，进度 `= 已过去/7`（今天 100%）——照设计稿 4/7=57% 的语义：进入 7 天窗口后每天推进 1/7，直观传达"时间在流逝"
+    - 标准层 8-30 天 `StandardCard`（现 `BirthdayCard` 微调）：44dp 圆形 Emoji 头像（类型色 10% 底）替代圆角方块（生日首字/类型 emoji）；左 3dp 类型色条 + 类型标签 pill + 名称 + 「日期 · 关系」小字 + 右侧 24sp 倒计时
+    - 远景层 >30 天 `DistantRow`（新组件）+ 月份分隔标题：按月分组（`EventCalc.nextSolarDate` 的 年·月），本年 →「X 月」、跨年 →「YYYY 年」灰色小标题；行 = 7dp 类型色圆点 + 「名字 · M月d日 · N岁」+「N 天后」，整行 opacity 0.55，点击进详情（即"展开详情"）
+  - **改动三：专属 Emoji 头像（数据字段 + 迁移 + 选择器）**
+    - `Birthday` 加 `emoji: String = ""`（`@ColumnInfo(defaultValue = "")`；空=自动：生日→姓名首字、其他→类型 emoji）
+    - 数据库 v3→v4：`ALTER TABLE birthdays ADD COLUMN emoji TEXT NOT NULL DEFAULT ''`；补 `app/src/test/assets/4.json` schema + `MigrationTest` v3→v4 用例
+    - 备份 `FORMAT_VERSION 3→4`：`encode` 加 `put("emoji")`，`decode` 加 `optString("emoji")`（老 v3 备份缺字段→默认空）；补编解码测试
+    - 添加/编辑页新增「头像 Emoji」区块：约 28 个预设 Emoji 的 FlowRow（👩👨👵👴👦👧👶🐱🐶💍🎂🎁🌹❤️🕯️等）+「自动」chip 清空，点选高亮（类型色描边）；`AddEditUiState` 加 emoji + `updateEmoji` + `loadBirthday`/`save` 带出带入
+    - 首页三层卡片头像统一取 `emoji.ifBlank { 自动 }`，头像底 = 类型色 10% tint
+    - 桌面小组件：`WidgetItem.emoji` 改取 `emoji.ifBlank { EventType.emoji(eventType) }`（一行）
+    - 详情页现无头像位不动；分享卡是定稿规范不动
+  - **改动四：分层/分组纯函数**——新建 `ui/home/HomeTier.kt`：`tierOf(countdown)`（0-7 紧急 / 8-30 标准 / >30 远景）、`progressOf/elapsedDays`、`buildRows(list)`（产出 `List<HomeListItem>` 含月份 Header，纯函数可单测）；`HomeViewModel.displayBirthdays` 排序保持（置顶→暂停→倒计时），`HomeScreen` LazyColumn 按 `buildRows` 渲染异构行（key：Header 用 "header-年-月"，卡片用 birthday.id）
+  - 测试计划：新增 `HomeTierTest`（分层/进度/分组纯函数）、`EventTypeStyleTest`（生日≠情侣色、Love=Violet）；更新 `HomeViewModelTest`（无卡片类型保持选中、分层结构）、`HomeScreenTest`/`SharedComponentsTest`（三层卡片/头像 emoji/进度条断言）、`MigrationTest`（v3→v4）、`BackupCodecTest`（emoji 编解码）、`AddEditViewModelTest`（emoji 保存）
+  - 坑点：Robolectric 下 emoji 字形尺寸为 0，Compose 断言用存在性+substring；新增列 defaultValue 必须与实体 `@ColumnInfo(defaultValue)` 一致否则 Room schema 校验崩；备份 FORMAT 升 4 后老版本 App 读新备份会提示"版本不支持"（与既有前向兼容策略一致）
+  - 验收：全量单测绿 + assembleDebug 通过；模拟器实测清单——类型面板无卡片可点、紧急卡进度条宽度/「已过去 X 天」、Emoji 头像选择与三层展示、月份分组/远景折叠、返回动画提速、导入预览滚动、深色模式、筛选/搜索/置顶/暂停回归
+  - 发版：versionCode 11→12、versionName 2.1.8→2.1.9；`Changelog.kt` 头部加 v2.1.9 条目（首页分层卡片/专属 Emoji 头像/紧急进度条/类型配色区分/月份分组/筛选面板修复/导入预览滚动/返回动画提速）；README 更新功能与测试统计
 
 ---
 
