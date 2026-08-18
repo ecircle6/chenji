@@ -2,4 +2,7 @@
     <string name="app_name">辰记</string>
     <string name="widget_label">辰记</string>
     <string name="widget_description">在桌面看最近的生日与纪念日</string>
+    <!-- 长按应用图标的快捷方式文案（system 可读，必须走资源） -->
+    <string name="shortcut_add_widget">添加小组件</string>
+    <string name="shortcut_add_widget_long">把辰记小组件放到桌面</string>
 </resources>

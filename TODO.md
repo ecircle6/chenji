@@ -287,6 +287,17 @@
   - 验收：全量单测绿 + `assembleDebug` 通过；模拟器按 `hero-redesign-mockup.html` 的 7 个场景逐一实测对照
   - **实现与验收**（2026-08-17）：`heroCandidate` 纯函数（活跃→最近日期组→组内第一条非缅怀）落地于 `HeroCard.kt`，替换旧 `heroBirthday`（只排暂停+取最小）；`HeroCard` 签名改为 `(hero: BirthdayDisplay?, ...)` 纯展示，候选逻辑收敛到调用方；`HomeScreen` 非搜索态计算一次 hero、对列表 `filterNot` 去重（buildRows 之前）、搜索态保持无 Hero 不分层；Hero 卡 `countdown <= 7` 时底部加进度条（复用 `HomeTier.progressOf/elapsedDays`，白字白条与渐变底融合，与紧急卡进度语义一致）；新增 `HeroCandidateTest` 11 用例（空/全暂停→null、非置顶当选、>7/≤7 均当选、最近全缅怀→null、更远庆祝不救场、同日缅怀+庆典取庆典、同日多庆祝取排序第一条、暂停不参与、情侣纪念也是庆祝）+ `HomeScreenTest` 更新（去重计数 2→1、全缅怀无 Hero、进度条有/无、同日缅怀+庆典聚焦庆典且缅怀留列表）；跨年分组 key 崩溃测试改用缅怀数据构造（缅怀不进 Hero 不被去重，保留两分组验证意图）。全量 **198 用例 / 26 测试类全绿** + `assembleDebug` 通过；模拟器 7 场景实测对照效果图；versionCode 13 / v2.1.10 + Changelog 已加
 
+- [ ] **小组件一键添加入口**（v2.1.12）
+  - 需求：添加小组件要进桌面小组件列表翻找，不方便 → 长按应用图标即可添加
+  - 方案：静态快捷方式（`res/xml/shortcuts.xml`，挂 MainActivity）+ `AppWidgetManager.requestPinAppWidget()`（API 26 = minSdk，零新权限），弹系统「添加到主屏幕」放置框，确认后自动走既有 WidgetConfigureActivity 配置页
+  - 选型对比：系统小组件选择器 deep-link（Android 8+ 禁第三方唤起）✗；动态快捷方式（静态足够，无需生命周期管理）✗；可拖拽快捷方式（拖出的是磁贴非 widget）✗；无障碍自动放置（需系统级权限，违背隐私定位）✗；依赖 launcher 自带长按入口（国产桌面普遍缺失，正是痛点）✗
+  - 实现：`WidgetPinner.request(context)` 统一入口（绑定 `BirthWidgetReceiver`）；MainActivity `ACTION_REQUEST_WIDGET` 双通道（cold onCreate / warm onNewIntent，仿 ACTION_OPEN_ADD）；返回 false（桌面不支持 pin）时 Toast 引导「长按桌面空白处 → 小组件 → 辰记」；设置页「关于」区新增「添加桌面小组件」行复用同一入口做兜底
+  - 测试：`WidgetPinnerTest`（Robolectric：provider 传参校验 + 不崩溃）；`SettingsScreenTest` 补「关于区显示添加行、点击触发回调」
+  - 收尾：versionCode 15 / v2.1.12 + Changelog 已加；README 功能列表同步
+  - 已知行为：从快捷方式冷启动首次会顺带弹通知/电池优化引导（与小组件「＋」冷启动一致，非本次新增）
+  - 不做：长按菜单不放「新增记录/打开日历」；不做专属 widget 预览图（远期可选）
+  - 验收（待实测）：模拟器 `am start -a com.birthapp.action.REQUEST_WIDGET` 弹放置框；桌面长按图标见「添加小组件」入口；设置页入口放置成功
+
 ---
 
 ## P2 — 工程与体验现代化

@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -56,6 +57,7 @@ import com.birthapp.ui.home.HomeScreen
 import com.birthapp.ui.navigation.MainNavigationBar
 import com.birthapp.ui.settings.SettingsScreen
 import com.birthapp.ui.theme.BirthAppTheme
+import com.birthapp.widget.WidgetPinner
 import java.util.Locale
 
 /**
@@ -110,6 +112,8 @@ class MainActivity : ComponentActivity() {
             if (intent?.action == ACTION_OPEN_ADD) openAddRequests.intValue++
             // 冷启动点通知进来：同样只在首次创建时处理，避免重建后重复跳详情
             handleDetailIntent(intent)
+            // 冷启动走长按图标的「添加小组件」快捷方式进来：同样只处理一次
+            requestWidgetIfAction(intent)
         }
 
         setContent {
@@ -189,6 +193,8 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         if (intent.action == ACTION_OPEN_ADD) openAddRequests.intValue++
         handleDetailIntent(intent)
+        // App 活着时长按图标的快捷方式走 onNewIntent，这里再触发一次放置框
+        requestWidgetIfAction(intent)
     }
 
     /**
@@ -201,13 +207,34 @@ class MainActivity : ComponentActivity() {
         if (id > 0) pendingDetailId.value = id
     }
 
-    companion object {
+    /**
+     * 长按图标的「添加小组件」快捷方式：action 匹配时弹系统桌面放置框。
+     * 放下后会自动走小组件配置页（birth_widget_info 的 configure）。
+     * 桌面不支持 pin 机制时 request 返回 false，Toast 引导用户手动添加，
+     * 而不是静默失败让人以为点了没反应
+     */
+    private fun requestWidgetIfAction(intent: Intent?) {
+        if (intent?.action != ACTION_REQUEST_WIDGET) return
+        val ok = WidgetPinner.request(this)
+        if (!ok) {
+            Toast.makeText(
+                this,
+                "当前桌面不支持直接添加，请长按桌面空白处 → 小组件 → 辰记",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+companion object {
         /** 小组件加号的跳转标记。用 action 而不是 extra，否则两个 PendingIntent 会被系统当成同一个 */
         const val ACTION_OPEN_ADD = "com.birthapp.action.OPEN_ADD"
 
+        /** 长按应用图标「添加小组件」的快捷方式标记，由 res/xml/shortcuts.xml 的 intent 带来 */
+        const val ACTION_REQUEST_WIDGET = "com.birthapp.action.REQUEST_WIDGET"
+
         /** 与 ThemeStore 共用同一份应用设置文件 */
         private const val PREFS_NAME = "birthapp_settings"
-        /** 是否已经引导过电池优化豁免：只引导一次，之后不再自动弹出 */
+        /** 是否已经引导过电池优化豁免：只引导一次，之后不再自动弹 */
         private const val KEY_ASKED_BATTERY_OPT = "asked_ignore_battery_opt"
     }
 

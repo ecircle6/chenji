@@ -19,6 +19,7 @@ import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Upload
+import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -42,6 +43,7 @@ import com.birthapp.settings.ThemeMode
 import com.birthapp.ui.theme.BirthAppTheme
 import com.birthapp.ui.theme.Coral500
 import com.birthapp.ui.theme.Teal500
+import com.birthapp.widget.WidgetPinner
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
@@ -68,7 +70,8 @@ class SettingsCallbacks(
     val onApplyImport: (List<ImportAction>, Boolean) -> Unit,
     val onToast: (String) -> Unit,
     val onShareFile: (Uri) -> Unit,
-    val onOpenSystemNotificationSettings: () -> Unit
+    val onOpenSystemNotificationSettings: () -> Unit,
+    val onAddWidget: () -> Unit
 )
 
 /**
@@ -144,6 +147,16 @@ fun SettingsScreen(
                     Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                         .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
                 )
+            },
+            // 添加桌面小组件：与长按应用图标共用同一个放置请求，殊途同归
+            onAddWidget = {
+                if (!WidgetPinner.request(context)) {
+                    Toast.makeText(
+                        context,
+                        "当前桌面不支持直接添加，请长按桌面空白处 → 小组件 → 辰记",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
             }
         )
     )
@@ -415,12 +428,21 @@ fun SettingsContent(
                     1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                 )
             ) {
-                BackupActionRow(
-                    icon = Icons.Outlined.Info,
-                    title = "版本更新说明",
-                    desc = "当前版本 v${uiState.versionName} · 查看每次更新了什么",
-                    onClick = { showChangelog = true }
-                )
+                Column {
+                    BackupActionRow(
+                        icon = Icons.Outlined.Widgets,
+                        title = "添加桌面小组件",
+                        desc = "长按应用图标或在这里随时添加",
+                        onClick = callbacks.onAddWidget
+                    )
+                    BackupDivider()
+                    BackupActionRow(
+                        icon = Icons.Outlined.Info,
+                        title = "版本更新说明",
+                        desc = "当前版本 v${uiState.versionName} · 查看每次更新了什么",
+                        onClick = { showChangelog = true }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -683,7 +705,8 @@ private val previewSettingsCallbacks = SettingsCallbacks(
     onApplyImport = { _, _ -> },
     onToast = {},
     onShareFile = {},
-    onOpenSystemNotificationSettings = {}
+    onOpenSystemNotificationSettings = {},
+    onAddWidget = {}
 )
 
 @Preview(showBackground = true, locale = "zh-rCN", name = "设置页 · 浅色")

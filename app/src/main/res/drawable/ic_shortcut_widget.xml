@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 长按图标快捷方式的图标：珊瑚底 + 白色四格网格，与 App 主色一致。
+     单色矢量，系统按主题自动着色/裁剪，不需要 mipmap 多密度适配 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- 珊瑚色圆角底 -->
+    <path
+        android:fillColor="#FF6B6B"
+        android:pathData="M8,4 h32 a4,4 0 0 1 4,4 v32 a4,4 0 0 1 -4,4 h-32 a4,4 0 0 1 -4,-4 v-32 a4,4 0 0 1 4,-4 z" />
+    <!-- 白色四格网格（小组件语义），四角略留白 -->
+    <path
+        android:pathData="M12,14 a2,2 0 0 1 2,-2 h8 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-8 a2,2 0 0 1 -2,-2 z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.2" />
+    <path
+        android:pathData="M26,14 a2,2 0 0 1 2,-2 h8 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-8 a2,2 0 0 1 -2,-2 z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.2" />
+    <path
+        android:pathData="M12,28 a2,2 0 0 1 2,-2 h8 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-8 a2,2 0 0 1 -2,-2 z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.2" />
+    <path
+        android:pathData="M26,28 a2,2 0 0 1 2,-2 h8 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-8 a2,2 0 0 1 -2,-2 z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.2" />
+</vector>

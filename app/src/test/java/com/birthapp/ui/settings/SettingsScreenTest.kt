@@ -44,7 +44,8 @@ class SettingsScreenTest {
             onApplyImport = { _, _ -> },
             onToast = {},
             onShareFile = {},
-            onOpenSystemNotificationSettings = {}
+            onOpenSystemNotificationSettings = {},
+            onAddWidget = {}
         )
     ) {
         compose.setContent {
@@ -88,9 +89,21 @@ class SettingsScreenTest {
         compose.onNodeWithText("07:30").assertIsDisplayed()
     }
 
+    @Test
+    fun `关于区_添加桌面小组件行点击触发回调`() {
+        var clicked = false
+        render(callbacks = previewCallbacks(onAddWidget = { clicked = true }))
+        compose.onNodeWithText("添加桌面小组件")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
+        assertEquals(true, clicked)
+    }
+
     private fun previewCallbacks(
         onThemeModeSelect: (ThemeMode) -> Unit = {},
-        onToggleReminders: (Boolean) -> Unit = {}
+        onToggleReminders: (Boolean) -> Unit = {},
+        onAddWidget: () -> Unit = {}
     ) = SettingsCallbacks(
         onBack = {},
         onThemeModeSelect = onThemeModeSelect,
@@ -103,6 +116,7 @@ class SettingsScreenTest {
         onApplyImport = { _, _ -> },
         onToast = {},
         onShareFile = {},
-        onOpenSystemNotificationSettings = {}
+        onOpenSystemNotificationSettings = {},
+        onAddWidget = onAddWidget
     )
 }

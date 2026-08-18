@@ -32,8 +32,8 @@ android {
         targetSdk = 35
         // versionCode 给系统判断新旧版用，每次发版 +1；
         // versionName 是给人看的版本号，与发布说明保持一致
-        versionCode = 14
-        versionName = "2.1.11"
+        versionCode = 15
+        versionName = "2.1.12"
     }
 
     // 安装包文件名改成「辰记_v版本号.apk」，
