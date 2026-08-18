@@ -148,9 +148,11 @@ fun SettingsScreen(
                         .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
                 )
             },
-            // 添加桌面小组件：与长按应用图标共用同一个放置请求，殊途同归
+            // 添加桌面小组件：与长按应用图标共用同一个放置请求。
+            // 带上成功回调：真放置成功时系统发广播 → 弹「已添加」Toast，
+            // 避免用户以为没反应重复点击加了两个
             onAddWidget = {
-                if (!WidgetPinner.request(context)) {
+                if (!WidgetPinner.request(context, WidgetPinner.successPendingIntent(context))) {
                     Toast.makeText(
                         context,
                         "当前桌面不支持直接添加，请长按桌面空白处 → 小组件 → 辰记",

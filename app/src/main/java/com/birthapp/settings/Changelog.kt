@@ -25,6 +25,15 @@ object Changelog {
     /** 全部版本说明，最新在前。发版时在头部插入新条目。 */
     val all = listOf(
         ChangelogEntry(
+            version = "2.1.13",
+            title = "小组件添加入口体验修正",
+            items = listOf(
+                "长按应用图标添加小组件时不再打开 App：点击后只弹出桌面放置框，放完直接回原地",
+                "添加成功后新增提示「小组件已添加到桌面」，不会以为没成功而重复添加",
+                "提示：弹出放置框里可勾选尺寸（默认最大尺寸）；通过此入口添加时小组件按默认设置展示最近记录"
+            )
+        ),
+        ChangelogEntry(
             version = "2.1.12",
             title = "小组件快捷添加",
             items = listOf(

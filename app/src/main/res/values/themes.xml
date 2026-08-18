@@ -1,3 +1,9 @@
 <resources>
     <style name="Theme.BirthApp" parent="Theme.Material3.DayNight.NoActionBar" />
+
+    <!-- 添加小组件的透明中转页：无界面、无动画，只在放置框出现前瞬间存在 -->
+    <style name="Theme.WidgetRequest" parent="@android:style/Theme.Translucent.NoTitleBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
 </resources>

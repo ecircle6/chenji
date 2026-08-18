@@ -78,6 +78,23 @@
             </intent-filter>
         </activity>
 
+        <!-- 添加小组件的透明中转页：长按图标快捷方式直达，不打开 App 主界面。
+             exported=true 是 launcher 解析显式快捷方式 intent 的硬性要求；
+             noHistory + excludeFromRecents + 独立 taskAffinity 保证它
+             用完即走，App 后台时也绝不把主界面拉回前台 -->
+        <activity
+            android:name=".widget.WidgetPinRequestActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.WidgetRequest" />
+
+        <!-- 小组件放置成功的回调收件人：只有我们自己的 PendingIntent 能触发 -->
+        <receiver
+            android:name=".widget.WidgetPinSuccessReceiver"
+            android:exported="false" />
+
         <!-- 分享备份文件用。grantUriPermissions：接收方（微信/QQ 等）只在本次分享
              内拿到读权限，读不到白名单之外的任何文件 -->
         <provider

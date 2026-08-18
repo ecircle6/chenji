@@ -76,6 +76,18 @@
   - 测试：新增 4 个 AddEditScreenTest 用例（弹出/点选回调/清空/恢复自动入口）
   - 验收：✅ 全量单测 182 用例 / 24 测试类绿；模拟器实测点选 🐶 后面板收起、预览更新、按钮转「恢复自动」
 
+- [x] **长按图标添加小组件会打开 App**（2026-08-18 用户实测反馈并修复，v2.1.13）
+  - 现象：桌面长按图标点「添加小组件」，App 主界面被整个拉起并留在前台——快捷方式只需弹放置框，不该打开 App
+  - 根因：快捷方式 intent 指向 `MainActivity`，静态快捷方式的本质就是启动目标 Activity，App 随之被带到前台
+  - 方案：新增透明中转页 `WidgetPinRequestActivity`（exported/noHistory/excludeFromRecents/taskAffinity=""，透明主题 Theme.WidgetRequest）：在 `onResume`（满足 requestPinAppWidget「前台调用」的硬性约束）发起放置请求后，onPause 或 600ms 超时先到先 finish；放置框由 system/launcher 持有，不随页面销毁。shortcuts.xml 的 targetClass 改指它；MainActivity 移除 ACTION_REQUEST_WIDGET 全套
+  - 验收：✅ 单测 `WidgetPinRequestActivityTest` 3 用例 + 全量 204 用例绿；模拟器实测：直达中转页后放置框弹出、`topResumedActivity` 不是 MainActivity（App 未打开）、finish 后放置框仍在
+
+- [x] **设置页添加小组件成功无提示，用户重复点击加了两个**（2026-08-18 用户实测反馈并修复，v2.1.13）
+  - 现象：设置页「添加桌面小组件」放置成功后没有任何反馈，用户以为没反映又点了一遍，结果桌面上加了两个小组件
+  - 根因：`requestPinAppWidget` 的「成功回调 PendingIntent」完全没用上；API 语义是放置成功必发、用户取消不发——正是反馈的唯一正解
+  - 方案：`WidgetPinner.request` 增加 `onAdded` 参数 + `successPendingIntent(context)` 工具（固定 requestCode + FLAG_UPDATE_CURRENT|IMMUTABLE）；新增 `WidgetPinSuccessReceiver`（exported=false）弹 Toast「小组件已添加到桌面」；设置页与长按图标两条入口都带上它
+  - 验收：✅ 单测 `WidgetPinSuccessReceiverTest` + 全量 204 用例绿；模拟器实测：放置框确认后 widget 上桌面且出现「小组件已添加到桌面」Toast；取消放置则无提示
+
 ---
 
 ## P1 — 功能对齐竞品（差异化收益最高）

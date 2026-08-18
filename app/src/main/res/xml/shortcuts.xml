@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 长按应用图标的快捷方式：点「添加小组件」直接唤起添加流程。
-     静态快捷方式（API 25+，minSdk 26 全覆盖）：系统启动 MainActivity 并带上
-     com.birthapp.action.REQUEST_WIDGET，MainActivity 收到后弹桌面放置框 -->
+     指向透明的 WidgetPinRequestActivity（而不是 MainActivity）：
+     这样只弹系统放置框、不会把整个 App 拉回前台。
+     静态快捷方式（API 25+，minSdk 26 全覆盖）：系统启动该 Activity 并带上
+     com.birthapp.action.REQUEST_WIDGET，它在 onResume 时发起桌面放置请求 -->
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
     <shortcut
         android:shortcutId="add_widget"
@@ -12,6 +14,6 @@
         <intent
             android:action="com.birthapp.action.REQUEST_WIDGET"
             android:targetPackage="com.birthapp"
-            android:targetClass="com.birthapp.MainActivity" />
+            android:targetClass="com.birthapp.widget.WidgetPinRequestActivity" />
     </shortcut>
 </shortcuts>
