@@ -4,8 +4,8 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- 珊瑚色背景，与 App 主色一致 -->
+    <!-- 加深 7% 去糖果感：#FF6B6B → #E94E4E，更沉更稳，与 App 内 Coral500 同族深一级 -->
     <path
-        android:fillColor="#FF6B6B"
+        android:fillColor="#E94E4E"
         android:pathData="M0,0h108v108h-108z" />
 </vector>

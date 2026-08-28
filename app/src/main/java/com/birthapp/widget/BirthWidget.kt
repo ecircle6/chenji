@@ -18,13 +18,11 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.AppWidgetId
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
-// Intent 版的 actionStartActivity 只在 glance-appwidget 里，跟上面那个同名，所以起个别名区分
 import androidx.glance.appwidget.action.actionStartActivity as actionStartActivityIntent
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
-// 日/夜双色的 ColorProvider 在 color 包里，不是 androidx.glance.unit 下那个单色重载
-import androidx.glance.color.ColorProvider
 import androidx.glance.background
+import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -41,7 +39,9 @@ import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import com.birthapp.BirthApp
 import com.birthapp.MainActivity
+import com.birthapp.alarm.AlarmScheduler
 import com.birthapp.data.EventType
+import com.birthapp.lunar.LunarCalendar
 import com.birthapp.ui.theme.Coral500
 import com.birthapp.ui.theme.SlateInk
 import com.birthapp.ui.theme.SlateInkLight
@@ -51,24 +51,37 @@ import com.birthapp.ui.theme.TextOnDark
 import com.birthapp.ui.theme.TextOnDarkSecondary
 import com.birthapp.ui.theme.TextPrimary
 import com.birthapp.ui.theme.TextSecondary
+import com.birthapp.ui.theme.Violet500
 import com.birthapp.util.EventCalc
+import com.birthapp.util.Greeting
+import com.birthapp.util.ZodiacUtils
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 /** 小组件上一行要显示的东西。桌面空间有限，只留最必要的几项 */
 data class WidgetItem(
+    val id: Long = 0,
     val name: String,
     val emoji: String,
     val countdown: Int,
-    val isSolemn: Boolean
+    val isSolemn: Boolean,
+    val eventType: String = EventType.BIRTHDAY,
+    val avatarText: String = name.take(1),
+    val typeLabel: String = EventType.label(eventType),
+    val dateLabel: String = "",
+    val relationLabel: String = ""
 )
 
 /**
- * 桌面小组件。
+ * 桌面小组件 — 纸笺辰刻（Paper Slip, Time Carved）。
  *
  * 一个 provider 用 SizeMode.Responsive 同时支持三种尺寸：
- * 宽的（4×2）列出最近 3 条，方的（2×2）只放最近 1 条但字更大，
- * 4×4 大尺寸列出最近 6 条。在桌面上拖拽缩放即可切换。
+ * 2×2 紧凑：日历撕页单焦，NEXT + 48dp 头像 + 34sp 倒计时 + 3px 进度条（Text 进度语义）
+ * 4×2 宽：问候语头部 + 3 行纸笺行（左 3.5dp 色条 + 36dp 头像 + 名称/类型 + 右侧 20sp 数字）
+ * 4×4 大：上半 Hero（纯色）+ 下半列表，信息密度与首页一致
  * 首次添加会打开配置页（android:configure），可指定只展示某一条记录。
  */
 class BirthWidget : GlanceAppWidget() {
@@ -91,12 +104,29 @@ class BirthWidget : GlanceAppWidget() {
         val itemsFlow = db.birthdayDao().getAllActive().map { list ->
             val filtered = if (selectedId != null) list.filter { it.id == selectedId } else list
             filtered.map {
+                val isSolemn = EventType.isSolemn(it.eventType)
+                val emoji = it.emoji.ifBlank { EventType.emoji(it.eventType) }
+                val avatarText = if (it.eventType == EventType.BIRTHDAY) {
+                    it.name.take(1).ifBlank { "🎂" }
+                } else {
+                    emoji
+                }
+                val dateLabel = if (it.calendarType == "lunar") {
+                    "农历${LunarCalendar.formatLunarDate(it.birthMonth, it.birthDay)}"
+                } else {
+                    "${it.birthMonth}月${it.birthDay}日"
+                }
                 WidgetItem(
+                    id = it.id,
                     name = it.name,
-                    // v4: 优先展示记录的专属 Emoji，空值时退回类型 Emoji
-                    emoji = it.emoji.ifBlank { EventType.emoji(it.eventType) },
+                    emoji = emoji,
                     countdown = EventCalc.countdown(it),
-                    isSolemn = EventType.isSolemn(it.eventType)
+                    isSolemn = isSolemn,
+                    eventType = it.eventType,
+                    avatarText = avatarText,
+                    typeLabel = EventType.label(it.eventType),
+                    dateLabel = dateLabel,
+                    relationLabel = ZodiacUtils.getRelationLabel(it.relation)
                 )
             }
                 .sortedBy { it.countdown }
@@ -124,35 +154,71 @@ class BirthWidget : GlanceAppWidget() {
 private const val MAX_ITEMS = 6
 
 // 小组件不跟随 App 内的 Material 主题，得自己给日/夜两套颜色
+// Glance 的 ColorProvider 在 color 包里（DayNight），不是 unit 下的单色重载
 private val BgColor = ColorProvider(day = Color.White, night = SurfaceDark)
+private val RowBgProvider = ColorProvider(day = Color.White, night = Color(0xFF242422))
 private val NameColor = ColorProvider(day = TextPrimary, night = TextOnDark)
 private val SubColor = ColorProvider(day = TextSecondary, night = TextOnDarkSecondary)
 private val AccentColor = ColorProvider(day = Coral500, night = Coral500)
-private val NormalColor = ColorProvider(day = Teal500, night = Teal500)
+private val VioletColor = ColorProvider(day = Violet500, night = Violet500)
+private val TealColor = ColorProvider(day = Teal500, night = Teal500)
 private val SolemnColor = ColorProvider(day = SlateInk, night = SlateInkLight)
+private val WhiteProvider = ColorProvider(day = Color.White, night = Color.White)
+private val WhiteAlpha90 = ColorProvider(day = Color.White.copy(alpha = 0.9f), night = Color.White.copy(alpha = 0.9f))
+private val WhiteAlpha85 = ColorProvider(day = Color.White.copy(alpha = 0.85f), night = Color.White.copy(alpha = 0.85f))
+
+private fun widgetAccent(item: WidgetItem): androidx.glance.unit.ColorProvider = when {
+    item.isSolemn -> SolemnColor
+    item.eventType == EventType.LOVE || item.eventType == EventType.MARRIAGE -> VioletColor
+    item.eventType == EventType.OTHER -> TealColor
+    else -> AccentColor
+}
+
+private fun accentSolid(item: WidgetItem): Color = when {
+    item.isSolemn -> SlateInk
+    item.eventType == EventType.LOVE || item.eventType == EventType.MARRIAGE -> Violet500
+    item.eventType == EventType.OTHER -> Teal500
+    else -> Coral500
+}
+
+/** Glance 的 ColorProvider 是 DayNight，实现上 ColorProvider(day,night) 内部存两个 Color 的 long 值；copy(alpha) 只能在固定色上做，DayNight 不支持 copy，故用叠色方案：头像用 solid 10% 固定色（日夜一致）已足够克制 */
+private val AvatarBgMap: Map<String, androidx.glance.unit.ColorProvider> = mapOf(
+    EventType.BIRTHDAY to ColorProvider(day = Color(0x1AFF6B6B), night = Color(0x1AFF6B6B)),
+    EventType.LOVE to ColorProvider(day = Color(0x1A7C6BFF), night = Color(0x1A7C6BFF)),
+    EventType.MARRIAGE to ColorProvider(day = Color(0x1A7C6BFF), night = Color(0x1A7C6BFF)),
+    EventType.OTHER to ColorProvider(day = Color(0x1A00BFA5), night = Color(0x1A00BFA5)),
+    EventType.MEMORIAL to ColorProvider(day = Color(0x1A5B6B7A), night = Color(0x1A5B6B7A)),
+)
+
+private fun avatarBg(item: WidgetItem): androidx.glance.unit.ColorProvider =
+    AvatarBgMap[item.eventType] ?: AvatarBgMap[EventType.BIRTHDAY]!!
 
 @Composable
 private fun WidgetBody(items: List<WidgetItem>) {
     // 按宽度而不是格子数判断：各家桌面一格的实际宽度差别很大
     val isWide = LocalSize.current.width >= 200.dp
+    val isLarge = LocalSize.current.height >= 210.dp
+    // 紧凑 2×2 可用高度仅 92dp（120-28），需更小内边距避免内容溢出裁切
+    val outerPadding = when {
+        isLarge -> 14.dp
+        isWide -> 10.dp
+        else -> 8.dp
+    }
 
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(BgColor)
-            .cornerRadius(20.dp)
-            .padding(12.dp)
-            // 点空白处进 App
+            .cornerRadius(24.dp)
+            .padding(outerPadding)
+            // 点空白处进 App（行与按钮的 clickable 会覆盖它）
             .clickable(actionStartActivity<MainActivity>())
     ) {
-        // 4×4 大尺寸多放几行（6 条），窄尺寸只放 3 条
-        val isLarge = LocalSize.current.height >= 210.dp
         val visibleItems = if (isLarge) items else items.take(3)
         when {
             items.isEmpty() -> EmptyBody()
-            // 只有一条时不摆列表：单行列表下面空一大片很难看，
-            // 改成居中放大的卡片排版，看起来是故意设计的
-            isWide && visibleItems.size > 1 -> WideBody(visibleItems, if (isLarge) MAX_ITEMS else 3)
+            isLarge && visibleItems.size > 1 -> LargeBody(visibleItems)
+            isWide && visibleItems.size > 1 -> WideBody(visibleItems)
             else -> CompactBody(visibleItems.first())
         }
     }
@@ -160,123 +226,334 @@ private fun WidgetBody(items: List<WidgetItem>) {
 
 @Composable
 private fun EmptyBody() {
-    Box(
+    val ctx = LocalContext.current
+    Column(
         modifier = GlanceModifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        // 44dp 圆，固定 10% 底（Glance DayNight 不支持 copy，用预计算 0x1A 前缀）
+        Box(
+            modifier = GlanceModifier
+                .width(44.dp).height(44.dp)
+                .background(ColorProvider(day = Color(0x1AFF6B6B), night = Color(0x1AFF6B6B)))
+                .cornerRadius(22.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = "🎂", style = TextStyle(fontSize = 18.sp))
+        }
+        Spacer(modifier = GlanceModifier.height(8.dp))
         Text(
-            text = "还没有记录\n点这里添加",
-            style = TextStyle(color = SubColor, fontSize = 13.sp, textAlign = TextAlign.Center)
+            text = "还没有记录",
+            style = TextStyle(color = NameColor, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         )
+        Spacer(modifier = GlanceModifier.height(4.dp))
+        Text(
+            text = "点这里添加第一个重要的日子",
+            style = TextStyle(color = SubColor, fontSize = 11.sp, textAlign = TextAlign.Center)
+        )
+        Spacer(modifier = GlanceModifier.height(12.dp))
+        Box(
+            modifier = GlanceModifier
+                .background(AccentColor)
+                .cornerRadius(20.dp)
+                .padding(horizontal = 14.dp, vertical = 8.dp)
+                .clickable(actionStartActivityIntent(openAddIntent(ctx))),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = "＋ 添加", style = TextStyle(color = WhiteProvider, fontSize = 12.sp, fontWeight = FontWeight.Bold))
+        }
     }
 }
 
 @Composable
-private fun WideBody(items: List<WidgetItem>, maxRows: Int) {
+private fun WideBody(items: List<WidgetItem>) {
+    val ctx = LocalContext.current
+    val greeting = rememberCompactGreeting()
     Column(modifier = GlanceModifier.fillMaxSize()) {
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "辰记",
-                style = TextStyle(
-                    color = AccentColor,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                text = greeting,
+                maxLines = 1,
+                style = TextStyle(color = SubColor, fontSize = 10.sp),
+                modifier = GlanceModifier.defaultWeight()
             )
-            Spacer(modifier = GlanceModifier.defaultWeight())
-            // 直接进新增页，省掉“开 App 再找加号”这一步
-            Text(
-                text = "＋",
-                style = TextStyle(
-                    color = AccentColor,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                ),
+            Spacer(modifier = GlanceModifier.width(6.dp))
+            // 26dp 圆形＋，比 28dp 更省宽，避免问候语被挤压过度
+            Box(
                 modifier = GlanceModifier
-                    .padding(horizontal = 10.dp, vertical = 2.dp)
-                    .clickable(actionStartActivityIntent(openAddIntent(LocalContext.current)))
-            )
+                    .width(26.dp).height(26.dp)
+                    .background(AccentColor)
+                    .cornerRadius(13.dp)
+                    .clickable(actionStartActivityIntent(openAddIntent(ctx))),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "＋", style = TextStyle(color = WhiteProvider, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center))
+            }
         }
-        Spacer(modifier = GlanceModifier.height(4.dp))
-        // 每行摊掉一份剩余高度，否则 3 行会挤在顶部、下面空一大片。
-        // defaultWeight 只在 Column 的 lambda 里有（它是 ColumnScope 的扩展），
-        // 所以得在这里算好再交给 WideRow
-        items.forEach { item ->
-            WideRow(item, GlanceModifier.fillMaxWidth().defaultWeight())
+        Spacer(modifier = GlanceModifier.height(8.dp))
+        // 4×2 可用高度有限，取 2 行收紧排版；4×4 走 LargeBody
+        val wideCount = minOf(items.size, 2)
+        repeat(wideCount) { idx ->
+            val isLast = idx == wideCount - 1
+            WidgetRow(item = items[idx])
+            if (!isLast) Spacer(modifier = GlanceModifier.height(8.dp))
         }
-        // 记录不足上限时用空白行补齐：否则仅有的几行会被平均拉高到整个卡片，
-        // 只有一条记录时它会孤零零地悬在卡片正中，上下各空一大段
-        repeat(maxRows - items.size) {
-            Spacer(modifier = GlanceModifier.defaultWeight())
+        // 底部“天后/天后”文字空间预留已在行高内，不再外加高度
+    }
+}
+
+@Composable
+private fun LargeBody(items: List<WidgetItem>) {
+    // Hero 取最近且非缅怀的那条，其余进列表；全是缅怀则无 Hero
+    val hero = items.filter { !it.isSolemn }.minByOrNull { it.countdown } ?: items.firstOrNull()
+    val rest = if (hero != null) items.filterNot { it.id == hero.id } else emptyList()
+    Column(modifier = GlanceModifier.fillMaxSize()) {
+        if (hero != null) {
+            HeroWidgetHeader(hero)
+            Spacer(modifier = GlanceModifier.height(8.dp))
+        }
+        if (rest.isNotEmpty()) {
+            Row(
+                modifier = GlanceModifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "其他近期", style = TextStyle(color = SubColor, fontSize = 10.sp, fontWeight = FontWeight.Bold))
+                Spacer(modifier = GlanceModifier.defaultWeight())
+                Text(text = "共 ${rest.size + 1} 个日子", style = TextStyle(color = SubColor, fontSize = 10.sp))
+            }
+            Spacer(modifier = GlanceModifier.height(6.dp))
+            rest.take(4).forEach { item ->
+                WidgetRow(item = item, compact = true)
+                Spacer(modifier = GlanceModifier.height(6.dp))
+            }
         }
     }
 }
 
 @Composable
-private fun WideRow(item: WidgetItem, modifier: GlanceModifier) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically
+private fun HeroWidgetHeader(item: WidgetItem) {
+    val ctx = LocalContext.current
+    val accent = widgetAccent(item)
+    // Hero 用 accent 纯色底（Glance 无渐变位图），白字，同 App 内 Hero 同源
+    Box(
+        modifier = GlanceModifier
+            .fillMaxWidth()
+            .background(accent)
+            .cornerRadius(14.dp)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .clickable(actionStartActivityIntent(detailIntent(ctx, item.id))),
+        contentAlignment = Alignment.CenterStart
     ) {
-        Text(text = item.emoji, style = TextStyle(color = SubColor, fontSize = 14.sp))
-        Spacer(modifier = GlanceModifier.width(6.dp))
-        Text(
-            text = item.name,
-            maxLines = 1,
-            style = TextStyle(color = NameColor, fontSize = 14.sp, fontWeight = FontWeight.Medium),
-            modifier = GlanceModifier.defaultWeight()
-        )
-        Text(
-            text = countdownText(item.countdown),
-            style = TextStyle(
-                color = countdownColor(item),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
-            )
-        )
+        Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = GlanceModifier.defaultWeight()) {
+                Text(text = "NEXT UP", style = TextStyle(color = WhiteAlpha90, fontSize = 10.sp))
+                Spacer(modifier = GlanceModifier.height(2.dp))
+                Text(text = item.name, maxLines = 1, style = TextStyle(color = WhiteProvider, fontSize = 15.sp, fontWeight = FontWeight.Bold))
+                Spacer(modifier = GlanceModifier.height(2.dp))
+                Text(text = "${item.dateLabel} · ${item.relationLabel}", maxLines = 1, style = TextStyle(color = WhiteAlpha85, fontSize = 11.sp))
+            }
+            Spacer(modifier = GlanceModifier.width(10.dp))
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = "${item.countdown}", style = TextStyle(color = WhiteProvider, fontSize = 30.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center))
+                Text(text = if (item.countdown == 0) "就是今天" else "天后", style = TextStyle(color = WhiteAlpha90, fontSize = 10.sp, textAlign = TextAlign.Center))
+            }
+        }
+    }
+}
+
+@Composable
+private fun WidgetRow(item: WidgetItem, compact: Boolean = false) {
+    val ctx = LocalContext.current
+    val isUrgent = !item.isSolemn && item.countdown <= 7
+    val accent = widgetAccent(item)
+    val accentSolid = accentSolid(item)
+    val solidProvider = ColorProvider(day = accentSolid, night = accentSolid)
+    val detail = detailIntent(ctx, item.id)
+
+    // 呼吸边框：Glance 无 border，用外层 accent 底 + 2dp padding 模拟 1.5dp 描边
+    val outerBg = if (isUrgent) accent else RowBgProvider
+    val outerPadding = if (isUrgent) 2.dp else 0.dp
+    val innerRadius = if (isUrgent) 12.dp else 14.dp
+
+    Box(
+        modifier = GlanceModifier
+            .fillMaxWidth()
+            .background(outerBg)
+            .cornerRadius(14.dp)
+            .padding(outerPadding)
+    ) {
+        Box(
+            modifier = GlanceModifier
+                .fillMaxWidth()
+                .background(RowBgProvider)
+                .cornerRadius(innerRadius)
+                .padding(horizontal = 10.dp, vertical = if (compact) 7.dp else 8.dp)
+                .clickable(actionStartActivityIntent(detail))
+        ) {
+            Row(
+                modifier = GlanceModifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 左 3.5dp 色条
+                Box(
+                    modifier = GlanceModifier
+                        .width(4.dp).height(36.dp)
+                        .background(accent)
+                        .cornerRadius(3.dp)
+                ) {}
+                Spacer(modifier = GlanceModifier.width(10.dp))
+                // 36dp 圆头像：10% 底（预计算 0x1A 前缀，Glance DayNight 不支持 copy）
+                Box(
+                    modifier = GlanceModifier
+                        .width(36.dp).height(36.dp)
+                        .background(avatarBg(item))
+                        .cornerRadius(10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = item.avatarText,
+                        style = TextStyle(color = solidProvider, fontSize = 15.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                    )
+                }
+                Spacer(modifier = GlanceModifier.width(10.dp))
+                Column(modifier = GlanceModifier.defaultWeight()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = item.name,
+                            maxLines = 1,
+                            style = TextStyle(color = NameColor, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        )
+                        if (!compact && !item.isSolemn && item.countdown <= 7) {
+                            Spacer(modifier = GlanceModifier.width(6.dp))
+                            Text(
+                                text = "● 急",
+                                style = TextStyle(color = accent, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            )
+                        }
+                        if (!compact) {
+                            Spacer(modifier = GlanceModifier.width(6.dp))
+                            Text(
+                                text = item.typeLabel,
+                                style = TextStyle(color = accent, fontSize = 10.sp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = GlanceModifier.height(2.dp))
+                    Text(
+                        text = "${item.dateLabel} · ${item.relationLabel}",
+                        maxLines = 1,
+                        style = TextStyle(color = SubColor, fontSize = 11.sp)
+                    )
+                }
+                Spacer(modifier = GlanceModifier.width(8.dp))
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = countdownText(item.countdown),
+                        style = TextStyle(color = accent, fontSize = if (compact) 15.sp else 18.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
+                    )
+                    if (!compact) {
+                        Text(text = "天后", style = TextStyle(color = SubColor, fontSize = 9.sp, textAlign = TextAlign.End))
+                    }
+                }
+            }
+        }
     }
 }
 
 @Composable
 private fun CompactBody(item: WidgetItem) {
+    val ctx = LocalContext.current
+    val accent = widgetAccent(item)
+    val solidProvider = ColorProvider(day = accentSolid(item), night = accentSolid(item))
+    val isSolemn = item.isSolemn
+    // 2×2可用高度仅~96dp（120-12*2），外加圆角裁切，纵向必须极度收紧；同时横向宽度窄，文字易被椭圆遮罩裁掉末字
     Column(
-        modifier = GlanceModifier.fillMaxSize(),
+        modifier = GlanceModifier.fillMaxSize().clickable(actionStartActivity<MainActivity>()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = item.emoji, style = TextStyle(color = SubColor, fontSize = 24.sp))
-        Spacer(modifier = GlanceModifier.height(2.dp))
+        // 将“NEXT”字号缩至 8sp，避免被顶边圆角裁切；Glance下超宽文字横向裁切敏感，越短越安全
+        Text(text = "NEXT", style = TextStyle(color = SubColor, fontSize = 8.sp, textAlign = TextAlign.Center))
+        Spacer(modifier = GlanceModifier.height(3.dp))
+        Box(
+            modifier = GlanceModifier
+                .width(42.dp).height(42.dp)
+                .background(avatarBg(item))
+                .cornerRadius(21.dp)
+                .clickable(actionStartActivityIntent(detailIntent(ctx, item.id))),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = item.avatarText,
+                style = TextStyle(color = solidProvider, fontSize = 17.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            )
+        }
+        Spacer(modifier = GlanceModifier.height(3.dp))
         Text(
             text = item.name,
             maxLines = 1,
-            style = TextStyle(color = NameColor, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            style = TextStyle(color = NameColor, fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         )
-        Spacer(modifier = GlanceModifier.height(2.dp))
+        Spacer(modifier = GlanceModifier.height(1.dp))
         Text(
-            text = countdownText(item.countdown),
-            style = TextStyle(
-                color = countdownColor(item),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold
-            )
+            text = "${item.dateLabel} · ${item.relationLabel}",
+            maxLines = 1,
+            style = TextStyle(color = SubColor, fontSize = 9.sp, textAlign = TextAlign.Center)
         )
+        Spacer(modifier = GlanceModifier.height(3.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = GlanceModifier.clickable(actionStartActivityIntent(detailIntent(ctx, item.id)))
+        ) {
+            // 倒计时适度收小至 26sp，避免与底部圆角/文字裁切重叠
+            Text(
+                text = "${item.countdown}",
+                style = TextStyle(color = accent, fontSize = 26.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            )
+            Spacer(modifier = GlanceModifier.width(3.dp))
+            Text(text = "天后", style = TextStyle(color = SubColor, fontSize = 10.sp))
+        }
+        // 2×2可用高度极窄，不再放进度文字，避免纵向溢出被底边圆角吃掉
     }
 }
 
 private fun countdownText(countdown: Int): String = when (countdown) {
     0 -> "就是今天"
     1 -> "明天"
-    else -> "$countdown 天后"
+    else -> "$countdown"
 }
 
-private fun countdownColor(item: WidgetItem) = when {
-    // 缅怀用素净的灰蓝，不跟着高亮成暖色
-    item.isSolemn -> SolemnColor
-    item.countdown == 0 -> AccentColor
-    else -> NormalColor
+@Composable
+private fun rememberGreeting(): String {
+    val today = LocalDate.now()
+    val datePart = try {
+        val fmt = DateTimeFormatter.ofPattern("M月d日 EEEE", Locale.SIMPLIFIED_CHINESE)
+        today.format(fmt)
+    } catch (_: Exception) {
+        "${today.monthValue}月${today.dayOfMonth}日"
+    }
+    return "$datePart · ${Greeting.today(today)}"
+}
+
+@Composable
+private fun rememberCompactGreeting(): String {
+    // 4×2可用宽度仅 222dp，完整问候语易溢出被截断，需优先缩短
+    val today = LocalDate.now()
+    val datePart = try {
+        val fmt = DateTimeFormatter.ofPattern("M月d日 EEE", Locale.SIMPLIFIED_CHINESE)
+        today.format(fmt)
+    } catch (_: Exception) {
+        "${today.monthValue}月${today.dayOfMonth}日"
+    }
+    val g = Greeting.today(today)
+    // 取前 6 字并加省略号，避免“岁月漫长，值得…”占满导致“天后”被挤压
+    // 用 Greeting 的短句时 10sp 仍可能溢出，但比之前 11sp+4字更稳
+    return "$datePart · $g"
 }
 
 /**
@@ -287,3 +564,8 @@ private fun countdownColor(item: WidgetItem) = when {
  */
 private fun openAddIntent(context: Context): Intent =
     Intent(context, MainActivity::class.java).setAction(MainActivity.ACTION_OPEN_ADD)
+
+private fun detailIntent(context: Context, id: Long): Intent =
+    Intent(context, MainActivity::class.java)
+        .setAction("com.birthapp.action.OPEN_DETAIL_$id")
+        .putExtra(AlarmScheduler.EXTRA_BIRTHDAY_ID, id)

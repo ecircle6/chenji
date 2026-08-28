@@ -4,28 +4,25 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- 对标目标图比例：月亮收 12%（scale 3.0→2.62），主星缩 20% 并内嵌缺口，副星收小，整体更精致 -->
+    <!-- Themed 单色（与前景同比例）：月亮收 12%，主星 10.5dp 嵌缺口，副星 1.6/1.2dp -->
     <group>
-        <!-- 月牙：Material dark_mode 路径，scale 2.62，translate 20,21 居中偏下，径 47dp -->
         <group
             android:scaleX="2.62"
             android:scaleY="2.62"
             android:translateX="20"
             android:translateY="21">
             <path
-                android:fillColor="#FFFFFF"
-                android:pathData="M12,3c-4.97,0 -9,4.03 -9,9s4.03,9 9,9s9,-4.03 9,-9c0,-0.46 -0.04,-0.92 -0.1,-1.36c-0.98,1.37 -2.58,2.26 -4.4,2.26c-2.98,0 -5.4,-2.42 -5.4,-5.4c0,-1.81 0.89,-3.42 2.26,-4.4C12.92,3.04 12.46,3 12,3L12,3z" />
+                android:fillColor="#000000"
+                android:pathData="M12,3c-4.97,0 -9,4.03 -9,9s4.03,9 9,9s9,-4.03 9,-9c0,-0.46 -0.04,-0.92 -0.1,-1.36c-0.98,1.37 -2.58,2.26 -4.4,2.26c-2.98,0 -5.4,-2.42 -5.4,-5.4c0,-1.81 0.89,-3.42 2.26,-4.4C12.92,3.04 12.46,3 12,3z" />
         </group>
-        <!-- 主星：10.5dp 嵌缺口内侧，无描边，唯一焦点 -->
         <path
-            android:fillColor="#FFD93D"
+            android:fillColor="#000000"
             android:pathData="M70,25c0.82,3.36 2.06,4.6 5.4,5.4c-3.34,0.82 -4.58,2.06 -5.4,5.4c-0.82,-3.34 -2.06,-4.58 -5.4,-5.4c3.34,-0.82 4.58,-2.06 5.4,-5.4z" />
-        <!-- 副星×2：实心圆，1.6/1.2dp，比旧 2.1/1.6 更克制，56dp 仍可辨 -->
         <path
-            android:fillColor="#FFFFFF"
+            android:fillColor="#000000"
             android:pathData="M31,30 m -1.6,0 a 1.6,1.6 0 1,0 3.2,0 a 1.6,1.6 0 1,0 -3.2,0" />
         <path
-            android:fillColor="#FFFFFF"
+            android:fillColor="#000000"
             android:pathData="M43,23 m -1.2,0 a 1.2,1.2 0 1,0 2.4,0 a 1.2,1.2 0 1,0 -2.4,0" />
     </group>
 </vector>

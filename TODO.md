@@ -310,6 +310,15 @@
   - 不做：长按菜单不放「新增记录/打开日历」；不做专属 widget 预览图（远期可选）
   - 验收：✅ 模拟器实测 `am start -a com.birthapp.action.REQUEST_WIDGET`（冷/热启动）与设置页入口三路均弹系统「添加到主屏幕」放置框（含组件说明与尺寸）；`cmd shortcut get-shortcuts` 确认系统已注册 `id=add_widget`（label/icon/action 正确）；长按弹窗视觉效果留待真机人工确认（模拟器 launcher 会把长按识别成拖拽，AGENTS 已知限制）
 
+- [x] **图标与小组件焕新：怀月藏星 2.0 × 纸笺辰刻**（2026-08-28 完成，v2.1.14；设计提案：`icon-widget-design-proposal.html`）
+  - 需求：现图标多色黄星在 Themed 单色下消失、副星小尺寸糊点；小组件白底列表与首页纸笺体系脱节、头部占 13%/行内等权无主次/单条悬空
+  - 方案：按 `icon-widget-design-proposal.html` 最小改动路径两步落地——① 图标 Themed 单色定稿（仅保留黑白，形体区分主次）② 小组件纸笺辰刻三档重构（复用现有 Token，不新增色）
+  - 图标：新增 `drawable/ic_launcher_monochrome.xml`（`Color 0xFF000000` 单色矢量，主星 4 尖/副星实心圆 2.1/1.6dp，3-4-5 三角星群，66dp 安全区）；`ic_launcher_foreground.xml` 副星 path→实心圆；`mipmap-anydpi-v26/ic_launcher.xml` monochrome 指向新文件（浅壁纸黑 on 白/深壁纸白 on 黑自动 tint）
+  - 小组件：`BirthWidget.kt` 全量重构——`WidgetItem` 补 id/eventType/avatarText/typeLabel/dateLabel/relationLabel；2×2 紧凑改日历撕页单焦（NEXT + 48dp 头像 + 34sp 倒计时，缅怀去进度保持庄重）；4×2 宽改问候语头部（`Greeting.today()` + 日期）+ 纸笺行（左 3.5dp 色条 + 36dp 头像 + 名称/类型/急标签 + 右侧 20sp 数字，≤7 天呼吸边框双层 Box 模拟）；4×4 大改 Hero 纯色头（accent 底白字，NEXT UP + 30sp 倒计时）+ 副标题「其他近期·共 N 个日子」+ 列表；空态明确「＋添加」按钮；暗色 `#242422` 行底；点击分流三路（空白→首页/行→详情独立 `OPEN_DETAIL_$id` + `EXTRA_BIRTHDAY_ID`/＋→新增 `ACTION_OPEN_ADD`，沿用 PendingIntent 独立 action 避合并）
+  - 约束：Glance 1.1.1 仅 `Box/Row/Column/Text + ColorProvider + cornerRadius`（无阴影/毛玻璃/自定义字体/border）；DayNight `ColorProvider(day,night)` 不支持 `copy(alpha)` 故头像 10% 底用预计算 `0x1A` 前缀固定色；Hero 本期纯色不做位图渐变；MainActivity 的 `handleDetailIntent` 复用 `EXTRA_BIRTHDAY_ID` 已支持小组件直达详情
+  - 测试：`assembleDebug` 通过；全量单测 189 用例 / 28 测试类绿（新增/改动仅视觉层，无数据迁移）
+  - 发版：versionCode 16→17 / versionName 2.1.13→2.1.14；`Changelog.kt` 头部加 v2.1.14 条目；README 图标与小组件描述同步；适配器图标小尺寸/深浅壁纸 Themed 需真机验证，三档小组件需真机桌面拖拽确认（模拟器仅能 `verify-on-emulator.sh` 截图）
+
 ---
 
 ## P2 — 工程与体验现代化
