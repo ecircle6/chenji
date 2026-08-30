@@ -14,6 +14,7 @@ import com.birthapp.util.EventCalc
 import com.birthapp.util.EventTextUtils
 import com.birthapp.util.ZodiacUtils
 import com.birthapp.widget.WidgetRefresher
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -158,8 +159,11 @@ class HomeViewModel @JvmOverloads constructor(
 
     fun deleteBirthday(birthday: Birthday) {
         viewModelScope.launch {
-            scheduler.cancelBirthdayReminder(birthday)
-            database.birthdayDao().delete(birthday)
+            // 取消闹钟与删库互不依赖，并行执行让列表行删除即时生效
+            coroutineScope {
+                launch { scheduler.cancelBirthdayReminder(birthday) }
+                launch { database.birthdayDao().delete(birthday) }
+            }
             WidgetRefresher.refresh(getApplication())
         }
     }

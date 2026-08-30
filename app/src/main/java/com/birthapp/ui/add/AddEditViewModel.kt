@@ -12,10 +12,12 @@ import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
 import com.birthapp.settings.ReminderSettings
 import com.birthapp.widget.WidgetRefresher
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class AddEditUiState(
     val id: Long = 0,
@@ -183,17 +185,20 @@ class AddEditViewModel @JvmOverloads constructor(
                 database.birthdayDao().insert(birthday)
             }
 
-            // 调度提醒：已暂停的记录不能因为保存一次就把闹钟重新排上
-            val saved = database.birthdayDao().getById(savedId)
-            if (saved != null) {
-                if (saved.isActive) {
-                    scheduler.scheduleBirthdayReminder(saved)
-                } else {
-                    scheduler.cancelBirthdayReminder(saved)
+            // 数据落库即返回，不等闹钟调度——调度挪到 NonCancellable 段：
+            // 页面退出会取消 viewModelScope，若调度还在普通段里会被拦腰取消漏排闹钟
+            _uiState.value = _uiState.value.copy(saved = true)
+            withContext(NonCancellable) {
+                // 已暂停的记录不能因为保存一次就把闹钟重新排上
+                val saved = database.birthdayDao().getById(savedId)
+                if (saved != null) {
+                    if (saved.isActive) {
+                        scheduler.scheduleBirthdayReminder(saved)
+                    } else {
+                        scheduler.cancelBirthdayReminder(saved)
+                    }
                 }
             }
-
-            _uiState.value = _uiState.value.copy(saved = true)
             WidgetRefresher.refresh(getApplication())
         }
     }
@@ -202,9 +207,13 @@ class AddEditViewModel @JvmOverloads constructor(
         val state = _uiState.value
         if (state.id <= 0) return
         viewModelScope.launch {
-            database.birthdayDao().getById(state.id)?.let { scheduler.cancelBirthdayReminder(it) }
-            database.birthdayDao().deleteById(state.id)
+            // 先取记录供取消闹钟用，删库前就返回，动作本身放 NonCancellable 收尾
+            val record = database.birthdayDao().getById(state.id)
             _uiState.value = _uiState.value.copy(saved = true)
+            withContext(NonCancellable) {
+                record?.let { scheduler.cancelBirthdayReminder(it) }
+                database.birthdayDao().deleteById(state.id)
+            }
             WidgetRefresher.refresh(getApplication())
         }
     }

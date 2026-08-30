@@ -138,8 +138,8 @@ class BirthWidget : GlanceAppWidget() {
     }
 }
 
-// 取数上限：4×4 大尺寸显示 6 行，窄尺寸在 WidgetBody 里再截断
-private const val MAX_ITEMS = 6
+// 取数上限：4×4 大档是 Hero+2 行、宽档 2 行、紧凑档 1 行，这里统一取 3 条已够各档渲染
+private const val MAX_ITEMS = 3
 
 // 小组件颜色全部收敛在 [WidgetTheme]（日/夜两套 + 对比度修正），这里只留简短别名
 private val BgColor get() = WidgetTheme.bg
@@ -257,6 +257,8 @@ private fun WideBody(items: List<WidgetItem>) {
             }
         }
         Spacer(modifier = GlanceModifier.height(8.dp))
+        // 弹性居中：实际被拉高（如 4×3）时剩余空间上下均分，空白不再全部沉底
+        Spacer(modifier = GlanceModifier.defaultWeight())
         // 4×2 可用高度有限，取 2 行收紧排版；4×4 走 LargeBody
         val wideCount = minOf(items.size, 2)
         repeat(wideCount) { idx ->
@@ -264,35 +266,38 @@ private fun WideBody(items: List<WidgetItem>) {
             WidgetRow(item = items[idx])
             if (!isLast) Spacer(modifier = GlanceModifier.height(8.dp))
         }
+        Spacer(modifier = GlanceModifier.defaultWeight())
         // 底部“天后/天后”文字空间预留已在行高内，不再外加高度
     }
 }
 
 @Composable
 private fun LargeBody(items: List<WidgetItem>) {
-    // Hero 取最近且非缅怀的那条，其余进列表；全是缅怀则无 Hero
+    // Hero 取最近且非缅怀的那条，其余进列表；调用方保证 items 至少 2 条，hero 必非空
     val hero = items.filter { !it.isSolemn }.minByOrNull { it.countdown } ?: items.firstOrNull()
-    val rest = if (hero != null) items.filterNot { it.id == hero.id } else emptyList()
+        ?: return
+    val rest = items.filterNot { it.id == hero.id }
     Column(modifier = GlanceModifier.fillMaxSize()) {
-        if (hero != null) {
-            HeroWidgetHeader(hero)
-            Spacer(modifier = GlanceModifier.height(8.dp))
+        HeroWidgetHeader(hero)
+        Spacer(modifier = GlanceModifier.height(8.dp))
+        // 列表区在剩余空间居中：4×4 被拉高或记录不足时，空白上下均分不再沉底。
+        // 行数收在 2：Hero+头行+2 行约 207dp，恰好填满 4×4 可用的 222dp，多放必溢出裁切
+        Spacer(modifier = GlanceModifier.defaultWeight())
+        Row(
+            modifier = GlanceModifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = "其他近期", style = TextStyle(color = SubColor, fontSize = 10.sp, fontWeight = FontWeight.Medium))
+            Spacer(modifier = GlanceModifier.defaultWeight())
+            Text(text = "共 ${rest.size + 1} 个日子", style = TextStyle(color = SubColor, fontSize = 10.sp))
         }
-        if (rest.isNotEmpty()) {
-            Row(
-                modifier = GlanceModifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = "其他近期", style = TextStyle(color = SubColor, fontSize = 10.sp, fontWeight = FontWeight.Medium))
-                Spacer(modifier = GlanceModifier.defaultWeight())
-                Text(text = "共 ${rest.size + 1} 个日子", style = TextStyle(color = SubColor, fontSize = 10.sp))
-            }
-            Spacer(modifier = GlanceModifier.height(6.dp))
-            rest.take(4).forEach { item ->
-                WidgetRow(item = item, compact = true)
-                Spacer(modifier = GlanceModifier.height(6.dp))
-            }
+        Spacer(modifier = GlanceModifier.height(6.dp))
+        val rowCount = minOf(rest.size, 2)
+        for (idx in 0 until rowCount) {
+            WidgetRow(item = rest[idx], compact = true)
+            if (idx != rowCount - 1) Spacer(modifier = GlanceModifier.height(6.dp))
         }
+        Spacer(modifier = GlanceModifier.defaultWeight())
     }
 }
 

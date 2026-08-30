@@ -41,6 +41,7 @@ import com.birthapp.ui.common.EmptyBirthdayList
 import com.birthapp.ui.common.EmptySearchResult
 import com.birthapp.ui.common.SwipeToDeleteBox
 import com.birthapp.ui.common.UrgentCard
+import com.birthapp.ui.common.rememberStaggerPlay
 import com.birthapp.ui.common.staggeredAppear
 import com.birthapp.ui.preview.previewBirthdays
 import com.birthapp.ui.theme.BirthAppTheme
@@ -149,6 +150,8 @@ fun HomeContent(
     var deleteTargetId by remember { mutableLongStateOf(-1L) }
     // 更多筛选底部面板开关
     var showFilterSheet by remember { mutableStateOf(false) }
+    // 错峰入场只播一次（冷启动/筛选变化），从其他页面返回时不重放，列表即时呈现
+    val staggerPlay = rememberStaggerPlay(filter, searchQuery, isSearching)
     // 卡片背景色必须跟随当前主题深浅（含 App 内强制的浅/深），否则深色下会变成浅底浅字看不清
     val isDark = LocalDarkTheme.current
     val searchFocus = remember { FocusRequester() }
@@ -297,7 +300,7 @@ fun HomeContent(
                 ) {
                     // Hero 聚焦卡：只放列表首项，不参与滚动懒加载的索引语义；null 时不渲染
                     item(key = "hero") {
-                        Box(modifier = Modifier.staggeredAppear(0)) {
+                        Box(modifier = Modifier.staggeredAppear(0, enabled = staggerPlay)) {
                             HeroCard(hero = hero, onItemClick = onItemClick)
                         }
                     }
@@ -312,7 +315,7 @@ fun HomeContent(
                                 is HomeListItem.Card -> li.display.birthday.id
                             }
                         }) { idx ->
-                            Box(modifier = Modifier.staggeredAppear(idx + 1)) {
+                            Box(modifier = Modifier.staggeredAppear(idx + 1, enabled = staggerPlay)) {
                                 when (val li = items[idx]) {
                                     is HomeListItem.MonthHeader ->
                                         MonthHeaderRow(label = li.label)
@@ -349,7 +352,7 @@ fun HomeContent(
                     } else {
                         // 搜索态：普通列表（不分层）
                         itemsIndexed(birthdays, key = { _, item -> item.birthday.id }) { index, display ->
-                            Box(modifier = Modifier.staggeredAppear(index + 1)) {
+                            Box(modifier = Modifier.staggeredAppear(index + 1, enabled = staggerPlay)) {
                                 SwipeToDeleteBox(
                                     onDelete = { deleteTargetId = display.birthday.id }
                                 ) {

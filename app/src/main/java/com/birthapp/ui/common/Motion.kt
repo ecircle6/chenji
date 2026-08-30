@@ -20,8 +20,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawBehind
@@ -48,12 +52,20 @@ import kotlinx.coroutines.launch
 /**
  * 首屏错峰入场：列表项按索引依次上浮淡入，每个节点只在首次组合时播放。
  * 懒加载滚动到的新项也会播放入场（观感是"浮现"），筛选切换后列表重新组合时同样成立。
+ *
+ * enabled=false 时直接以最终态呈现、不启动动画——导航返回时列表会整体重组，
+ * 若照常重放错峰会让人感觉"刷新慢"，由 [rememberStaggerPlay] 决定是否播放。
  */
-fun Modifier.staggeredAppear(index: Int, delayPerItemMs: Int = 55): Modifier = composed {
-    val alpha = remember { Animatable(0f) }
-    val offsetY = remember { Animatable(28f) }
+fun Modifier.staggeredAppear(
+    index: Int,
+    enabled: Boolean = true,
+    delayPerItemMs: Int = 40
+): Modifier = composed {
+    val alpha = remember { Animatable(if (enabled) 0f else 1f) }
+    val offsetY = remember { Animatable(if (enabled) 28f else 0f) }
     LaunchedEffect(Unit) {
-        delay(index.coerceAtMost(12).toLong() * delayPerItemMs)
+        if (!enabled) return@LaunchedEffect
+        delay(index.coerceAtMost(8).toLong() * delayPerItemMs)
         launch {
             alpha.animateTo(
                 1f,
@@ -71,6 +83,19 @@ fun Modifier.staggeredAppear(index: Int, delayPerItemMs: Int = 55): Modifier = c
         this.alpha = alpha.value
         translationY = offsetY.value
     }
+}
+
+/**
+ * 错峰播放闸门：冷启动首帧为 true（播放），随后置 false 并存入可保存状态——
+ * 从添加/编辑/详情页返回时恢复的就是 false，列表即时呈现不重放；
+ * 传入的筛选/搜索等 inputs 变化时状态重置回 true，错峰重新编排。
+ */
+@Composable
+fun rememberStaggerPlay(vararg inputs: Any?): Boolean {
+    // 必须展开传 *inputs：传数组本身的话每次重组都是新实例，状态会被反复重置成死循环
+    var play by rememberSaveable(*inputs) { mutableStateOf(true) }
+    SideEffect { play = false }
+    return play
 }
 
 /**

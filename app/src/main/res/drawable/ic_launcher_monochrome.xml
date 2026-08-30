@@ -4,25 +4,31 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Themed 单色（与前景同比例）：月亮收 12%，主星 10.5dp 嵌缺口，副星 1.6/1.2dp -->
+    <!-- Themed 单色（与前景同比例）：月亮 41.4dp 居中，主星 9.5dp 嵌缺口，副星 1.5/1.1dp -->
     <group>
         <group
-            android:scaleX="2.62"
-            android:scaleY="2.62"
-            android:translateX="20"
-            android:translateY="21">
+            android:scaleX="2.3"
+            android:scaleY="2.3"
+            android:translateX="25"
+            android:translateY="27">
             <path
                 android:fillColor="#000000"
-                android:pathData="M12,3c-4.97,0 -9,4.03 -9,9s4.03,9 9,9s9,-4.03 9,-9c0,-0.46 -0.04,-0.92 -0.1,-1.36c-0.98,1.37 -2.58,2.26 -4.4,2.26c-2.98,0 -5.4,-2.42 -5.4,-5.4c0,-1.81 0.89,-3.42 2.26,-4.4C12.92,3.04 12.46,3 12,3z" />
+                android:pathData="M12,3c-4.97,0 -9,4.03 -9,9s4.03,9 9,9s9,-4.03 9,-9c0,-0.46 -0.04,-0.92 -0.1,-1.36c-0.98,1.37 -2.58,2.26 -4.4,2.26c-2.98,0 -5.4,-2.42 -5.4,-5.4c0,-1.81 0.89,-3.42 2.26,-4.4C12.92,3.04 12.46,3 12,3L12,3z" />
+        </group>
+        <group
+            android:scaleX="0.88"
+            android:scaleY="0.88"
+            android:translateX="7.9"
+            android:translateY="8.75">
+            <path
+                android:fillColor="#000000"
+                android:pathData="M70,25c0.82,3.36 2.06,4.6 5.4,5.4c-3.34,0.82 -4.58,2.06 -5.4,5.4c-0.82,-3.34 -2.06,-4.58 -5.4,-5.4c3.34,-0.82 4.58,-2.06 5.4,-5.4z" />
         </group>
         <path
             android:fillColor="#000000"
-            android:pathData="M70,25c0.82,3.36 2.06,4.6 5.4,5.4c-3.34,0.82 -4.58,2.06 -5.4,5.4c-0.82,-3.34 -2.06,-4.58 -5.4,-5.4c3.34,-0.82 4.58,-2.06 5.4,-5.4z" />
+            android:pathData="M34,34 m -1.5,0 a 1.5,1.5 0 1,0 3,0 a 1.5,1.5 0 1,0 -3,0" />
         <path
             android:fillColor="#000000"
-            android:pathData="M31,30 m -1.6,0 a 1.6,1.6 0 1,0 3.2,0 a 1.6,1.6 0 1,0 -3.2,0" />
-        <path
-            android:fillColor="#000000"
-            android:pathData="M43,23 m -1.2,0 a 1.2,1.2 0 1,0 2.4,0 a 1.2,1.2 0 1,0 -2.4,0" />
+            android:pathData="M45,28 m -1.1,0 a 1.1,1.1 0 1,0 2.2,0 a 1.1,1.1 0 1,0 -2.2,0" />
     </group>
 </vector>
