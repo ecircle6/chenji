@@ -5,7 +5,6 @@ import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -22,7 +21,6 @@ import androidx.glance.appwidget.action.actionStartActivity as actionStartActivi
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
-import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -42,16 +40,6 @@ import com.birthapp.MainActivity
 import com.birthapp.alarm.AlarmScheduler
 import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
-import com.birthapp.ui.theme.Coral500
-import com.birthapp.ui.theme.SlateInk
-import com.birthapp.ui.theme.SlateInkLight
-import com.birthapp.ui.theme.SurfaceDark
-import com.birthapp.ui.theme.Teal500
-import com.birthapp.ui.theme.TextOnDark
-import com.birthapp.ui.theme.TextOnDarkSecondary
-import com.birthapp.ui.theme.TextPrimary
-import com.birthapp.ui.theme.TextSecondary
-import com.birthapp.ui.theme.Violet500
 import com.birthapp.util.EventCalc
 import com.birthapp.util.Greeting
 import com.birthapp.util.ZodiacUtils
@@ -153,45 +141,19 @@ class BirthWidget : GlanceAppWidget() {
 // 取数上限：4×4 大尺寸显示 6 行，窄尺寸在 WidgetBody 里再截断
 private const val MAX_ITEMS = 6
 
-// 小组件不跟随 App 内的 Material 主题，得自己给日/夜两套颜色
-// Glance 的 ColorProvider 在 color 包里（DayNight），不是 unit 下的单色重载
-private val BgColor = ColorProvider(day = Color.White, night = SurfaceDark)
-private val RowBgProvider = ColorProvider(day = Color.White, night = Color(0xFF242422))
-private val NameColor = ColorProvider(day = TextPrimary, night = TextOnDark)
-private val SubColor = ColorProvider(day = TextSecondary, night = TextOnDarkSecondary)
-private val AccentColor = ColorProvider(day = Coral500, night = Coral500)
-private val VioletColor = ColorProvider(day = Violet500, night = Violet500)
-private val TealColor = ColorProvider(day = Teal500, night = Teal500)
-private val SolemnColor = ColorProvider(day = SlateInk, night = SlateInkLight)
-private val WhiteProvider = ColorProvider(day = Color.White, night = Color.White)
-private val WhiteAlpha90 = ColorProvider(day = Color.White.copy(alpha = 0.9f), night = Color.White.copy(alpha = 0.9f))
-private val WhiteAlpha85 = ColorProvider(day = Color.White.copy(alpha = 0.85f), night = Color.White.copy(alpha = 0.85f))
+// 小组件颜色全部收敛在 [WidgetTheme]（日/夜两套 + 对比度修正），这里只留简短别名
+private val BgColor get() = WidgetTheme.bg
+private val RowBgProvider get() = WidgetTheme.rowBg
+private val NameColor get() = WidgetTheme.name
+private val SubColor get() = WidgetTheme.sub
+private val AccentColor get() = WidgetTheme.coral
+private val WhiteProvider get() = WidgetTheme.white
+private val WhiteAlpha90 get() = WidgetTheme.white90
+private val WhiteAlpha85 get() = WidgetTheme.white85
 
-private fun widgetAccent(item: WidgetItem): androidx.glance.unit.ColorProvider = when {
-    item.isSolemn -> SolemnColor
-    item.eventType == EventType.LOVE || item.eventType == EventType.MARRIAGE -> VioletColor
-    item.eventType == EventType.OTHER -> TealColor
-    else -> AccentColor
-}
+private fun widgetAccent(item: WidgetItem) = WidgetTheme.accent(item.eventType, item.isSolemn)
 
-private fun accentSolid(item: WidgetItem): Color = when {
-    item.isSolemn -> SlateInk
-    item.eventType == EventType.LOVE || item.eventType == EventType.MARRIAGE -> Violet500
-    item.eventType == EventType.OTHER -> Teal500
-    else -> Coral500
-}
-
-/** Glance 的 ColorProvider 是 DayNight，实现上 ColorProvider(day,night) 内部存两个 Color 的 long 值；copy(alpha) 只能在固定色上做，DayNight 不支持 copy，故用叠色方案：头像用 solid 10% 固定色（日夜一致）已足够克制 */
-private val AvatarBgMap: Map<String, androidx.glance.unit.ColorProvider> = mapOf(
-    EventType.BIRTHDAY to ColorProvider(day = Color(0x1AFF6B6B), night = Color(0x1AFF6B6B)),
-    EventType.LOVE to ColorProvider(day = Color(0x1A7C6BFF), night = Color(0x1A7C6BFF)),
-    EventType.MARRIAGE to ColorProvider(day = Color(0x1A7C6BFF), night = Color(0x1A7C6BFF)),
-    EventType.OTHER to ColorProvider(day = Color(0x1A00BFA5), night = Color(0x1A00BFA5)),
-    EventType.MEMORIAL to ColorProvider(day = Color(0x1A5B6B7A), night = Color(0x1A5B6B7A)),
-)
-
-private fun avatarBg(item: WidgetItem): androidx.glance.unit.ColorProvider =
-    AvatarBgMap[item.eventType] ?: AvatarBgMap[EventType.BIRTHDAY]!!
+private fun avatarBg(item: WidgetItem) = WidgetTheme.wash(item.eventType)
 
 @Composable
 private fun WidgetBody(items: List<WidgetItem>) {
@@ -232,11 +194,11 @@ private fun EmptyBody() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 44dp 圆，固定 10% 底（Glance DayNight 不支持 copy，用预计算 0x1A 前缀）
+        // 44dp 圆，wash 底（日夜透明度分流见 WidgetTheme）
         Box(
             modifier = GlanceModifier
                 .width(44.dp).height(44.dp)
-                .background(ColorProvider(day = Color(0x1AFF6B6B), night = Color(0x1AFF6B6B)))
+                .background(WidgetTheme.wash(EventType.BIRTHDAY))
                 .cornerRadius(22.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -245,7 +207,7 @@ private fun EmptyBody() {
         Spacer(modifier = GlanceModifier.height(8.dp))
         Text(
             text = "还没有记录",
-            style = TextStyle(color = NameColor, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            style = TextStyle(color = NameColor, fontSize = 13.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
         )
         Spacer(modifier = GlanceModifier.height(4.dp))
         Text(
@@ -261,7 +223,7 @@ private fun EmptyBody() {
                 .clickable(actionStartActivityIntent(openAddIntent(ctx))),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = "＋ 添加", style = TextStyle(color = WhiteProvider, fontSize = 12.sp, fontWeight = FontWeight.Bold))
+            Text(text = "＋ 添加", style = TextStyle(color = WhiteProvider, fontSize = 12.sp, fontWeight = FontWeight.Medium))
         }
     }
 }
@@ -291,7 +253,7 @@ private fun WideBody(items: List<WidgetItem>) {
                     .clickable(actionStartActivityIntent(openAddIntent(ctx))),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "＋", style = TextStyle(color = WhiteProvider, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center))
+                Text(text = "＋", style = TextStyle(color = WhiteProvider, fontSize = 13.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center))
             }
         }
         Spacer(modifier = GlanceModifier.height(8.dp))
@@ -321,7 +283,7 @@ private fun LargeBody(items: List<WidgetItem>) {
                 modifier = GlanceModifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "其他近期", style = TextStyle(color = SubColor, fontSize = 10.sp, fontWeight = FontWeight.Bold))
+                Text(text = "其他近期", style = TextStyle(color = SubColor, fontSize = 10.sp, fontWeight = FontWeight.Medium))
                 Spacer(modifier = GlanceModifier.defaultWeight())
                 Text(text = "共 ${rest.size + 1} 个日子", style = TextStyle(color = SubColor, fontSize = 10.sp))
             }
@@ -337,12 +299,11 @@ private fun LargeBody(items: List<WidgetItem>) {
 @Composable
 private fun HeroWidgetHeader(item: WidgetItem) {
     val ctx = LocalContext.current
-    val accent = widgetAccent(item)
-    // Hero 用 accent 纯色底（Glance 无渐变位图），白字，同 App 内 Hero 同源
+    // Hero 用与 App 内 HeroCard 同源的渐变底（drawable 日/夜两份），白字
     Box(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .background(accent)
+            .background(WidgetTheme.heroImage(item.eventType))
             .cornerRadius(14.dp)
             .padding(horizontal = 12.dp, vertical = 10.dp)
             .clickable(actionStartActivityIntent(detailIntent(ctx, item.id))),
@@ -350,7 +311,7 @@ private fun HeroWidgetHeader(item: WidgetItem) {
     ) {
         Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = GlanceModifier.defaultWeight()) {
-                Text(text = "NEXT UP", style = TextStyle(color = WhiteAlpha90, fontSize = 10.sp))
+                Text(text = "🌙 NEXT UP", style = TextStyle(color = WhiteAlpha90, fontSize = 10.sp))
                 Spacer(modifier = GlanceModifier.height(2.dp))
                 Text(text = item.name, maxLines = 1, style = TextStyle(color = WhiteProvider, fontSize = 15.sp, fontWeight = FontWeight.Bold))
                 Spacer(modifier = GlanceModifier.height(2.dp))
@@ -370,8 +331,7 @@ private fun WidgetRow(item: WidgetItem, compact: Boolean = false) {
     val ctx = LocalContext.current
     val isUrgent = !item.isSolemn && item.countdown <= 7
     val accent = widgetAccent(item)
-    val accentSolid = accentSolid(item)
-    val solidProvider = ColorProvider(day = accentSolid, night = accentSolid)
+    val solidProvider = WidgetTheme.accentSolid(item.eventType, item.isSolemn)
     val detail = detailIntent(ctx, item.id)
 
     // 呼吸边框：Glance 无 border，用外层 accent 底 + 2dp padding 模拟 1.5dp 描边
@@ -406,7 +366,7 @@ private fun WidgetRow(item: WidgetItem, compact: Boolean = false) {
                         .cornerRadius(3.dp)
                 ) {}
                 Spacer(modifier = GlanceModifier.width(10.dp))
-                // 36dp 圆头像：10% 底（预计算 0x1A 前缀，Glance DayNight 不支持 copy）
+                // 36dp 圆头像：类型 wash 底（日 10% / 夜 18%）
                 Box(
                     modifier = GlanceModifier
                         .width(36.dp).height(36.dp)
@@ -416,7 +376,7 @@ private fun WidgetRow(item: WidgetItem, compact: Boolean = false) {
                 ) {
                     Text(
                         text = item.avatarText,
-                        style = TextStyle(color = solidProvider, fontSize = 15.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                        style = TextStyle(color = solidProvider, fontSize = 15.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
                     )
                 }
                 Spacer(modifier = GlanceModifier.width(10.dp))
@@ -425,7 +385,8 @@ private fun WidgetRow(item: WidgetItem, compact: Boolean = false) {
                         Text(
                             text = item.name,
                             maxLines = 1,
-                            style = TextStyle(color = NameColor, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            // 名字 Medium：数字 Bold 是行内唯一焦点（字重层级）
+                            style = TextStyle(color = NameColor, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         )
                         if (!compact && !item.isSolemn && item.countdown <= 7) {
                             Spacer(modifier = GlanceModifier.width(6.dp))
@@ -468,7 +429,7 @@ private fun WidgetRow(item: WidgetItem, compact: Boolean = false) {
 private fun CompactBody(item: WidgetItem) {
     val ctx = LocalContext.current
     val accent = widgetAccent(item)
-    val solidProvider = ColorProvider(day = accentSolid(item), night = accentSolid(item))
+    val solidProvider = WidgetTheme.accentSolid(item.eventType, item.isSolemn)
     val isSolemn = item.isSolemn
     // 2×2可用高度仅~96dp（120-12*2），外加圆角裁切，纵向必须极度收紧；同时横向宽度窄，文字易被椭圆遮罩裁掉末字
     Column(
@@ -477,7 +438,7 @@ private fun CompactBody(item: WidgetItem) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         // 将“NEXT”字号缩至 8sp，避免被顶边圆角裁切；Glance下超宽文字横向裁切敏感，越短越安全
-        Text(text = "NEXT", style = TextStyle(color = SubColor, fontSize = 8.sp, textAlign = TextAlign.Center))
+        Text(text = "🌙 NEXT", style = TextStyle(color = SubColor, fontSize = 8.sp, textAlign = TextAlign.Center))
         Spacer(modifier = GlanceModifier.height(3.dp))
         Box(
             modifier = GlanceModifier
@@ -489,14 +450,14 @@ private fun CompactBody(item: WidgetItem) {
         ) {
             Text(
                 text = item.avatarText,
-                style = TextStyle(color = solidProvider, fontSize = 17.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                style = TextStyle(color = solidProvider, fontSize = 17.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
             )
         }
         Spacer(modifier = GlanceModifier.height(3.dp))
         Text(
             text = item.name,
             maxLines = 1,
-            style = TextStyle(color = NameColor, fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            style = TextStyle(color = NameColor, fontSize = 12.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
         )
         Spacer(modifier = GlanceModifier.height(1.dp))
         Text(
@@ -553,7 +514,8 @@ private fun rememberCompactGreeting(): String {
     val g = Greeting.today(today)
     // 取前 6 字并加省略号，避免“岁月漫长，值得…”占满导致“天后”被挤压
     // 用 Greeting 的短句时 10sp 仍可能溢出，但比之前 11sp+4字更稳
-    return "$datePart · $g"
+    // 前缀 🌙 呼应「怀月藏星」图标母题
+    return "🌙 $datePart · $g"
 }
 
 /**

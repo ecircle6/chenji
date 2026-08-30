@@ -370,6 +370,15 @@
   - 坑记录：drawBehind 光晕必须放在 padding/shadow 链之后，否则描边画在 padding 区域外扩 16dp；LazyColumn 项用 id 做 key，滚动复用不重播
   - 验收：✅ 全量单测通过（含既有 Compose UI 测试对无限动画兼容）；模拟器实测入场/滚动/光晕
 
+- [x] **小组件「纸笺辰刻」打磨：调色板收敛 + 字重层级 + 夜间适配 + Hero 渐变**（2026-08-30 完成，v2.1.17）
+  - 背景：audit 发现小组件全部文字 Bold 无层级、五个类型 wash 的 day/night 值完全相同（10% 透明度在深底上几乎隐形）、Violet500 文字对比度 3.7:1 不达标、色值散落
+  - 调色板：新增 `widget/WidgetTheme.kt`——基础面/文字、类型强调（日 700 档 / 夜 400·300 档）、类型 wash（日 0x1A / 夜 0x2E）全部集中；BirthWidget 旧常量改为别名转发，页面不再散落硬编码
+  - Hero 渐变：4×4 头从纯色 accent 升级为与 App 内 HeroCard 同源渐变（生日/情侣/其他/缅怀 × 日/夜共 8 份 shape drawable），走 `drawable/` + `drawable-night/` 限定符自动切换——Glance 1.1 的 ImageProvider 没有 day/night 双 res 构造，标准资源限定符是正解
+  - 字重层级：姓名/空态标题/＋按钮/头像字 Bold→Medium，倒计时数字与 Hero 名字保持 Bold，「数字是行内唯一焦点」
+  - 母题：4×2 问候语与 2×2 "NEXT" 前缀加 🌙、4×4 Hero "🌙 NEXT UP"，呼应「怀月藏星」
+  - 坑记录：Glance DayNight ColorProvider 不支持 copy(alpha)，wash 用预计算 ARGB；`androidx.glance.color.ColorProvider` 是工厂函数，类型引用必须写全 `androidx.glance.unit.ColorProvider`
+  - 验收：✅ 编译 + 全量单测通过；组件需真机/模拟器桌面添加后目检（模拟器截图见 tools/verify 留档）
+
 ---
 
 ## P3 — 远期可选（做前先确认定位与需求）
