@@ -11,7 +11,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -64,11 +63,11 @@ fun BirthdayCard(
             .padding(horizontal = 16.dp, vertical = 5.dp)
             .shadow(
                 elevation = if (isPaused) 0.dp else 3.dp,
-                shape = RoundedCornerShape(20.dp),
+                shape = MaterialTheme.shapes.large,
                 ambientColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                 spotColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
             ),
-        shape = RoundedCornerShape(20.dp),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
@@ -85,7 +84,7 @@ fun BirthdayCard(
                 modifier = Modifier
                     .width(4.dp)
                     .height(42.dp)
-                    .clip(RoundedCornerShape(4.dp))
+                    .clip(MaterialTheme.shapes.extraSmall)
                     .background(accentColor)
             )
             Spacer(modifier = Modifier.width(10.dp))
@@ -113,8 +112,7 @@ fun BirthdayCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = display.birthday.name,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1
                     )
@@ -126,11 +124,10 @@ fun BirthdayCard(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "已暂停",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
+                                .clip(MaterialTheme.shapes.small)
                                 .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f))
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         )
@@ -139,11 +136,10 @@ fun BirthdayCard(
                     // 类型标签：soft 底 + eventAccent 色
                     Text(
                         text = EventType.label(display.eventType),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
+                        style = MaterialTheme.typography.labelSmall,
                         color = accentColor,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(MaterialTheme.shapes.small)
                             .background(accentColor.copy(alpha = 0.12f))
                             .padding(horizontal = 8.dp, vertical = 3.dp)
                     )
@@ -151,7 +147,7 @@ fun BirthdayCard(
                 Spacer(modifier = Modifier.height(5.dp))
                 Text(
                     text = "${display.dateLabel} · ${display.relationLabel}",
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1
                 )
@@ -162,14 +158,13 @@ fun BirthdayCard(
             if (display.isToday) {
                 val (bannerBg, bannerFg) = eventBannerColors(display.eventType, darkTheme)
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.medium,
                     color = bannerBg
                 ) {
                     Text(
                         text = "  ${display.todayBanner}",
                         modifier = Modifier.padding(vertical = 8.dp, horizontal = 10.dp),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleSmall,
                         color = bannerFg,
                         maxLines = 2
                     )
@@ -179,15 +174,13 @@ fun BirthdayCard(
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
                             text = "${display.countdown}",
-                            fontSize = 26.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = accentColor,
-                            lineHeight = 26.sp
+                            style = CountdownCompact,
+                            color = accentColor
                         )
                     }
                     Text(
                         text = " 天后",
-                        fontSize = 11.sp,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -276,7 +269,7 @@ fun EmptyBirthdayList(onAddClick: () -> Unit) {
         Button(
             onClick = onAddClick,
             colors = ButtonDefaults.buttonColors(containerColor = Coral500),
-            shape = RoundedCornerShape(16.dp),
+            shape = MaterialTheme.shapes.large,
             modifier = Modifier
                 .fillMaxWidth(0.6f)
                 .height(48.dp)
@@ -319,7 +312,7 @@ fun UrgentCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 5.dp),
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.large,
         border = BorderStroke(2.dp, accentColor.copy(alpha = borderAlpha)),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
@@ -331,7 +324,7 @@ fun UrgentCard(
                     modifier = Modifier
                         .width(5.dp)
                         .height(52.dp)
-                        .clip(RoundedCornerShape(5.dp))
+                        .clip(MaterialTheme.shapes.extraSmall)
                         .background(accentColor)
                 )
                 Spacer(Modifier.width(12.dp))
@@ -357,14 +350,13 @@ fun UrgentCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = display.birthday.name,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = display.infoLine,
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
@@ -377,23 +369,19 @@ fun UrgentCard(
                     if (display.isToday) {
                         Text(
                             text = "今天",
-                            fontSize = 38.sp,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.displaySmall,
                             color = accentColor
                         )
                     } else {
                         Text(
                             text = "${display.countdown}",
-                            fontSize = 38.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = accentColor,
-                            lineHeight = 38.sp
+                            style = MaterialTheme.typography.displaySmall,
+                            color = accentColor
                         )
                         Text(
                             text = "天后",
-                            fontSize = 12.sp,
-                            color = accentColor,
-                            fontWeight = FontWeight.Medium
+                            style = MaterialTheme.typography.labelSmall,
+                            color = accentColor
                         )
                     }
                 }
@@ -407,12 +395,12 @@ fun UrgentCard(
             ) {
                 Text(
                     "提醒进度",
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     "已过去 $elapsed 天",
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -421,14 +409,14 @@ fun UrgentCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(5.dp)
-                    .clip(RoundedCornerShape(3.dp))
+                    .clip(MaterialTheme.shapes.extraSmall)
                     .background(accentColor.copy(alpha = 0.06f))
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(fraction = progress)
                         .fillMaxHeight()
-                        .clip(RoundedCornerShape(3.dp))
+                        .clip(MaterialTheme.shapes.extraSmall)
                         .background(
                             Brush.horizontalGradient(
                                 listOf(accentColor, accentColor.copy(alpha = 0.6f))
@@ -477,8 +465,8 @@ fun DistantRow(
         )
         Text(
             text = "${display.countdown} 天后",
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
         )
     }

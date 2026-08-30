@@ -357,6 +357,12 @@
   - 2026-08-15：实现与 `design-card-demo.html` 逐项对齐（此前一度跑偏为 840×640 横版已纠正），像素级校验：品牌行左 Logo 右 CHENJI、倒计时垂直居中、分隔线/诗句/翻页数字位置均按 CSS 值 ×3.375 换算
   - 2026-08-15：圆角外角部由透明改为铺中性深色底（设计稿页面底色 #14161c）——相册/浅色背景预览不再出现白色角；深色背景观感不变，圆角弧线保留
 
+- [x] **UI 风格体系化：等宽数字字阶 + 语义圆角 + 对比度达标**（2026-08-30 完成，v2.1.15；审计与提案：`design-optimization-preview.html`）
+  - 背景：material-3 audit 自查约 54/100——形状（57 处 RoundedCornerShape 魔法数字、MaterialTheme.shapes 使用 0 次）、排版（92 处硬编码 fontSize、倒计时数字非等宽）、无障碍（浅色次要文字 #8E8E8E 对暖纸底仅 3.06:1）三大短板
+  - 主题层：`Type.kt` 补 displayLarge/Medium/Small（56/44/34sp ExtraBold + `fontFeatureSettings="tnum"` 等宽）与 titleSmall/labelSmall，titleMedium 定为卡片姓名（600，让数字成为唯一焦点），新增扩展 token `CountdownCompact`（26sp 紧凑卡数字）；`Theme.kt` 定义 `Shapes` 四档（4/8/12/16 + extraLarge 28）与 `SheetShape`（顶部弹层 28），light/dark scheme 补全 `surfaceContainer` 五档、`outline`/`outlineVariant` 分角色；`Color.kt` 次要文字 #8E8E8E→#6E6E6E（4.6:1 达标）并新增暖色容器阶梯/边界色常量
+  - 页面收敛：6 个页面 57 处 `RoundedCornerShape(N.dp)` 全部替换为语义引用（16→large、12→medium、8/10→small、3/4/5→extraSmall、20/24→large/extraLarge、筛选胶囊→`RoundedCornerShape(50)`、底部面板→`SheetShape`）；首页问候语/月历表头/远景行等半透明灰字改 `onSurfaceVariant`；Hero/详情/列表卡的姓名、倒计时、辅助行、进度标签全部接入 Typography 角色
+  - 验收：✅ `compileDebugKotlin` + 全量单测通过；模拟器实测见 tools/verify 留档
+
 ---
 
 ## P3 — 远期可选（做前先确认定位与需求）

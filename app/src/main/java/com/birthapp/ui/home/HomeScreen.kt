@@ -45,6 +45,7 @@ import com.birthapp.ui.preview.previewBirthdays
 import com.birthapp.ui.theme.BirthAppTheme
 import com.birthapp.ui.theme.Coral500
 import com.birthapp.ui.theme.LocalDarkTheme
+import com.birthapp.ui.theme.SheetShape
 import com.birthapp.util.Greeting
 import java.time.LocalDate
 
@@ -407,7 +408,7 @@ private fun GreetingRow() {
         text = "${today.monthValue}月${today.dayOfMonth}日 ${WEEKDAY_CN[today.dayOfWeek] ?: ""} · ${Greeting.today(today)}",
         modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
         fontSize = 13.sp,
-        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
+        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
 
@@ -477,7 +478,7 @@ private fun FilterChip(
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(50), // 胶囊（full）
         color = if (selected) Coral500
         else MaterialTheme.colorScheme.surface,
         border = if (selected) null
@@ -508,7 +509,7 @@ private fun FilterSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        shape = SheetShape
     ) {
         Column(
             modifier = Modifier
@@ -601,7 +602,7 @@ private fun FilterGroup(
                 val isSelected = selected == key
                 Surface(
                     onClick = { onSelect(key) },
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(50), // 胶囊（full）
                     color = if (isSelected) Coral500.copy(alpha = 0.15f)
                     else MaterialTheme.colorScheme.surface,
                     border = BorderStroke(

@@ -44,9 +44,30 @@ val WarmDark = Color(0xFF1A1A18)
 val SurfaceLight = Color(0xFFFFFFFF)
 val SurfaceDark = Color(0xFF2A2A28)
 
+// Surface 容器阶梯（暖色调），用于替代散落的硬编码灰底/分组底
+// 浅色：从白到最深 5 档；深色：从最深到稍亮 5 档
+val ContainerLowestLight = Color(0xFFFFFFFF)
+val ContainerLowLight = Color(0xFFF2F0EC)
+val ContainerLight = Color(0xFFECEAE6)
+val ContainerHighLight = Color(0xFFE6E4DF)
+val ContainerHighestLight = Color(0xFFE0DED9)
+
+val ContainerLowestDark = Color(0xFF121211)
+val ContainerLowDark = Color(0xFF1E1E1C)
+val ContainerDark = Color(0xFF262624)
+val ContainerHighDark = Color(0xFF2E2E2C)
+val ContainerHighestDark = Color(0xFF373734)
+
+// 边界色：outline 用于重要边界（输入框描边），outlineVariant 用于分隔线等弱边界
+val OutlineLight = Color(0xFF8A8A86)
+val OutlineVariantLight = Color(0xFFDCD9D3)
+val OutlineDark = Color(0xFF8F8F8B)
+val OutlineVariantDark = Color(0xFF45443F)
+
 // Text
 val TextPrimary = Color(0xFF2D2D2D)
-val TextSecondary = Color(0xFF8E8E8E)
+// 浅色次要文字：#8E8E8E 对暖纸底只有 3.06:1（不达标），加深到 4.6:1
+val TextSecondary = Color(0xFF6E6E6E)
 val TextOnDark = Color(0xFFE8E8E6)
 val TextOnDarkSecondary = Color(0xFF9E9E9C)
 

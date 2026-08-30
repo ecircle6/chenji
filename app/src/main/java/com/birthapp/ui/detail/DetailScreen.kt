@@ -6,7 +6,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -219,7 +218,7 @@ fun DetailContent(
             if (state.isToday) {
                 val (bannerBg, bannerFg) = eventBannerColors(state.eventType, darkTheme)
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
+                    shape = MaterialTheme.shapes.large,
                     color = bannerBg,
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -234,7 +233,7 @@ fun DetailContent(
                 }
             } else {
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
+                    shape = MaterialTheme.shapes.large,
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -245,9 +244,7 @@ fun DetailContent(
                     ) {
                         Text(
                             text = "${state.countdown}",
-                            fontSize = 44.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            lineHeight = 46.sp,
+                            style = MaterialTheme.typography.displayMedium,
                             color = if (state.isSolemn) {
                                 if (darkTheme) SlateInkLight else SlateInk
                             } else {
@@ -341,7 +338,7 @@ fun DetailContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.large,
                 colors = ButtonDefaults.buttonColors(containerColor = accent)
             ) {
                 Text("编辑", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
@@ -371,12 +368,11 @@ fun DetailContent(
 
 @Composable
 private fun TagPill(text: String, color: Color) {
-    Surface(shape = RoundedCornerShape(12.dp), color = color.copy(alpha = 0.15f)) {
+    Surface(shape = MaterialTheme.shapes.medium, color = color.copy(alpha = 0.15f)) {
         Text(
             text = text,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
+            style = MaterialTheme.typography.labelMedium,
             color = color
         )
     }
@@ -392,7 +388,7 @@ private fun DetailCard(title: String, content: @Composable ColumnScope.() -> Uni
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Surface(
-            shape = RoundedCornerShape(20.dp),
+            shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surface,
             border = BorderStroke(
                 1.dp,

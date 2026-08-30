@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -100,7 +99,7 @@ fun CalendarScreen(
                 Text(
                     lunarMonthName(displayedMonth),
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             IconButton(onClick = { displayedMonth = displayedMonth.plusMonths(1) }) {
@@ -118,7 +117,7 @@ fun CalendarScreen(
                     textAlign = TextAlign.Center,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -163,7 +162,7 @@ fun CalendarScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
+                                .clip(MaterialTheme.shapes.small)
                                 .clickable {
                                     selectedDay = null
                                     onItemClick(e.id)
@@ -188,7 +187,7 @@ fun CalendarScreen(
             confirmButton = {
                 TextButton(onClick = { selectedDay = null }) { Text("关闭") }
             },
-            shape = RoundedCornerShape(24.dp)
+            shape = MaterialTheme.shapes.extraLarge
         )
     }
 }
@@ -220,7 +219,7 @@ private fun RowScope.DayCell(
         modifier = Modifier
             .weight(1f)
             .height(56.dp)
-            .clip(RoundedCornerShape(10.dp))
+            .clip(MaterialTheme.shapes.small)
             .clickable(enabled = date != null && events.isNotEmpty()) {
                 date?.let(onDayClick)
             },

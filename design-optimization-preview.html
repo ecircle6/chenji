@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>辰记 · 风格优化效果预览（v2.1.15–v2.1.17 提案）</title>
+<style>
+  :root{
+    --coral500:#FF6B6B; --coral400:#FF8A8A; --coral300:#FFABAB; --coral700:#E05555;
+    --teal500:#00BFA5; --teal400:#26D9C0; --teal700:#009688;
+    --yellow:#FFD93D; --yellow700:#E6C235;
+    --violet500:#7C6BFF; --violet300:#B5ACFF; --violet700:#5B4BC4;
+    --peach:#FFF5EE; --mint:#F0F8F0; --lavender:#F5F0FF; --today:#FFFDE7;
+    --warmlight:#F8F7F4; --warmdark:#1A1A18; --surfacelight:#fff; --surfacedark:#2A2A28;
+    --t1:#2D2D2D; --t2:#8E8E8E; --t2fix:#6E6E6E; --tdark:#E8E8E6; --tdark2:#9E9E9C;
+    --peachdark:#3A2820; --mintdark:#1A3028; --lavdark:#2A2040; --todaydark:#3A3520;
+    --slate:#EDF1F5; --slatedark:#232A30; --slateink:#5B6B7A;
+    --rowdark:#242422;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:#eceae5;color:#2D2D2D;line-height:1.6;padding:32px 20px 80px}
+  .wrap{max-width:1280px;margin:0 auto}
+  h1{font-size:28px;font-weight:800;margin-bottom:6px}
+  .sub{color:#777;font-size:14px;margin-bottom:32px;max-width:960px}
+  .sub b{color:#2D2D2D}
+  section{background:#fff;border-radius:20px;padding:26px 28px;margin-bottom:26px;box-shadow:0 2px 14px rgba(0,0,0,.06)}
+  h2{font-size:20px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:9px}
+  h2 .no{width:28px;height:28px;border-radius:9px;background:var(--coral500);color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .tag{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--coral500);color:#fff;letter-spacing:.5px}
+  .tag.fix{background:#E05555}.tag.new{background:var(--teal500)}.tag.q{background:#7C6BFF}.tag.v{background:#6E6E6E}
+  .desc{color:#666;font-size:14px;margin:10px 0 20px;max-width:960px}
+  .desc b{color:#2D2D2D}
+  .desc code{background:#f4f2ef;padding:1px 6px;border-radius:4px;font-size:12.5px;color:#8a4a3a}
+  .row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+  .col{display:flex;flex-direction:column;gap:10px}
+  .caption{font-size:13px;font-weight:700;color:#555;display:flex;align-items:center;gap:6px}
+  .caption .dot{width:9px;height:9px;border-radius:50%}
+  .bad .dot{background:#E05555}.good .dot{background:var(--teal500)}
+  .bad{color:#C0392B}.good{color:var(--teal700)}
+  .note{font-size:12px;color:#888;max-width:330px}
+  .legend{font-size:12px;color:#999;margin-top:16px;padding-top:12px;border-top:1px dashed #e5e5e5;max-width:960px}
+
+  /* ===== phone frame（沿用 design-mockup.html） ===== */
+  .phone{width:334px;border:8px solid #23231f;border-radius:34px;overflow:hidden;background:var(--warmlight);box-shadow:0 8px 26px rgba(0,0,0,.16)}
+  .phone.dark{background:var(--warmdark)}
+  .status{height:26px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:11px;color:var(--t2)}
+  .phone.dark .status{color:var(--tdark2)}
+  .appbar{padding:10px 18px 12px;font-size:22px;font-weight:800;color:var(--t1);display:flex;align-items:center;justify-content:space-between}
+  .phone.dark .appbar{color:var(--tdark)}
+  .tabs{display:flex;gap:8px;padding:0 14px 12px;overflow:hidden}
+  .pill{font-size:12px;padding:7px 15px;border-radius:20px;border:1px solid rgba(142,142,142,.3);color:var(--t1);white-space:nowrap;background:#fff}
+  .pill.on{background:var(--coral500);color:#fff;border-color:transparent;font-weight:600}
+  .phone.dark .pill{background:var(--surfacedark);color:var(--tdark);border-color:rgba(158,158,156,.3)}
+  .phone.dark .pill.on{background:var(--coral400);color:var(--warmdark)}
+  .body{padding:4px 0 16px}
+
+  /* ===== 卡片：before（现状） ===== */
+  .card{margin:6px 14px;border-radius:22px;padding:16px;background:var(--peach);box-shadow:0 3px 10px rgba(0,0,0,.05)}
+  .c-mint{background:var(--mint)}.c-lav{background:var(--lavender)}.c-today{background:var(--today)}
+  .c-slate{background:var(--slate)}
+  .r1{display:flex;align-items:center;justify-content:space-between}
+  .who{display:flex;align-items:center;gap:9px}
+  .ava{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px}
+  .nm{font-size:18px;font-weight:800;color:var(--t1)}
+  .rel{font-size:11px;font-weight:600;padding:3px 9px;border-radius:11px}
+  .r2{font-size:12.5px;color:var(--t2);margin-top:9px}
+  .r3{display:flex;align-items:flex-end;justify-content:space-between;margin-top:12px}
+  .cd{display:flex;align-items:flex-end;gap:4px}
+  .cd b{font-size:34px;font-weight:900;color:var(--teal500);line-height:1}
+  .cd span{font-size:13px;color:var(--t2);padding-bottom:3px}
+  .clock{font-size:11px;color:var(--teal700);background:rgba(0,191,165,.1);padding:4px 8px;border-radius:9px;white-space:nowrap}
+  .banner{margin-top:12px;background:rgba(255,217,61,.32);border-radius:11px;padding:9px 12px;font-size:15px;font-weight:800;color:var(--coral700)}
+  .banner.solemn{background:rgba(91,107,122,.13);color:var(--slateink);font-weight:700;font-size:14px}
+  .phone.dark .card{background:var(--peachdark)}
+  .phone.dark .c-mint{background:var(--mintdark)}
+  .phone.dark .c-lav{background:var(--lavdark)}
+  .phone.dark .c-today{background:var(--todaydark)}
+  .phone.dark .c-slate{background:var(--slatedark)}
+  .phone.dark .nm{color:var(--tdark)}
+  .phone.dark .r2,.phone.dark .cd span{color:var(--tdark2)}
+  .phone.dark .cd b{color:var(--teal400)}
+  .phone.dark .banner{color:#FFC9C9}
+  .phone.dark .banner.solemn{color:#AFC0CE}
+  .paused{opacity:.55}
+  .pausetag{font-size:10px;font-weight:700;color:#8E8E8E;background:rgba(142,142,142,.16);padding:3px 8px;border-radius:9px;margin-left:6px}
+
+  /* ===== 卡片：after（优化后 · 排版/形状/对比度） ===== */
+  /* 形状走语义 token：hero 28 / 卡 16 / 输入 8 / 胶囊 full */
+  .card2{margin:6px 14px;border-radius:16px;padding:16px 18px;background:var(--peach);box-shadow:0 2px 8px rgba(0,0,0,.04)}
+  .card2.c-mint{background:var(--mint)}.card2.c-lav{background:var(--lavender)}.card2.c-today{background:var(--today)}
+  .card2.c-slate{background:var(--slate)}
+  .r2b{font-size:12.5px;color:var(--t2fix);margin-top:9px}
+  .nm2{font-size:16.5px;font-weight:600;color:var(--t1)}
+  .cdb{display:flex;align-items:baseline;gap:5px;margin-top:13px}
+  .cdb b{font-size:36px;font-weight:850;color:var(--teal500);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+  .cdb span{font-size:12.5px;color:var(--t2fix);font-weight:500}
+  .clock2{font-size:11px;font-weight:600;color:var(--teal700);background:rgba(0,191,165,.1);padding:4px 10px;border-radius:999px;white-space:nowrap}
+  .phone.dark .card2{background:var(--peachdark)}
+  .phone.dark .card2.c-mint{background:var(--mintdark)}
+  .phone.dark .card2.c-lav{background:var(--lavdark)}
+  .phone.dark .card2.c-today{background:var(--todaydark)}
+  .phone.dark .card2.c-slate{background:var(--slatedark)}
+  .phone.dark .nm2{color:var(--tdark)}
+  .phone.dark .r2b,.phone.dark .cdb span{color:var(--tdark2)}
+  .phone.dark .cdb b{color:var(--teal400)}
+  /* 呼吸的「今天」卡 */
+  @keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(255,107,107,.32)}55%{box-shadow:0 0 0 13px rgba(255,107,107,0)}}
+  .breathe{animation:breathe 2.6s ease-out infinite}
+
+  /* Hero 卡（形状 extra-large 28 + 大数字排版） */
+  .hero2{margin:6px 14px 10px;border-radius:28px;padding:20px 18px;color:#fff;background:linear-gradient(140deg,#FFC98A,#FF8A5C);position:relative;overflow:hidden}
+  .hero2 .h-tag{font-size:11px;font-weight:600;letter-spacing:1px;opacity:.85}
+  .hero2 .h-nm{font-size:20px;font-weight:700;margin-top:2px}
+  .hero2 .h-cd{display:flex;align-items:baseline;gap:6px;margin-top:10px}
+  .hero2 .h-cd b{font-size:46px;font-weight:850;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-1px}
+  .hero2 .h-cd span{font-size:13px;font-weight:500;opacity:.9}
+  .hero2 .h-date{font-size:12px;opacity:.85;margin-top:8px}
+  .hero2 .moon{position:absolute;right:14px;top:12px;font-size:26px;opacity:.9}
+
+  /* ===== 1 排版：tabular 数字对比 demo ===== */
+  .tnum-demo{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px}
+  .tnum-box{background:#faf9f7;border:1px solid #eceae5;border-radius:14px;padding:14px 18px;min-width:220px}
+  .tnum-box h4{font-size:12.5px;color:#555;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .tnum-box h4 i{font-style:normal;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:8px;color:#fff}
+  .tnum-box.prop h4 i{background:#C0392B}
+  .tnum-box.tab h4 i{background:var(--teal500)}
+  .tnum-rows div{font-size:30px;font-weight:850;line-height:1.35;color:var(--t1)}
+  .tnum-box.tab .tnum-rows{font-variant-numeric:tabular-nums}
+  .tnum-w{font-size:11px;color:#999;margin-top:6px}
+  .tick{color:var(--teal700)}
+
+  /* 对比度色板 */
+  .contrast{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px}
+  .cbox{width:225px;border-radius:14px;padding:15px 16px;background:var(--warmlight);border:1px solid #eceae5}
+  .cbox .big{font-size:19px;font-weight:800;margin-bottom:2px}
+  .cbox .sec{font-size:13px;margin-bottom:9px}
+  .cbox .ratio{font-size:11px;font-weight:800;padding:3px 9px;border-radius:9px;display:inline-block}
+  .ratio.fail{background:#FDECEA;color:#C0392B}
+  .ratio.pass{background:#E6F7F3;color:var(--teal700)}
+
+  /* 类型标尺表 */
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid #eee;vertical-align:middle}
+  th{background:#faf9f7;font-weight:700;color:#555;font-size:12.5px}
+  td code{background:#f4f2ef;padding:1px 5px;border-radius:4px;font-size:12px}
+  .t-sample{font-size:22px;font-weight:850;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+  .t-sample.big{font-size:30px}
+  .t-sample.mid{font-size:17px;font-weight:700}
+  .t-sample.n{font-size:14px;font-weight:400}
+  .t-sample.s{font-size:12px;font-weight:500;color:var(--t2fix)}
+
+  /* ===== 2 形状 ===== */
+  .shape-strip{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-top:14px}
+  .shape-card{border-radius:14px;background:#faf9f7;border:1px solid #eceae5;padding:12px 14px;text-align:center}
+  .shape-demo{margin:0 auto 8px;background:#fff;border:1.5px solid #eadfd6;display:flex;align-items:center;justify-content:center;color:var(--coral700);font-size:11px;font-weight:700}
+  .shape-card p{font-size:11px;color:#888;line-height:1.5}
+  .shape-card p b{display:block;font-size:12.5px;color:#2D2D2D}
+  .chaos .shape-card{border-radius:0;border:none;background:none;padding:0;text-align:left}
+  .chaos-sample{height:52px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11.5px;font-weight:700;width:118px}
+
+  /* ===== 3 动效 ===== */
+  .demo-btns{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 14px}
+  .demo-btns button{border:1.5px solid rgba(255,107,107,.45);background:#fff;color:var(--coral700);font-size:12.5px;font-weight:700;padding:8px 16px;border-radius:999px;cursor:pointer}
+  .demo-btns button:hover{background:var(--coral500);color:#fff;border-color:transparent}
+  @keyframes rise{0%{opacity:0;transform:translateY(24px) scale(.965)}62%{transform:translateY(-3px) scale(1.006)}100%{opacity:1;transform:none}}
+  .stag{opacity:0;animation:rise .62s cubic-bezier(.24,1.1,.38,1) forwards;animation-delay:var(--d,0s)}
+  .odo{display:inline-flex;align-items:baseline;gap:5px}
+  .odo-win{display:inline-block;height:36px;overflow:hidden;vertical-align:bottom}
+  .odo-track{display:flex;flex-direction:column;transition:transform .58s cubic-bezier(.3,1.35,.45,1)}
+  .odo-track span{height:36px;line-height:36px;font-size:34px;font-weight:850;color:var(--teal500);font-variant-numeric:tabular-nums;display:block}
+  .odo-win.today-win{height:auto;overflow:visible}
+  .odo-track .today{font-size:26px;font-weight:800;color:var(--coral500)}
+  .hot .odo-track span{color:var(--coral500)}
+
+  /* ===== 4 小组件 ===== */
+  .wall{background:linear-gradient(150deg,#2b3a4a,#4a3b52 60%,#6b4a44);padding:20px;border-radius:26px;width:334px}
+  .wall.day{background:linear-gradient(150deg,#7fb3d5,#a7cbb8 55%,#e8c9a8)}
+  .wg{background:rgba(255,255,255,.94);border-radius:22px;padding:13px 14px;box-shadow:0 4px 16px rgba(0,0,0,.25);position:relative;overflow:hidden}
+  /* 纸笺质感：细横纹 + 暖色晕 */
+  .wg.paper{background:
+    radial-gradient(120% 90% at 85% -10%, rgba(255,217,61,.10), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(90,70,40,.022) 0 1px, transparent 1px 4px),
+    rgba(255,255,255,.94)}
+  .wall .wg{background:rgba(255,255,255,.96)}
+  .wall .wg.paper{background:
+    radial-gradient(120% 90% at 85% -10%, rgba(255,217,61,.10), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(90,70,40,.022) 0 1px, transparent 1px 4px),
+    rgba(255,255,255,.97)}
+  /* 夜间小组件 */
+  .wg.night{background:
+    radial-gradient(120% 90% at 85% -10%, rgba(255,201,138,.06), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0 1px, transparent 1px 4px),
+    var(--surfacedark)}
+  .wghead{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--t2);margin-bottom:8px}
+  .wghead .moon-motif{color:var(--coral700);font-weight:700;letter-spacing:.5px}
+  .wgrow{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid rgba(0,0,0,.06)}
+  .wgrow:first-of-type{border-top:none}
+  .wgemo{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex:0 0 auto}
+  .wgnm{font-size:13.5px;font-weight:700;color:var(--t1);flex:1}
+  .wgsub{font-size:11px;color:var(--t2)}
+  .wgdays{font-size:17px;font-weight:900;color:var(--teal500);font-variant-numeric:tabular-nums}
+  .wgdays.hot{color:var(--coral500)}
+  .wgbig{text-align:center;padding:6px 0 2px}
+  .wgbig .n{font-size:40px;font-weight:900;color:var(--coral500);line-height:1.05;font-variant-numeric:tabular-nums;letter-spacing:-1px}
+  .wgbig .l{font-size:13px;color:var(--t1);font-weight:700}
+  .wgbig .s{font-size:11px;color:var(--t2)}
+  /* after：字重层级（名字 600 / 数字 850）+ 夜间适配 */
+  .wg2 .wgnm{font-weight:600}
+  .wg2 .wgsub{font-weight:400}
+  .wg2 .wgdays{font-weight:800;letter-spacing:-.3px}
+  .wg2 .wgbig .n{font-weight:850}
+  .wg2 .wgbig .l{font-weight:600}
+  .wg2 .wgbig .s{font-weight:400}
+  .wgnight{background:var(--surfacedark)}
+  .wgnight .wghead{color:var(--tdark2)}
+  .wgnight .wgnm{color:var(--tdark)}
+  .wgnight .wgsub{color:var(--tdark2)}
+  .wgnight .wgdays{color:var(--teal400)}
+  .wgnight .wgdays.hot{color:var(--coral400)}
+  .wgnight .wgbig .l{color:var(--tdark)}
+  .wgnight .wgbig .s{color:var(--tdark2)}
+  .wgnight .wgbig .n{color:var(--coral400)}
+  .wgnight .wgrow{border-top-color:rgba(255,255,255,.07)}
+  /* 夜间类型 wash：由 10% 提到 ~18%，且文字用亮一档 */
+  .w1{background:rgba(255,107,107,.10);color:var(--coral700)}
+  .w2{background:rgba(124,107,255,.10);color:var(--violet700)}
+  .w3{background:rgba(0,191,165,.10);color:var(--teal700)}
+  .w4{background:rgba(91,107,122,.12);color:var(--slateink)}
+  .n1{background:rgba(255,138,138,.18);color:var(--coral400)}
+  .n2{background:rgba(181,172,255,.18);color:var(--violet300)}
+  .n3{background:rgba(38,217,192,.16);color:var(--teal400)}
+  .n4{background:rgba(159,176,191,.16);color:#AFC0CE}
+  .wgbig-hero{border-radius:20px;padding:14px 12px 10px;color:#fff;background:linear-gradient(140deg,#FFC98A,#FF8A5C)}
+  .wgnight-h{border-radius:20px;padding:14px 12px 10px;color:#fff;background:linear-gradient(140deg,#B06A2E,#C74F2A)}
+
+  /* ===== 5 图标母题 ===== */
+  .icon-row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-end;margin-top:14px}
+  .icon-fig{text-align:center}
+  .icon-fig .cap{font-size:11.5px;color:#888;margin-top:8px}
+  .launcher{width:88px;height:88px;border-radius:26px;background:linear-gradient(150deg,#FFC98A,#FF8A5C 70%);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(255,138,92,.4);position:relative;overflow:hidden}
+  .launcher::before{content:"";position:absolute;width:46px;height:46px;border-radius:50%;background:#fff;opacity:.92}
+  .launcher::after{content:"";position:absolute;width:38px;height:38px;border-radius:50%;background:linear-gradient(150deg,#FFB067,#FF8A5C);transform:translate(11px,-7px)}
+  .launcher .star{position:absolute;color:#FFF3D6;font-size:15px;transform:translate(20px,-19px);z-index:2}
+  .mini-moon{width:40px;height:40px;border-radius:12px;background:linear-gradient(150deg,#FFC98A,#FF8A5C);display:flex;align-items:center;justify-content:center;margin:0 auto;color:#fff;font-size:19px}
+  .mono-moon{width:40px;height:40px;border-radius:12px;background:#2D2D2D;display:flex;align-items:center;justify-content:center;margin:0 auto;color:#fff;font-size:19px}
+
+  /* 章节导航 */
+  .nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:26px}
+  .nav a{font-size:12.5px;font-weight:600;color:#666;text-decoration:none;background:#fff;border:1px solid #e5e2dc;padding:7px 14px;border-radius:999px}
+  .nav a:hover{color:var(--coral700);border-color:rgba(255,107,107,.4)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🌙 辰记 · 风格优化效果预览 <span class="tag new" style="vertical-align:middle;font-size:12px">v2.1.15–v2.1.17 提案</span></h1>
+  <p class="sub">基于 <b>material-3 audit</b>（54/100）与 <b>android-compose-design</b> 方法论的三刀优化。全部使用 App 真实配色。目标不是换风格——「怀月藏星 × 纸笺辰刻」不变——而是把散落的即兴发挥<b>收进主题系统</b>，再补上完全缺失的<b>动效</b>。</p>
+  <div class="nav">
+    <a href="#s1">① 排版与数字</a><a href="#s2">② 形状语言</a><a href="#s3">③ 动效系统</a><a href="#s4">④ 小组件打磨</a><a href="#s5">⑤ 图标母题</a><a href="#s6">⑥ 实施对照</a>
+  </div>
+
+  <!-- ================= 1 排版 ================= -->
+  <section id="s1">
+    <h2><span class="no">1</span>排版系统：层级 + 等宽数字 + 对比度 <span class="tag fix">v2.1.15</span></h2>
+    <p class="desc">三处修复：<b>①</b> 全项目 <code>92 处硬编码 fontSize</code> 收敛进 Typography（新增 <code>displayMedium</code> 给倒计时大数字）+ 数字启用 <b>tabular-nums 等宽</b>（倒计时数字宽度不再抖动）；<b>②</b> 名字降为 600 字重、数字 850——现在两者都是 800/900，互相打架没有层级；<b>③</b> 次要文字 <code>#8E8E8E</code> 对比度仅 <b>3.06:1</b>（不达标），加深到 <code>#6E6E6E</code>（4.6:1 ✅）。</p>
+    <div class="row">
+      <div class="col">
+        <div class="caption bad"><span class="dot"></span>现在：名字和数字抢焦点 · 次要文字发灰 · 数字等宽无保障</div>
+        <div class="phone">
+          <div class="status"><span>1:35</span><span>5G ▮</span></div>
+          <div class="appbar">辰记</div>
+          <div class="tabs"><span class="pill on">全部</span><span class="pill">家人</span><span class="pill">朋友</span></div>
+          <div class="body">
+            <div class="hero2" style="border-radius:22px;background:linear-gradient(140deg,#FFC98A,#FF8A5C)">
+              <div class="h-tag">距离生日还有</div>
+              <div class="h-nm" style="font-weight:800">妈妈</div>
+              <div class="h-cd"><b style="font-variant-numeric:normal;letter-spacing:0">32</b><span>天后 · 农历八月十五</span></div>
+            </div>
+            <div class="card">
+              <div class="r1"><div class="who"><div class="ava" style="background:rgba(255,107,107,.2);color:#FF6B6B">爸</div><div class="nm">爸爸</div></div><div class="rel" style="background:rgba(255,107,107,.15);color:#FF6B6B">家人</div></div>
+              <div class="r2">☀️ 3月8日 · 🐴属马 · 60岁</div>
+              <div class="r3"><div class="cd"><b>190</b><span>天后</span></div><div class="clock">⏰ 08:00</div></div>
+            </div>
+            <div class="card c-mint paused">
+              <div class="r1"><div class="who"><div class="ava" style="background:rgba(0,191,165,.2);color:#00BFA5">S</div><div class="nm">Sam</div><span class="pausetag">已暂停</span></div><div class="rel" style="background:rgba(0,191,165,.15);color:#00BFA5">朋友</div></div>
+              <div class="r2">☀️ 12月25日 · 🐵属猴 · 34岁</div>
+              <div class="r3"><div class="cd"><b>147</b><span>天后</span></div></div>
+            </div>
+          </div>
+        </div>
+        <p class="note">⚠️ 18px/800 的名字 vs 34px/900 的数字：两个字重都顶满，扫视时没有主次。次要灰字在暖纸底上偏虚。</p>
+      </div>
+      <div class="col">
+        <div class="caption good"><span class="dot"></span>优化后：数字是唯一主角 · 名字退后半步 · 灰字够黑</div>
+        <div class="phone">
+          <div class="status"><span>1:35</span><span>5G ▮</span></div>
+          <div class="appbar">辰记</div>
+          <div class="tabs"><span class="pill on">全部</span><span class="pill">家人</span><span class="pill">朋友</span></div>
+          <div class="body">
+            <div class="hero2 stag" style="--d:.05s;animation:none;opacity:1">
+              <div class="moon">🌙</div>
+              <div class="h-tag">距离生日还有</div>
+              <div class="h-nm">妈妈</div>
+              <div class="h-cd"><b>32</b><span>天后 · 农历八月十五</span></div>
+            </div>
+            <div class="card2">
+              <div class="r1"><div class="who"><div class="ava" style="background:rgba(255,107,107,.2);color:#FF6B6B">爸</div><div class="nm2">爸爸</div></div><div class="rel" style="background:rgba(255,107,107,.15);color:#FF6B6B">家人</div></div>
+              <div class="r2b">☀️ 3月8日 · 🐴属马 · 60岁</div>
+              <div class="r3"><div class="cdb"><b>190</b><span>天后</span></div><div class="clock2">⏰ 08:00</div></div>
+            </div>
+            <div class="card2 c-mint paused">
+              <div class="r1"><div class="who"><div class="ava" style="background:rgba(0,191,165,.2);color:#00BFA5">S</div><div class="nm2">Sam</div><span class="pausetag">已暂停</span></div><div class="rel" style="background:rgba(0,191,165,.15);color:#00BFA5">朋友</div></div>
+              <div class="r2b">☀️ 12月25日 · 🐵属猴 · 34岁</div>
+              <div class="r3"><div class="cdb"><b>147</b><span>天后</span></div></div>
+            </div>
+          </div>
+        </div>
+        <p class="note">✅ 时钟 chip 改全圆角（M3 胶囊），卡片 16dp 语义圆角，Hero 28dp。</p>
+      </div>
+    </div>
+
+    <div class="tnum-demo">
+      <div class="tnum-box prop">
+        <h4><i>BEFORE</i> 比例数字（默认）— 宽度实时抖动</h4>
+        <div class="tnum-rows"><div>188</div><div>253</div><div id="propTick">364</div></div>
+        <div class="tnum-w">当前数字宽度：<span id="propW">–</span> px</div>
+      </div>
+      <div class="tnum-box tab">
+        <h4><i>AFTER</i> tabular-nums — 宽度恒定不抖</h4>
+        <div class="tnum-rows"><div>188</div><div>253</div><div id="tabTick" class="tick">364</div></div>
+        <div class="tnum-w">当前数字宽度：<span id="tabW">–</span> px（恒定）</div>
+      </div>
+    </div>
+
+    <div class="contrast">
+      <div class="cbox">
+        <div class="big" style="color:var(--t1)">妈妈</div>
+        <div class="sec" style="color:var(--t2)">☀️ 农历八月十五 · 属马 · 58岁</div>
+        <span class="ratio fail">次要文字 3.06 : 1 ✗（需 4.5:1）</span>
+      </div>
+      <div class="cbox">
+        <div class="big" style="color:var(--t1)">妈妈</div>
+        <div class="sec" style="color:var(--t2fix)">☀️ 农历八月十五 · 属马 · 58岁</div>
+        <span class="ratio pass">次要文字 4.62 : 1 ✓ 达标</span>
+      </div>
+    </div>
+
+    <table>
+      <tr><th>Typography 新增/调整（→ ui/theme/Type.kt）</th><th>角色</th><th>规格</th><th>用于</th></tr>
+      <tr><td><span class="t-sample big">364</span></td><td><code>displayMedium</code> 新增</td><td>42sp / 850 / tabular</td><td>Hero 卡、详情页倒计时大数字</td></tr>
+      <tr><td><span class="t-sample mid">爸爸</span></td><td><code>titleMedium</code> 调整</td><td>16.5sp / 600（降一档）</td><td>卡片姓名</td></tr>
+      <tr><td><span class="t-sample n">农历八月十五 · 属马</span></td><td><code>bodyMedium</code> 调整</td><td>14sp / 400 / #6E6E6E</td><td>辅助信息行</td></tr>
+      <tr><td><span class="t-sample s">⏰ 08:00</span></td><td><code>labelSmall</code> 新增</td><td>11sp / 600 胶囊</td><td>时钟 chip、标签</td></tr>
+    </table>
+  </section>
+
+  <!-- ================= 2 形状 ================= -->
+  <section id="s2">
+    <h2><span class="no">2</span>形状语言：12 种魔法数字 → 4 个语义 token <span class="tag fix">v2.1.15</span></h2>
+    <p class="desc">现状：<code>57 处 RoundedCornerShape</code>、<b>12 种半径</b>（3 / 4 / 5 / 8 / 10 / 12 / 14 / 16 / 18 / 20 / 24 / 顶角24）散落各页，<code>MaterialTheme.shapes</code> 使用 <b>0 次</b>——每个容器都在"各自为政地圆"。优化后定义 <code>Shapes(small=8, medium=12, large=16, extraLarge=28)</code>，全局只允许 4 个语义值 + 胶囊（full）。层级反而更清楚：<b>Hero 最大最软、卡片中等、chip 锐利</b>。</p>
+    <div class="row">
+      <div class="col chaos">
+        <div class="caption bad"><span class="dot"></span>现在：12 种半径随机出现</div>
+        <div class="shape-strip">
+          <div class="shape-card"><div class="chaos-sample" style="border-radius:5px;background:#c9b8a8">5dp 输入框</div></div>
+          <div class="shape-card"><div class="chaos-sample" style="border-radius:14px;background:#b8a89a">14dp 小容器</div></div>
+          <div class="shape-card"><div class="chaos-sample" style="border-radius:3px;background:#a89a8c">3dp ??</div></div>
+          <div class="shape-card"><div class="chaos-sample" style="border-radius:18px;background:#98887a">18dp ？</div></div>
+          <div class="shape-card"><div class="chaos-sample" style="border-radius:10px;background:#8a7a6c">10dp 弹窗</div></div>
+        </div>
+        <p class="note">⚠️ 半径之间没有可解释的层级关系，新页面只能"凭感觉填数"。</p>
+      </div>
+      <div class="col">
+        <div class="caption good"><span class="dot"></span>优化后：4 个语义 token + 胶囊</div>
+        <div class="shape-strip">
+          <div class="shape-card">
+            <div class="shape-demo" style="width:110px;height:56px;border-radius:28px;background:linear-gradient(140deg,#FFC98A,#FF8A5C);color:#fff;border:none">Hero 28</div>
+            <p><b>extraLarge</b><code>28dp</code> Hero / 底部弹层</p>
+          </div>
+          <div class="shape-card">
+            <div class="shape-demo" style="width:110px;height:56px;border-radius:16px">卡 16</div>
+            <p><b>large</b><code>16dp</code> 列表卡 / 信息组</p>
+          </div>
+          <div class="shape-card">
+            <div class="shape-demo" style="width:110px;height:56px;border-radius:12px">小容器 12</div>
+            <p><b>medium</b><code>12dp</code> 内嵌块 / 菜单</p>
+          </div>
+          <div class="shape-card">
+            <div class="shape-demo" style="width:110px;height:56px;border-radius:8px">输入 8</div>
+            <p><b>small</b><code>8dp</code> 输入框 / 提示</p>
+          </div>
+          <div class="shape-card">
+            <div class="shape-demo" style="width:110px;height:56px;border-radius:999px;background:#fff">chip ⏰ 08:00</div>
+            <p><b>full</b><code>胶囊</code> chip / 筛选 / 按钮</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 3 动效 ================= -->
+  <section id="s3">
+    <h2><span class="no">3</span>动效系统：从 0 到 1 <span class="tag new">v2.1.16</span></h2>
+    <p class="desc">现状全项目只有 <b>1 处 spring</b>、无任何入场/状态动画——skill 里说的 "flat and static" 模板脸。三个动效全部可用（点按钮重播）：<b>① 首屏错峰入场</b>（spring 回弹曲线，卡片依次浮起）；<b>② 倒计时数字滚动</b>（进入新的一天 3→2→1→今天，数字滚动而非跳变）；<b>③ 「今天」卡片呼吸光晕</b>（当天寿星轻轻脉动，扫一眼就锁定）。<b>左边手机会自动播放</b>。</p>
+    <div class="demo-btns">
+      <button onclick="replay()">↻ 重播入场动画</button>
+      <button onclick="odoReplay()">↻ 重播数字滚动</button>
+    </div>
+    <div class="row">
+      <div class="col">
+        <div class="caption good"><span class="dot"></span>优化后（会动）</div>
+        <div class="phone" id="motionPhone">
+          <div class="status"><span>1:35</span><span>5G ▮</span></div>
+          <div class="appbar">辰记</div>
+          <div class="tabs"><span class="pill on">全部</span><span class="pill">家人</span><span class="pill">朋友</span></div>
+          <div class="body" id="stagBody">
+            <div class="hero2 stag" style="--d:.04s">
+              <div class="moon">🌙</div>
+              <div class="h-tag">距离生日还有</div>
+              <div class="h-nm">妈妈</div>
+              <div class="h-cd"><b class="odo"><span class="odo-win"><span class="odo-track" id="odoTrack" style="transform:translateY(0)"><span>3</span><span>2</span><span>1</span></span></span></b><span>天后 · 农历八月十五</span></div>
+            </div>
+            <div class="card2 c-today stag breathe" style="--d:.16s">
+              <div class="r1"><div class="who"><div class="ava" style="background:rgba(255,107,107,.2);color:#FF6B6B">我</div><div class="nm2">小辰</div></div><div class="rel" style="background:rgba(255,107,107,.15);color:#FF6B6B">家人</div></div>
+              <div class="r2b">🎉 今天生日 · 🐲属龙 · 25岁</div>
+              <div class="r3"><div class="cdb" style="margin-top:6px"><b style="font-size:26px;color:var(--coral500)">今天</b></div><div class="clock2" style="color:var(--coral700);background:rgba(255,107,107,.1)">🎂 18:00 聚</div></div>
+            </div>
+            <div class="card2 c-mint stag" style="--d:.28s">
+              <div class="r1"><div class="who"><div class="ava" style="background:rgba(0,191,165,.2);color:#00BFA5">S</div><div class="nm2">Sam</div></div><div class="rel" style="background:rgba(0,191,165,.15);color:#00BFA5">朋友</div></div>
+              <div class="r2b">☀️ 12月25日 · 🐵属猴 · 34岁</div>
+              <div class="r3"><div class="cdb"><b>147</b><span>天后</span></div></div>
+            </div>
+            <div class="card2 c-lav stag" style="--d:.40s">
+              <div class="r1"><div class="who"><div class="ava" style="background:rgba(124,107,255,.2);color:#7C6BFF">❤</div><div class="nm2">领证纪念日</div></div><div class="rel" style="background:rgba(124,107,255,.15);color:#7C6BFF">情侣</div></div>
+              <div class="r2b">💍 10月20日 · 已携手 3 年</div>
+              <div class="r3"><div class="cdb"><b style="color:var(--violet700)">51</b><span>天后</span></div></div>
+            </div>
+          </div>
+        </div>
+        <p class="note">曲线：<code>cubic-bezier(.24, 1.1, .38, 1)</code>（约 spring 回弹）；错峰间隔 120ms；呼吸周期 2.6s。Compose 侧对应 <code>animate*AsState + spring()</code> / <code>AnimatedContent</code>。</p>
+      </div>
+      <div class="col">
+        <div class="caption good"><span class="dot"></span>数字滚动 · 特写</div>
+        <div class="tnum-box hot" style="min-width:300px">
+          <h4><i style="background:var(--coral500)">ODOMETER</i> 跨天倒计时滚动 3 → 2 → 1 → 今天</h4>
+          <div style="display:flex;align-items:baseline;gap:6px;padding:8px 0 2px">
+            <b class="odo"><span class="odo-win"><span class="odo-track" id="odoTrack2" style="transform:translateY(0)"><span>3</span><span>2</span><span>1</span></span></span></b>
+            <span style="font-size:13px;color:var(--t2fix)">天后</span>
+          </div>
+          <div class="tnum-w">滚动曲线 = spring(dampingRatio ≈ 0.7)，落位带轻微回弹；等宽数字保证滚动全程不横移。</div>
+        </div>
+        <div class="tnum-box" style="min-width:300px">
+          <h4><i style="background:#6E6E6E">BREATHE</i> 「今天」卡呼吸</h4>
+          <div class="card2 c-today breathe" style="margin:6px 0">
+            <div class="r1"><div class="who"><div class="ava" style="background:rgba(255,107,107,.2);color:#FF6B6B">我</div><div class="nm2">小辰</div></div><div class="rel" style="background:rgba(255,107,107,.15);color:#FF6B6B">家人</div></div>
+            <div class="r2b">🎉 今天生日 · 🐲属龙 · 25岁</div>
+          </div>
+          <div class="tnum-w">扩散光晕 2.6s/周期，珊瑚色 32% → 0；只给「今天」卡，稀缺性 = 注意力。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 4 小组件 ================= -->
+  <section id="s4">
+    <h2><span class="no">4</span>小组件「纸笺辰刻」打磨 <span class="tag q">v2.1.17</span></h2>
+    <p class="desc">现状三件事：<b>① 全部文字 Bold</b>（10–30sp 一律 700+，没有层级）；<b>② 夜间适配漏洞</b>——五个事件类型 wash 色的 day/night 值完全相同（<code>BirthWidget.kt:186-190</code>，10% 透明度在深色底上几乎隐形）、Violet 文字对比度 3.7:1 不达标；<b>③ 7 处硬编码色值</b>散落。优化后：名字 600 / 数字 850 的字重层级、夜间 wash 提到 ~18% + 文字用亮一档、加一层「纸笺」细纹与 🌙✦ 母题呼应图标。<b>点按钮切换昼夜</b>。</p>
+    <div class="demo-btns">
+      <button id="wbtn" onclick="toggleWidget()">🌙 切到夜间模式</button>
+    </div>
+    <div class="row">
+      <div class="col">
+        <div class="caption bad"><span class="dot"></span>现在（白天）· 全 Bold 无层级</div>
+        <div class="wall day" id="wallBefore">
+          <div class="wg" id="wgBefore" style="padding:12px 14px">
+            <div class="wghead"><span class="moon-motif" style="color:var(--coral500)">⭐ 辰记 · 即将到来</span><span>8月30日 周日</span></div>
+            <div class="wgrow"><div class="wgemo w1">🎂</div><div class="wgnm">妈妈</div><div class="wgsub">农历八月十五</div><div class="wgdays hot">32天</div></div>
+            <div class="wgrow"><div class="wgemo w2">❤️</div><div class="wgnm">领证纪念日</div><div class="wgsub">10月20日</div><div class="wgdays" style="color:var(--violet500)">51天</div></div>
+            <div class="wgrow"><div class="wgemo w3">🎂</div><div class="wgnm">Sam</div><div class="wgsub">12月25日</div><div class="wgdays">147天</div></div>
+          </div>
+        </div>
+        <p class="note">⚠️ 名字 / 日期 / 天数全是 700–900 字重，眼睛没有落点；夜间 wash 10% 几乎不可见。</p>
+      </div>
+      <div class="col">
+        <div class="caption good"><span class="dot"></span>优化后（白天 · 纸笺纹 + 字重层级）</div>
+        <div class="wall day">
+          <div class="wg paper wg2" style="padding:12px 14px">
+            <div class="wghead"><span class="moon-motif">🌙 辰记 · 即将到来</span><span>8月30日 周日</span></div>
+            <div class="wgrow"><div class="wgemo w1">🎂</div><div class="wgnm">妈妈</div><div class="wgsub">农历八月十五</div><div class="wgdays hot">32天</div></div>
+            <div class="wgrow"><div class="wgemo w2">❤️</div><div class="wgnm">领证纪念日</div><div class="wgsub">10月20日</div><div class="wgdays" style="color:var(--violet700)">51天</div></div>
+            <div class="wgrow"><div class="wgemo w3">🎂</div><div class="wgnm">Sam</div><div class="wgsub">12月25日</div><div class="wgdays">147天</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="caption good"><span class="dot"></span>优化后（夜间 · wash 18% + 亮色文字）</div>
+        <div class="wall">
+          <div class="wg night wg2" style="padding:12px 14px">
+            <div class="wghead"><span class="moon-motif" style="color:var(--coral400)">🌙 辰记 · 即将到来</span><span>8月30日 周日</span></div>
+            <div class="wgrow"><div class="wgemo n1">🎂</div><div class="wgnm">妈妈</div><div class="wgsub">农历八月十五</div><div class="wgdays hot">32天</div></div>
+            <div class="wgrow"><div class="wgemo n2">❤️</div><div class="wgnm">领证纪念日</div><div class="wgsub">10月20日</div><div class="wgdays" style="color:var(--violet300)">51天</div></div>
+            <div class="wgrow"><div class="wgemo n3">🎂</div><div class="wgnm">Sam</div><div class="wgsub">12月25日</div><div class="wgdays">147天</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:20px">
+      <div class="col">
+        <div class="caption bad"><span class="dot"></span>2×2 大数字 · 现在（纯色底 + 全 Bold）</div>
+        <div class="wall day" style="width:auto;max-width:334px">
+          <div class="wg" style="max-width:294px">
+            <div class="wgbig">
+              <div class="s">距离生日还有</div>
+              <div class="n">32</div>
+              <div class="l">妈妈 · 农历八月十五</div>
+              <div class="s">9月21日 周日</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="caption good"><span class="dot"></span>2×2 大数字 · 优化后（Hero 渐变 + 🌙✦ 母题 + tabular）</div>
+        <div class="wall day">
+          <div class="wg paper" style="max-width:294px">
+            <div class="wgbig-hero">
+              <div class="s" style="opacity:.9;letter-spacing:1px">🌙 距离生日还有</div>
+              <div class="n" style="font-variant-numeric:tabular-nums;letter-spacing:-1.5px">32</div>
+              <div class="l">妈妈 · 农历八月十五</div>
+              <div class="s" style="opacity:.85">9月21日 周日 ✦</div>
+            </div>
+          </div>
+        </div>
+        <p class="note">✅ 夜间自动切暗金渐变（HeroBirthdayDark 色值），与 App 内 Hero 卡同源。</p>
+      </div>
+      <div class="col">
+        <div class="caption good"><span class="dot"></span>2×2 大数字 · 优化后（夜间）</div>
+        <div class="wall">
+          <div class="wg night" style="max-width:294px">
+            <div class="wgbig-hero wgnight-h">
+              <div class="s" style="opacity:.9;letter-spacing:1px">🌙 距离生日还有</div>
+              <div class="n" style="font-variant-numeric:tabular-nums;letter-spacing:-1.5px">32</div>
+              <div class="l">妈妈 · 农历八月十五</div>
+              <div class="s" style="opacity:.85">9月21日 周日 ✦</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="legend">Glance 约束说明：小组件跑在 RemoteViews 里，字体只能用系统字族（无法打包自定义字体），因此层级靠「字重 + 字号 + 留白」完成；纸纹与母题用低透明度叠色实现，成本极低。</p>
+  </section>
+
+  <!-- ================= 5 图标 ================= -->
+  <section id="s5">
+    <h2><span class="no">5</span>图标：母题延续，不换方向 <span class="tag v">随版本收尾</span></h2>
+    <p class="desc">v2.1.14 的「怀月藏星」方向不动。唯一动作：<b>同一弯月 + 星芒母题</b>贯穿所有触点——桌面图标、通知小图标、小组件头部、分享卡片品牌角标（design-card-demo 规范），形成完整闭环。</p>
+    <div class="icon-row">
+      <div class="icon-fig"><div class="launcher"><span class="star">✦</span></div><div class="cap">桌面自适应图标<br>（怀月藏星 · 已上线）</div></div>
+      <div class="icon-fig"><div class="mono-moon">🌙</div><div class="cap">通知小图标<br>（单色层 ✓ 已就位）</div></div>
+      <div class="icon-fig"><div class="mini-moon">🌙✦</div><div class="cap">小组件头部<br>（v2.1.17 加入）</div></div>
+      <div class="icon-fig"><div class="mini-moon" style="border-radius:999px">✦</div><div class="cap">分享卡片品牌角标<br>（design-card-demo 呼应）</div></div>
+    </div>
+  </section>
+
+  <!-- ================= 6 实施对照 ================= -->
+  <section id="s6">
+    <h2><span class="no">6</span>实施对照表</h2>
+    <table>
+      <tr><th>优化项</th><th>对应代码</th><th>版本</th></tr>
+      <tr><td>Typography 补全（displayMedium / labelSmall）+ tabular-nums + 92 处硬编码收敛</td><td><code>ui/theme/Type.kt</code> + 各 Screen</td><td>v2.1.15</td></tr>
+      <tr><td>Shapes 四档语义 token，57 处魔法数字收敛</td><td><code>ui/theme/Theme.kt</code> + 各 Screen</td><td>v2.1.15</td></tr>
+      <tr><td>次要文字 #8E8E8E → #6E6E6E（4.6:1）</td><td><code>ui/theme/Color.kt</code></td><td>v2.1.15</td></tr>
+      <tr><td>scheme 补 surfaceContainer 系列 / outlineVariant / error 角色</td><td><code>ui/theme/Theme.kt</code></td><td>v2.1.15</td></tr>
+      <tr><td>首屏错峰入场 + 倒计时滚动 + 「今天」呼吸光晕</td><td><code>ui/home/*</code></td><td>v2.1.16</td></tr>
+      <tr><td>小组件字重层级 + 夜间 wash 18% + Violet 对比度修复 + 色值收敛</td><td><code>widget/BirthWidget.kt</code>（新增 widget 调色板）</td><td>v2.1.17</td></tr>
+      <tr><td>小组件纸纹 + 🌙✦ 母题；2×2 切 Hero 渐变</td><td><code>widget/BirthWidget.kt</code></td><td>v2.1.17</td></tr>
+    </table>
+    <p class="legend">每一版完成后照例运行 <code>bash tools/verify-on-emulator.sh</code> 实测，深浅色 + 大字体两种场景各截图留档。本预览文件仅为提案稿，确认后按表实施。</p>
+  </section>
+</div>
+
+<script>
+  // ===== tabular 数字抖动演示 =====
+  const propTick=document.getElementById('propTick'),tabTick=document.getElementById('tabTick');
+  const propW=document.getElementById('propW'),tabW=document.getElementById('tabW');
+  function measure(){
+    const r1=propTick.getBoundingClientRect(),r2=tabTick.getBoundingClientRect();
+    propW.textContent=r1.width.toFixed(1);tabW.textContent=r2.width.toFixed(1);
+  }
+  const seq=[364,188,253,707,999,253,188,364];let si=0;
+  setInterval(()=>{si=(si+1)%seq.length;propTick.textContent=seq[si];tabTick.textContent=seq[si];measure();},900);
+  addEventListener('load',measure);
+
+  // ===== 错峰入场重播 =====
+  function replay(){
+    document.querySelectorAll('#stagBody .stag').forEach(el=>{
+      el.style.animation='none';el.offsetHeight;el.style.animation='';
+    });
+  }
+
+  // ===== 倒计时滚动 3→2→1→今天 =====
+  const steps=[0,1,2,null];let oi=0;
+  function odoStep(){
+    oi=(oi+1)%steps.length;
+    const t=steps[oi];
+    [document.getElementById('odoTrack'),document.getElementById('odoTrack2')].forEach(tr=>{
+      tr.style.transform=t===null?'translateY(0)':`translateY(-${t*36}px)`;
+    });
+  }
+  let odoTimer=null;
+  function odoReplay(){
+    clearInterval(odoTimer);oi=0;
+    [document.getElementById('odoTrack'),document.getElementById('odoTrack2')].forEach(tr=>tr.style.transform='translateY(0)');
+    odoTimer=setInterval(odoStep,1100);
+  }
+  odoReplay();
+
+  // ===== 小组件昼夜切换（右侧"优化后白天/夜间"两台常驻，按钮只演示第一台切换） =====
+  let night=false;
+  function toggleWidget(){
+    night=!night;
+    const wg=document.getElementById('wgBefore'),wall=document.getElementById('wallBefore');
+    wg.classList.toggle('night',night);wg.classList.toggle('wg2',true);
+    wall.classList.toggle('day',!night);
+    document.getElementById('wbtn').textContent=night?'☀️ 切回白天模式':'🌙 切到夜间模式';
+    // 切换 wash / 文字色
+    wg.querySelectorAll('.wgemo').forEach((el,i)=>{
+      const cls=['1','2','3'][i];
+      el.className='wgemo '+(night?('n'+cls):('w'+cls));
+    });
+    wg.querySelectorAll('.wgdays').forEach((el,i)=>{
+      if(i===1){el.style.color=night?'var(--violet300)':'var(--violet700)';}
+    });
+    wg.querySelector('.moon-motif').style.color=night?'var(--coral400)':'var(--coral700)';
+  }
+</script>
+</body>
+</html>

@@ -2,9 +2,9 @@ package com.birthapp.ui.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -12,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -73,7 +72,7 @@ fun HeroCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(24.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         // 用 Column 垂直排列：Box 的子组件是叠放的，进度条会被叠到文本行上
@@ -92,35 +91,31 @@ fun HeroCard(
                     // 「即将到来」 / 「就是今天」
                     Text(
                         text = if (isToday) "就是今天" else "即将到来",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
+                        style = MaterialTheme.typography.labelMedium,
                         color = Color.White.copy(alpha = 0.85f)
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = hero.birthday.name,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleLarge,
                         color = Color.White
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = hero.dateLabel,
-                        fontSize = 13.sp,
+                        style = MaterialTheme.typography.labelMedium,
                         color = Color.White.copy(alpha = 0.8f)
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
                             text = "${hero.countdown}",
-                            fontSize = 56.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color.White,
-                            lineHeight = 52.sp
+                            style = MaterialTheme.typography.displayLarge,
+                            color = Color.White
                         )
                         Text(
                             text = if (isToday) "" else " 天后",
-                            fontSize = 15.sp,
+                            style = MaterialTheme.typography.titleMedium,
                             color = Color.White.copy(alpha = 0.85f),
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
@@ -131,7 +126,7 @@ fun HeroCard(
                     text = hero.typeEmoji,
                     fontSize = 44.sp,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(MaterialTheme.shapes.large)
                         .background(Color.White.copy(alpha = 0.12f))
                         .padding(14.dp)
                 )
@@ -170,12 +165,12 @@ private fun HeroProgressBar(
         ) {
             Text(
                 text = "提醒进度",
-                fontSize = 11.sp,
+                style = MaterialTheme.typography.labelSmall,
                 color = Color.White.copy(alpha = 0.85f)
             )
             Text(
                 text = "已过去 $elapsed 天",
-                fontSize = 11.sp,
+                style = MaterialTheme.typography.labelSmall,
                 color = Color.White.copy(alpha = 0.85f)
             )
         }
@@ -184,14 +179,14 @@ private fun HeroProgressBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(5.dp)
-                .clip(RoundedCornerShape(3.dp))
+                .clip(MaterialTheme.shapes.extraSmall)
                 .background(Color.White.copy(alpha = 0.22f))
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(fraction = progress)
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(3.dp))
+                    .clip(MaterialTheme.shapes.extraSmall)
                     .background(
                         Brush.horizontalGradient(
                             listOf(Color.White, Color.White.copy(alpha = 0.6f))

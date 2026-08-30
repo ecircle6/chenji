@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -155,7 +154,7 @@ fun AddEditContent(
                             Surface(
                                 onClick = { onUpdateEventType(type) },
                                 modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp),
+                                shape = MaterialTheme.shapes.medium,
                                 color = if (isSelected) accent.copy(alpha = 0.15f)
                                 else MaterialTheme.colorScheme.surface,
                                 border = androidx.compose.foundation.BorderStroke(
@@ -188,7 +187,7 @@ fun AddEditContent(
                 label = { Text(EventType.nameFieldLabel(state.eventType)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.large,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Coral500,
                     focusedLabelColor = Coral500
@@ -236,7 +235,7 @@ fun AddEditContent(
                 // 打开底部面板选 Emoji
                 Button(
                     onClick = { showEmojiSheet = true },
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.medium,
                     colors = ButtonDefaults.buttonColors(containerColor = Teal500)
                 ) {
                     Text("选择 Emoji", fontWeight = FontWeight.Bold)
@@ -309,7 +308,7 @@ fun AddEditContent(
             Surface(
                 onClick = { showTimePicker = true },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.large,
                 color = CardPeach
             ) {
                 Row(
@@ -326,7 +325,7 @@ fun AddEditContent(
                         color = TextPrimary
                     )
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
+                        shape = MaterialTheme.shapes.small,
                         color = Coral500.copy(alpha = 0.15f)
                     ) {
                         Text(
@@ -356,7 +355,7 @@ fun AddEditContent(
                     val isSelected = days in state.advanceDays
                     Surface(
                         onClick = { onToggleAdvanceDay(days) },
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MaterialTheme.shapes.medium,
                         color = if (isSelected) Teal500 else MaterialTheme.colorScheme.surface,
                         border = if (isSelected) null
                         else androidx.compose.foundation.BorderStroke(
@@ -378,7 +377,7 @@ fun AddEditContent(
                 // 自定义天数
                 Surface(
                     onClick = { showCustomDaysDialog = true },
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.medium,
                     color = if (isCustomSelected) Teal500 else MaterialTheme.colorScheme.surface,
                     border = if (isCustomSelected) null
                     else androidx.compose.foundation.BorderStroke(
@@ -415,7 +414,7 @@ fun AddEditContent(
                     val isSelected = state.relation == key
                     Surface(
                         onClick = { onUpdateRelation(key) },
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MaterialTheme.shapes.medium,
                         color = if (isSelected) color.copy(alpha = 0.15f)
                         else MaterialTheme.colorScheme.surface,
                         border = if (isSelected) androidx.compose.foundation.BorderStroke(
@@ -443,7 +442,7 @@ fun AddEditContent(
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,
                 maxLines = 4,
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.large,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Teal500,
                     focusedLabelColor = Teal500
@@ -457,7 +456,7 @@ fun AddEditContent(
                     .fillMaxWidth()
                     .height(52.dp),
                 enabled = state.name.isNotBlank(),
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.large,
                 colors = ButtonDefaults.buttonColors(containerColor = Coral500)
             ) {
                 Text(
@@ -492,7 +491,7 @@ fun AddEditContent(
             dismissButton = {
                 TextButton(onClick = { showTimePicker = false }) { Text("取消") }
             },
-            shape = RoundedCornerShape(24.dp)
+            shape = MaterialTheme.shapes.extraLarge
         )
     }
 
@@ -520,7 +519,7 @@ fun AddEditContent(
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) { Text("取消") }
             },
-            shape = RoundedCornerShape(24.dp)
+            shape = MaterialTheme.shapes.extraLarge
         ) {
             DatePicker(state = datePickerState)
         }
@@ -555,7 +554,7 @@ fun AddEditContent(
                             singleLine = true,
                             isError = customDaysInput.isNotEmpty() && (!inputValid || alreadyAdded),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = MaterialTheme.shapes.medium,
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Teal500,
                                 focusedLabelColor = Teal500
@@ -595,7 +594,7 @@ fun AddEditContent(
                             customLevels.forEach { day ->
                                 Surface(
                                     onClick = { onRemoveAdvanceDay(day) },
-                                    shape = RoundedCornerShape(12.dp),
+                                    shape = MaterialTheme.shapes.medium,
                                     color = Teal500,
                                     border = null
                                 ) {
@@ -622,7 +621,7 @@ fun AddEditContent(
             dismissButton = {
                 TextButton(onClick = { showCustomDaysDialog = false }) { Text("取消") }
             },
-            shape = RoundedCornerShape(24.dp)
+            shape = MaterialTheme.shapes.extraLarge
         )
     }
 
@@ -630,7 +629,7 @@ fun AddEditContent(
     if (showEmojiSheet) {
         ModalBottomSheet(
             onDismissRequest = { showEmojiSheet = false },
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            shape = SheetShape
         ) {
             Column(
                 modifier = Modifier
@@ -690,7 +689,7 @@ fun AddEditContent(
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) { Text("取消") }
             },
-            shape = RoundedCornerShape(24.dp)
+            shape = MaterialTheme.shapes.extraLarge
         )
     }
 }
@@ -732,7 +731,7 @@ private fun EmojiChip(
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
         color = if (isSelected) Teal500 else MaterialTheme.colorScheme.surface,
         border = if (isSelected) null
         else androidx.compose.foundation.BorderStroke(
@@ -776,7 +775,7 @@ private fun SolarDatePickerSection(
         SectionLabel("$dateLabel（阳历）")
         Surface(
             onClick = onOpenCalendar,
-            shape = RoundedCornerShape(10.dp),
+            shape = MaterialTheme.shapes.small,
             color = Coral500.copy(alpha = 0.12f)
         ) {
             Row(
@@ -920,7 +919,7 @@ private fun LunarDatePickerSection(
     if (solarPreview != null) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            shape = MaterialTheme.shapes.medium,
             color = CardLavender
         ) {
             Text(
@@ -934,7 +933,7 @@ private fun LunarDatePickerSection(
     } else {
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            shape = MaterialTheme.shapes.medium,
             color = Coral500.copy(alpha = 0.1f)
         ) {
             Text(
@@ -972,7 +971,7 @@ private fun DateDropdown(
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.menuAnchor(),
             textStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-            shape = RoundedCornerShape(12.dp),
+            shape = MaterialTheme.shapes.medium,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = accentColor,
                 focusedLabelColor = accentColor,
@@ -985,7 +984,7 @@ private fun DateDropdown(
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            shape = RoundedCornerShape(16.dp)
+            shape = MaterialTheme.shapes.large
         ) {
             options.forEachIndexed { index, option ->
                 DropdownMenuItem(

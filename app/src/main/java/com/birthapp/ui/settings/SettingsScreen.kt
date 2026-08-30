@@ -11,7 +11,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -218,7 +217,7 @@ fun SettingsContent(
             dismissButton = {
                 TextButton(onClick = { showTimePicker = false }) { Text("取消") }
             },
-            shape = RoundedCornerShape(24.dp)
+            shape = MaterialTheme.shapes.extraLarge
         )
     }
 
@@ -248,7 +247,7 @@ fun SettingsContent(
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.large,
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
@@ -303,7 +302,7 @@ fun SettingsContent(
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.large,
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
@@ -390,7 +389,7 @@ fun SettingsContent(
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.large,
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
@@ -424,7 +423,7 @@ fun SettingsContent(
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.large,
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
@@ -531,7 +530,7 @@ fun SettingsContent(
             dismissButton = {
                 TextButton(onClick = { importPreview = null }) { Text("取消") }
             },
-            shape = RoundedCornerShape(24.dp)
+            shape = MaterialTheme.shapes.extraLarge
         )
     }
 
@@ -566,7 +565,7 @@ fun SettingsContent(
             confirmButton = {
                 TextButton(onClick = { showChangelog = false }) { Text("知道了") }
             },
-            shape = RoundedCornerShape(24.dp)
+            shape = MaterialTheme.shapes.extraLarge
         )
     }
 }
@@ -585,7 +584,7 @@ private fun importItemSubtitle(b: Birthday): String {
 private fun ImportChoicePill(label: String, selected: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(8.dp),
+        shape = MaterialTheme.shapes.small,
         color = if (selected) Teal500 else MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
