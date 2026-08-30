@@ -5,7 +5,7 @@ import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -66,15 +66,16 @@ data class WidgetItem(
 /**
  * 桌面小组件 — 纸笺辰刻（Paper Slip, Time Carved）。
  *
- * 一个 provider 用 SizeMode.Responsive 同时支持三种尺寸：
- * 2×2 紧凑：日历撕页单焦，NEXT + 48dp 头像 + 34sp 倒计时 + 3px 进度条（Text 进度语义）
- * 4×2 宽：问候语头部 + 3 行纸笺行（左 3.5dp 色条 + 36dp 头像 + 名称/类型 + 右侧 20sp 数字）
- * 4×4 大：上半 Hero（纯色）+ 下半列表，信息密度与首页一致
+ * SizeMode.Single 按桌面上的实际尺寸渲染（resize 即重绘），布局按真实宽高自适应：
+ * 窄（宽 <200dp）：日历撕页单焦，NEXT + 头像 + 倒计时
+ * 宽而矮：问候语头部 + N 行纸笺行（N 按实际高度算），行框均分剩余高度铺满
+ * 宽而高（高 ≥210dp）：Hero 渐变头 + 「其他近期」+ 列表行，同样均分铺满
+ * 行框均分（defaultWeight）是关键：内容始终填满整个组件，不留沉底或夹心的空白段。
  * 首次添加会打开配置页（android:configure），可指定只展示某一条记录。
  */
 class BirthWidget : GlanceAppWidget() {
 
-    override val sizeMode = SizeMode.Responsive(setOf(COMPACT, WIDE, LARGE))
+    override val sizeMode = SizeMode.Single
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         // 坐在 Flow 上订阅而不是进来时读一次快照：provideContent 之前的代码
@@ -130,12 +131,6 @@ class BirthWidget : GlanceAppWidget() {
             WidgetBody(items)
         }
     }
-
-    companion object {
-        private val COMPACT = DpSize(120.dp, 120.dp)
-        private val WIDE = DpSize(250.dp, 120.dp)
-        private val LARGE = DpSize(250.dp, 250.dp)
-    }
 }
 
 // 取数上限：4×4 大档是 Hero+2 行、宽档 2 行、紧凑档 1 行，这里统一取 3 条已够各档渲染
@@ -157,10 +152,10 @@ private fun avatarBg(item: WidgetItem) = WidgetTheme.wash(item.eventType)
 
 @Composable
 private fun WidgetBody(items: List<WidgetItem>) {
-    // 按宽度而不是格子数判断：各家桌面一格的实际宽度差别很大
+    // Single 模式下 LocalSize 是桌面上的实际尺寸：按宽度/高度分流，不猜格子数
     val isWide = LocalSize.current.width >= 200.dp
     val isLarge = LocalSize.current.height >= 210.dp
-    // 紧凑 2×2 可用高度仅 92dp（120-28），需更小内边距避免内容溢出裁切
+    // 窄高时可用空间极小，需更小内边距避免内容溢出裁切
     val outerPadding = when {
         isLarge -> 14.dp
         isWide -> 10.dp
@@ -176,12 +171,11 @@ private fun WidgetBody(items: List<WidgetItem>) {
             // 点空白处进 App（行与按钮的 clickable 会覆盖它）
             .clickable(actionStartActivity<MainActivity>())
     ) {
-        val visibleItems = if (isLarge) items else items.take(3)
         when {
             items.isEmpty() -> EmptyBody()
-            isLarge && visibleItems.size > 1 -> LargeBody(visibleItems)
-            isWide && visibleItems.size > 1 -> WideBody(visibleItems)
-            else -> CompactBody(visibleItems.first())
+            isLarge && items.size > 1 -> LargeBody(items, outerPadding)
+            isWide && items.size > 1 -> WideBody(items, outerPadding)
+            else -> CompactBody(items.first())
         }
     }
 }
@@ -229,9 +223,13 @@ private fun EmptyBody() {
 }
 
 @Composable
-private fun WideBody(items: List<WidgetItem>) {
+private fun WideBody(items: List<WidgetItem>, outerPadding: Dp) {
     val ctx = LocalContext.current
     val greeting = rememberCompactGreeting()
+    // 行数按桌面上的实际高度算：可用高 = 组件高 - 上下内边距 - 问候行(26) - 间距(8)，
+    // 行高下限 50dp（36dp 头像 + 7×2 内边距），保证行框不被挤压裁切
+    val listHeight = LocalSize.current.height - outerPadding * 2 - 26.dp - 8.dp
+    val maxRows = (listHeight / 50.dp).toInt().coerceIn(1, items.size)
     Column(modifier = GlanceModifier.fillMaxSize()) {
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
@@ -257,32 +255,30 @@ private fun WideBody(items: List<WidgetItem>) {
             }
         }
         Spacer(modifier = GlanceModifier.height(8.dp))
-        // 弹性居中：实际被拉高（如 4×3）时剩余空间上下均分，空白不再全部沉底
-        Spacer(modifier = GlanceModifier.defaultWeight())
-        // 4×2 可用高度有限，取 2 行收紧排版；4×4 走 LargeBody
-        val wideCount = minOf(items.size, 2)
-        repeat(wideCount) { idx ->
-            val isLast = idx == wideCount - 1
-            WidgetRow(item = items[idx])
-            if (!isLast) Spacer(modifier = GlanceModifier.height(8.dp))
+        // 行框均分剩余高度、行内容在其中垂直居中：组件拉到多高都铺满，没有沉底或夹心的空白段
+        items.take(maxRows).forEach { item ->
+            Box(
+                modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                WidgetRow(item = item)
+            }
         }
-        Spacer(modifier = GlanceModifier.defaultWeight())
-        // 底部“天后/天后”文字空间预留已在行高内，不再外加高度
     }
 }
 
 @Composable
-private fun LargeBody(items: List<WidgetItem>) {
+private fun LargeBody(items: List<WidgetItem>, outerPadding: Dp) {
     // Hero 取最近且非缅怀的那条，其余进列表；调用方保证 items 至少 2 条，hero 必非空
     val hero = items.filter { !it.isSolemn }.minByOrNull { it.countdown } ?: items.firstOrNull()
         ?: return
     val rest = items.filterNot { it.id == hero.id }
+    // 行数按实际高度算：可用高 = 组件高 - 上下内边距 - Hero(约76) - 头行(14) - 间距(8+6)
+    val listHeight = LocalSize.current.height - outerPadding * 2 - 76.dp - 14.dp - 14.dp
+    val maxRows = (listHeight / 50.dp).toInt().coerceIn(1, rest.size)
     Column(modifier = GlanceModifier.fillMaxSize()) {
         HeroWidgetHeader(hero)
         Spacer(modifier = GlanceModifier.height(8.dp))
-        // 列表区在剩余空间居中：4×4 被拉高或记录不足时，空白上下均分不再沉底。
-        // 行数收在 2：Hero+头行+2 行约 207dp，恰好填满 4×4 可用的 222dp，多放必溢出裁切
-        Spacer(modifier = GlanceModifier.defaultWeight())
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -292,12 +288,15 @@ private fun LargeBody(items: List<WidgetItem>) {
             Text(text = "共 ${rest.size + 1} 个日子", style = TextStyle(color = SubColor, fontSize = 10.sp))
         }
         Spacer(modifier = GlanceModifier.height(6.dp))
-        val rowCount = minOf(rest.size, 2)
-        for (idx in 0 until rowCount) {
-            WidgetRow(item = rest[idx], compact = true)
-            if (idx != rowCount - 1) Spacer(modifier = GlanceModifier.height(6.dp))
+        // 行框均分剩余高度、行内容垂直居中：高度富余时行距自然拉开，整面铺满无空白
+        rest.take(maxRows).forEach { item ->
+            Box(
+                modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                WidgetRow(item = item, compact = true)
+            }
         }
-        Spacer(modifier = GlanceModifier.defaultWeight())
     }
 }
 

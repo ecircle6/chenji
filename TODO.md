@@ -17,8 +17,8 @@
 - [x] **用户实测三项优化：首页返回重播动效 / 图标星贴边 / 小组件沉底空白**（2026-08-30 修复，v2.1.18）
   - 现象：① 保存/删除后返回首页，列表慢悠悠整体重播错峰入场（约 1.3s 才完全呈现）；② 图标月亮偏大（占可见区 65.5%）、三颗星贴着 33dp 安全区（主星顶点 33.1 微超、副星外缘 34.8 出界）；③ 小组件被拉高时内容沉底、下方堆一截空白
   - 根因：① `staggeredAppear` 用 `remember` 存 Animatable，导航返回时首页离开组合状态丢失、全量重放（v2.1.16 引入）；② f27fff4 只缩了元素尺寸没动星星坐标；③ Responsive 档位内容固定高度顶对齐，被 launcher 拉伸后剩余空间全部沉底，且 LargeBody 末行多一个 Spacer、`rest.take(4)` 满行时溢出裁切
-  - 修复：① `staggeredAppear` 加 `enabled` + `rememberStaggerPlay`（rememberSaveable + SideEffect：冷启动/筛选变化播放、页间返回不播），错峰参数 55ms×12 → 40ms×8；删除链路取消闹钟与删库并行、保存链路闹钟调度挪进 `NonCancellable` 后台段（`saved` 置位提前）；② 图标几何重排版：月亮 scale 2.62→2.3（径 41.4dp/57.5% 居中）、主星 group 缩 0.88 内收、副星坐标收进安全区（最远 29.8），foreground/monochrome 同步；③ WideBody/LargeBody 列表区上下 `defaultWeight()` 弹性居中、修末行 Spacer、行数收敛 Hero+2（约 207dp 恰满 222dp）
-  - 验收：✅ 全量单测绿 + `assembleRelease` 通过；SVG 三视图预览核对安全区几何（`app/build/icon-preview.html`）；模拟器实测返回即时呈现/图标比例/小组件留白
+  - 修复：① `staggeredAppear` 加 `enabled` + `rememberStaggerPlay`（rememberSaveable + SideEffect：冷启动/筛选变化播放、页间返回不播），错峰参数 55ms×12 → 40ms×8；删除链路取消闹钟与删库并行、保存链路闹钟调度挪进 `NonCancellable` 后台段（`saved` 置位提前）；② 图标几何重排版：月亮 scale 2.62→2.3（径 41.4dp/57.5% 居中）、主星 group 缩 0.88 内收、副星坐标收进安全区（最远 29.8），foreground/monochrome 同步；③ 小组件 `SizeMode.Responsive`（预设三档不知实际高度）改 `SizeMode.Single`：按桌面实际尺寸算行数（可用高/行高 50dp 下限），行框 `defaultWeight()` 均分剩余高度、行内容居中其中——拉高多显示记录、行距均匀铺满整面；首版"上下弹性居中"方案会让问候行与内容之间出现夹心空隙（用户实测反馈），已废弃
+  - 验收：✅ 全量单测绿 + `assembleRelease` 通过；SVG 三视图预览核对安全区几何（`app/build/icon-preview.html`）；模拟器实测返回即时呈现/图标比例/小组件铺满
 
 - [x] **通知点击跳转详情页**（2026-08-14 完成）
   - 实现：`MainActivity` 新增 `pendingDetailId` 状态，`onCreate`（冷启动）与 `onNewIntent`（热启动）解析 `birthday_id` extra → 导航到现成的 `detail/{id}` 路由；导航完成即清空状态，同一条通知可重复跳转；记录已删时详情页自动返回首页
