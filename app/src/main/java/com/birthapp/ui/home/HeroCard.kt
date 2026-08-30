@@ -16,6 +16,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.birthapp.data.EventType
+import com.birthapp.ui.common.AnimatedCountdownText
+import com.birthapp.ui.common.breathingGlow
 import com.birthapp.ui.preview.PreviewData
 import com.birthapp.ui.preview.previewBirthdays
 import com.birthapp.ui.theme.*
@@ -71,7 +73,8 @@ fun HeroCard(
         onClick = { onItemClick(hero.birthday.id) },
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .then(if (isToday) Modifier.breathingGlow(Color.White, cornerRadius = 28.dp) else Modifier),
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
@@ -108,8 +111,8 @@ fun HeroCard(
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = "${hero.countdown}",
+                        AnimatedCountdownText(
+                            count = hero.countdown,
                             style = MaterialTheme.typography.displayLarge,
                             color = Color.White
                         )

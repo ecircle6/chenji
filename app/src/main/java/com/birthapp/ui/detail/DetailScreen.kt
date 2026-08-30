@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.birthapp.data.EventType
+import com.birthapp.ui.common.AnimatedCountdownText
+import com.birthapp.ui.common.breathingGlow
 import com.birthapp.ui.common.eventAccent
 import com.birthapp.ui.common.eventBannerColors
 import com.birthapp.ui.preview.previewDetailState
@@ -220,7 +222,9 @@ fun DetailContent(
                 Surface(
                     shape = MaterialTheme.shapes.large,
                     color = bannerBg,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .breathingGlow(bannerFg)
                 ) {
                     Text(
                         text = "就是今天",
@@ -242,8 +246,8 @@ fun DetailContent(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.Bottom
                     ) {
-                        Text(
-                            text = "${state.countdown}",
+                        AnimatedCountdownText(
+                            count = state.countdown,
                             style = MaterialTheme.typography.displayMedium,
                             color = if (state.isSolemn) {
                                 if (darkTheme) SlateInkLight else SlateInk

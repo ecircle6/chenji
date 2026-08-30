@@ -66,7 +66,8 @@ fun BirthdayCard(
                 shape = MaterialTheme.shapes.large,
                 ambientColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                 spotColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
-            ),
+            )
+            .then(if (display.isToday) Modifier.breathingGlow(accentColor) else Modifier),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -172,8 +173,8 @@ fun BirthdayCard(
             } else {
                 Column(horizontalAlignment = Alignment.End) {
                     Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = "${display.countdown}",
+                        AnimatedCountdownText(
+                            count = display.countdown,
                             style = CountdownCompact,
                             color = accentColor
                         )

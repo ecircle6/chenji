@@ -41,6 +41,7 @@ import com.birthapp.ui.common.EmptyBirthdayList
 import com.birthapp.ui.common.EmptySearchResult
 import com.birthapp.ui.common.SwipeToDeleteBox
 import com.birthapp.ui.common.UrgentCard
+import com.birthapp.ui.common.staggeredAppear
 import com.birthapp.ui.preview.previewBirthdays
 import com.birthapp.ui.theme.BirthAppTheme
 import com.birthapp.ui.theme.Coral500
@@ -296,7 +297,9 @@ fun HomeContent(
                 ) {
                     // Hero 聚焦卡：只放列表首项，不参与滚动懒加载的索引语义；null 时不渲染
                     item(key = "hero") {
-                        HeroCard(hero = hero, onItemClick = onItemClick)
+                        Box(modifier = Modifier.staggeredAppear(0)) {
+                            HeroCard(hero = hero, onItemClick = onItemClick)
+                        }
                     }
 
                     if (items != null) {
@@ -309,50 +312,54 @@ fun HomeContent(
                                 is HomeListItem.Card -> li.display.birthday.id
                             }
                         }) { idx ->
-                            when (val li = items[idx]) {
-                                is HomeListItem.MonthHeader ->
-                                    MonthHeaderRow(label = li.label)
+                            Box(modifier = Modifier.staggeredAppear(idx + 1)) {
+                                when (val li = items[idx]) {
+                                    is HomeListItem.MonthHeader ->
+                                        MonthHeaderRow(label = li.label)
 
-                                is HomeListItem.Card ->
-                                    SwipeToDeleteBox(
-                                        onDelete = { deleteTargetId = li.display.birthday.id }
-                                    ) {
-                                        when (li.tier) {
-                                            CardTier.URGENT ->
-                                                UrgentCard(
-                                                    display = li.display,
-                                                    onClick = { onItemClick(li.display.birthday.id) }
-                                                )
+                                    is HomeListItem.Card ->
+                                        SwipeToDeleteBox(
+                                            onDelete = { deleteTargetId = li.display.birthday.id }
+                                        ) {
+                                            when (li.tier) {
+                                                CardTier.URGENT ->
+                                                    UrgentCard(
+                                                        display = li.display,
+                                                        onClick = { onItemClick(li.display.birthday.id) }
+                                                    )
 
-                                            CardTier.NORMAL ->
-                                                BirthdayCard(
-                                                    display = li.display,
-                                                    index = idx,
-                                                    onClick = { onItemClick(li.display.birthday.id) },
-                                                    darkTheme = isDark
-                                                )
+                                                CardTier.NORMAL ->
+                                                    BirthdayCard(
+                                                        display = li.display,
+                                                        index = idx,
+                                                        onClick = { onItemClick(li.display.birthday.id) },
+                                                        darkTheme = isDark
+                                                    )
 
-                                            CardTier.DISTANT ->
-                                                DistantRow(
-                                                    display = li.display,
-                                                    onClick = { onItemClick(li.display.birthday.id) }
-                                                )
+                                                CardTier.DISTANT ->
+                                                    DistantRow(
+                                                        display = li.display,
+                                                        onClick = { onItemClick(li.display.birthday.id) }
+                                                    )
+                                            }
                                         }
-                                    }
+                                }
                             }
                         }
                     } else {
                         // 搜索态：普通列表（不分层）
                         itemsIndexed(birthdays, key = { _, item -> item.birthday.id }) { index, display ->
-                            SwipeToDeleteBox(
-                                onDelete = { deleteTargetId = display.birthday.id }
-                            ) {
-                                BirthdayCard(
-                                    display = display,
-                                    index = index,
-                                    onClick = { onItemClick(display.birthday.id) },
-                                    darkTheme = isDark
-                                )
+                            Box(modifier = Modifier.staggeredAppear(index + 1)) {
+                                SwipeToDeleteBox(
+                                    onDelete = { deleteTargetId = display.birthday.id }
+                                ) {
+                                    BirthdayCard(
+                                        display = display,
+                                        index = index,
+                                        onClick = { onItemClick(display.birthday.id) },
+                                        darkTheme = isDark
+                                    )
+                                }
                             }
                         }
                     }

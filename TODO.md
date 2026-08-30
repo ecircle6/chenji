@@ -363,6 +363,13 @@
   - 页面收敛：6 个页面 57 处 `RoundedCornerShape(N.dp)` 全部替换为语义引用（16→large、12→medium、8/10→small、3/4/5→extraSmall、20/24→large/extraLarge、筛选胶囊→`RoundedCornerShape(50)`、底部面板→`SheetShape`）；首页问候语/月历表头/远景行等半透明灰字改 `onSurfaceVariant`；Hero/详情/列表卡的姓名、倒计时、辅助行、进度标签全部接入 Typography 角色
   - 验收：✅ `compileDebugKotlin` + 全量单测通过；模拟器实测见 tools/verify 留档
 
+- [x] **动效系统：错峰入场 + 倒计时滚动 + 今天呼吸光晕**（2026-08-30 完成，v2.1.16）
+  - 背景：audit 中动效仅 2/10（UrgentCard 边框呼吸是唯一既有动效），skill 评价为 "flat and static"
+  - 基建：新增 `ui/common/Motion.kt`——`Modifier.staggeredAppear(index)`（Animatable + spring(dampingRatio .62) 上浮回弹，55ms/项错峰，懒加载浮现/筛选切换重播）；`AnimatedCountdownText`（AnimatedContent 上下滚动换值，配合 tnum 等宽不横移）；`Modifier.breathingGlow(color, cornerRadius)`（drawBehind 外圈扩散描边 2.6s/周期，不受宿主裁剪）
+  - 接入：Home 列表项/Hero/搜索结果全部错峰入场（Box 包裹保留 SwipeToDeleteBox 结构）；Hero 与详情页倒计时数字接滚动；BirthdayCard 今天卡、详情「就是今天」横幅接呼吸光晕（UrgentCard 原有边框呼吸保留）
+  - 坑记录：drawBehind 光晕必须放在 padding/shadow 链之后，否则描边画在 padding 区域外扩 16dp；LazyColumn 项用 id 做 key，滚动复用不重播
+  - 验收：✅ 全量单测通过（含既有 Compose UI 测试对无限动画兼容）；模拟器实测入场/滚动/光晕
+
 ---
 
 ## P3 — 远期可选（做前先确认定位与需求）
