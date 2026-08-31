@@ -16,7 +16,7 @@ import org.robolectric.shadows.ShadowToast
  * 这里锁「收到广播 → 弹已添加提示」的文案。
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], qualifiers = "zh-rCN")
 class WidgetPinSuccessReceiverTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()

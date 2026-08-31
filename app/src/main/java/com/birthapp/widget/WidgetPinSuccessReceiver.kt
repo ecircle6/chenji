@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import com.birthapp.R
 
 /**
  * 小组件放置成功的回调收件人。
@@ -14,6 +15,6 @@ import android.widget.Toast
  */
 class WidgetPinSuccessReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        Toast.makeText(context, "小组件已添加到桌面", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, context.getString(R.string.widget_pin_success), Toast.LENGTH_LONG).show()
     }
 }

@@ -26,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
@@ -33,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.birthapp.R
 import com.birthapp.data.Birthday
 import com.birthapp.data.EventType
 import com.birthapp.ui.common.BirthdayCard
@@ -48,18 +51,22 @@ import com.birthapp.ui.theme.BirthAppTheme
 import com.birthapp.ui.theme.Coral500
 import com.birthapp.ui.theme.LocalDarkTheme
 import com.birthapp.ui.theme.SheetShape
+import com.birthapp.util.DateUtils
 import com.birthapp.util.Greeting
+import com.birthapp.util.ZodiacUtils
 import java.time.LocalDate
 
-// 快捷行的关系胶囊（固定四类，与历史关系取值同源）；「全部」单独一颗
+// 快捷行的关系胶囊（固定四类，与历史关系取值同源）；「全部」单独一颗。
+// label 用资源 id，显示跟随系统语言
 private val QUICK_RELATIONS = listOf(
-    "family" to "家人",
-    "friend" to "朋友",
-    "colleague" to "同事",
-    "other" to "其他"
+    "family" to R.string.relation_family,
+    "friend" to R.string.relation_friend,
+    "colleague" to R.string.relation_colleague,
+    "other" to R.string.relation_other
 )
 
-// 筛选面板里生肖的可选项（与 ZodiacUtils.getZodiacName 输出的中文串同源）
+// 筛选面板里生肖的可选项（与 ZodiacUtils.getZodiacName 输出的中文串同源，
+// 显示名按语言走资源数组，key 保持中文语义）
 private val ZODIACS = listOf(
     "鼠", "牛", "虎", "兔", "龙", "蛇",
     "马", "羊", "猴", "鸡", "狗", "猪"
@@ -68,14 +75,6 @@ private val ZODIACS = listOf(
 // 面板类型组：固定四类（老数据里的结婚/宝宝类型仍在快捷行/全部里可见）
 private val PANEL_TYPES = listOf(
     EventType.BIRTHDAY, EventType.LOVE, EventType.MEMORIAL, EventType.OTHER
-)
-
-/** 星期中文名，给页首问候语行用 */
-private val WEEKDAY_CN = mapOf(
-    java.time.DayOfWeek.MONDAY to "周一", java.time.DayOfWeek.TUESDAY to "周二",
-    java.time.DayOfWeek.WEDNESDAY to "周三", java.time.DayOfWeek.THURSDAY to "周四",
-    java.time.DayOfWeek.FRIDAY to "周五", java.time.DayOfWeek.SATURDAY to "周六",
-    java.time.DayOfWeek.SUNDAY to "周日"
 )
 
 /**
@@ -187,13 +186,13 @@ fun HomeContent(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .focusRequester(searchFocus),
-                            placeholder = { Text("搜姓名或备注") },
+                            placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                             trailingIcon = {
                                 if (searchQuery.isNotEmpty()) {
                                     IconButton(onClick = { onSearchChange("") }) {
-                                        Icon(Icons.Default.Clear, contentDescription = "清空")
+                                        Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.home_clear))
                                     }
                                 }
                             },
@@ -206,7 +205,7 @@ fun HomeContent(
                         )
                     } else {
                         Text(
-                            "辰记",
+                            stringResource(R.string.app_name),
                             fontWeight = FontWeight.Bold,
                             fontSize = 24.sp
                         )
@@ -215,14 +214,14 @@ fun HomeContent(
                 actions = {
                     if (isSearching) {
                         IconButton(onClick = onExitSearch) {
-                            Icon(Icons.Default.Close, contentDescription = "退出搜索")
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.home_exit_search))
                         }
                     } else {
                         IconButton(onClick = onEnterSearch) {
-                            Icon(Icons.Default.Search, contentDescription = "搜索")
+                            Icon(Icons.Default.Search, contentDescription = stringResource(R.string.home_search))
                         }
                         IconButton(onClick = onSettingsClick) {
-                            Icon(Icons.Default.Settings, contentDescription = "设置")
+                            Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.home_settings))
                         }
                     }
                 },
@@ -244,7 +243,7 @@ fun HomeContent(
                 ) {
                     Icon(
                         Icons.Default.Add,
-                        contentDescription = "添加记录",
+                        contentDescription = stringResource(R.string.home_add_record),
                         tint = MaterialTheme.colorScheme.onPrimary
                     )
                 }
@@ -290,7 +289,7 @@ fun HomeContent(
                 val listBirthdays = if (hero != null)
                     birthdays.filterNot { it.birthday.id == hero.birthday.id } else birthdays
                 val items: List<HomeListItem>? =
-                    if (isSearching) null else HomeTier.buildRows(listBirthdays)
+                    if (isSearching) null else HomeTier.buildRows(listBirthdays, LocalContext.current.resources)
                 LazyColumn(
                     state = listState,
                     modifier = Modifier
@@ -389,8 +388,8 @@ fun HomeContent(
         val target = birthdays.find { it.birthday.id == deleteTargetId }
         AlertDialog(
             onDismissRequest = { deleteTargetId = -1L },
-            title = { Text("确认删除") },
-            text = { Text("确定要删除「${target?.birthday?.name}」的记录吗？\n删除后将不再提醒。") },
+            title = { Text(stringResource(R.string.home_confirm_delete_title)) },
+            text = { Text(stringResource(R.string.home_confirm_delete_text, target?.birthday?.name ?: "")) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -398,12 +397,12 @@ fun HomeContent(
                         deleteTargetId = -1L
                     }
                 ) {
-                    Text("删除", color = Coral500)
+                    Text(stringResource(R.string.common_delete), color = Coral500)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { deleteTargetId = -1L }) {
-                    Text("取消")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -413,9 +412,11 @@ fun HomeContent(
 /** 页首问候语行：例如「8月17日 周一 · 每一个日子都值得铭记」 */
 @Composable
 private fun GreetingRow() {
+    val resources = LocalContext.current.resources
     val today = LocalDate.now()
     Text(
-        text = "${today.monthValue}月${today.dayOfMonth}日 ${WEEKDAY_CN[today.dayOfWeek] ?: ""} · ${Greeting.today(today)}",
+        text = "${DateUtils.formatSolarMonthDay(resources, today.monthValue, today.dayOfMonth)} " +
+                "${DateUtils.weekdayShort(resources, today.dayOfWeek)} · ${Greeting.today(resources, today)}",
         modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
         fontSize = 13.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -451,20 +452,20 @@ private fun QuickFilterRow(
             FilterChip(
                 selected = !filter.isActive,
                 onClick = onClearFilters,
-                label = "全部"
+                label = stringResource(R.string.home_all)
             )
-            QUICK_RELATIONS.forEach { (key, label) ->
+            QUICK_RELATIONS.forEach { (key, labelRes) ->
                 FilterChip(
                     selected = filter.relation == key,
                     onClick = { onQuickFilter(FilterDim.RELATION, key) },
-                    label = label
+                    label = stringResource(labelRes)
                 )
             }
             availableTypes.forEach { type ->
                 FilterChip(
                     selected = filter.type == type,
                     onClick = { onQuickFilter(FilterDim.TYPE, type) },
-                    label = "${EventType.emoji(type)} ${EventType.label(type)}"
+                    label = "${EventType.emoji(type)} ${EventType.label(LocalContext.current.resources, type)}"
                 )
             }
         }
@@ -472,7 +473,7 @@ private fun QuickFilterRow(
         IconButton(onClick = onMoreClick) {
             Icon(
                 Icons.Default.FilterList,
-                contentDescription = "更多筛选",
+                contentDescription = stringResource(R.string.home_more_filters),
                 tint = Coral500
             )
         }
@@ -535,7 +536,7 @@ private fun FilterSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("更多筛选", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(stringResource(R.string.home_more_filters), fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     Text(
                         text = summaryText(filter),
                         fontSize = 12.sp,
@@ -543,31 +544,33 @@ private fun FilterSheet(
                     )
                 }
                 TextButton(onClick = onClearFilters) {
-                    Text("清除", color = Coral500)
+                    Text(stringResource(R.string.home_filter_clear), color = Coral500)
                 }
             }
 
             // 关系组
             FilterGroup(
-                title = "关系",
-                options = listOf("all" to "全部") +
-                        QUICK_RELATIONS.map { (k, v) -> k to v },
+                title = stringResource(R.string.home_filter_relation),
+                options = listOf("all" to stringResource(R.string.home_all)) +
+                        QUICK_RELATIONS.map { (k, labelRes) -> k to stringResource(labelRes) },
                 selected = filter.relation,
                 onSelect = { onUpdateFilter(FilterDim.RELATION, it ?: "all") }
             )
             // 类型组
             FilterGroup(
-                title = "类型",
-                options = listOf("all" to "全部") +
-                        PANEL_TYPES.map { it to EventType.label(it) },
+                title = stringResource(R.string.home_filter_type),
+                options = listOf("all" to stringResource(R.string.home_all)) +
+                        PANEL_TYPES.map {
+                            it to EventType.label(LocalContext.current.resources, it)
+                        },
                 selected = filter.type,
                 onSelect = { onUpdateFilter(FilterDim.TYPE, it ?: "all") }
             )
-            // 生肖组
+            // 生肖组（显示名按语言走资源，key 保持中文语义）
             FilterGroup(
-                title = "生肖",
-                options = listOf(null to "不限") +
-                        ZODIACS.map { it to it },
+                title = stringResource(R.string.home_filter_zodiac),
+                options = listOf(null to stringResource(R.string.home_filter_unlimited)) +
+                        ZODIACS.map { it to ZodiacUtils.zodiacDisplayNameByKey(LocalContext.current.resources, it) },
                 selected = filter.zodiac,
                 onSelect = { onUpdateFilter(FilterDim.ZODIAC, it ?: "all") }
             )
@@ -576,15 +579,15 @@ private fun FilterSheet(
 }
 
 /** 当前筛选摘要，如「家人 · 生日 · 虎」，全默认时显示「未筛选」 */
+@Composable
 private fun summaryText(filter: FilterState): String {
+    val resources = LocalContext.current.resources
     val parts = buildList {
-        if (filter.relation != "all") add(
-            com.birthapp.util.ZodiacUtils.getRelationLabel(filter.relation)
-        )
-        if (filter.type != "all") add(EventType.label(filter.type))
-        filter.zodiac?.let { add(it) }
+        if (filter.relation != "all") add(ZodiacUtils.getRelationLabel(resources, filter.relation))
+        if (filter.type != "all") add(EventType.label(resources, filter.type))
+        filter.zodiac?.let { add(ZodiacUtils.zodiacDisplayNameByKey(resources, it)) }
     }
-    return if (parts.isEmpty()) "未筛选" else parts.joinToString(" · ")
+    return if (parts.isEmpty()) resources.getString(R.string.home_filter_none) else parts.joinToString(" · ")
 }
 
 /** 面板内的单选组：FlowRow 布局胶囊 */
@@ -649,14 +652,14 @@ private fun EmptyFilterResult() {
         Text(text = "\uD83C\uDF43", fontSize = 42.sp)
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "这个筛选下没有记录",
+            text = stringResource(R.string.home_filter_empty_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "换个条件看看，或点“全部”回到完整列表",
+            text = stringResource(R.string.home_filter_empty_hint),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

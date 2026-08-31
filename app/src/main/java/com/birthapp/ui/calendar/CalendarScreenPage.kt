@@ -19,11 +19,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.birthapp.R
 import com.birthapp.ui.theme.Coral500
 
 /**
@@ -48,7 +50,7 @@ fun CalendarScreenPage(
                 title = {},
                 actions = {
                     IconButton(onClick = onSettingsClick) {
-                        Icon(Icons.Default.Settings, contentDescription = "设置")
+                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.home_settings))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -66,7 +68,7 @@ fun CalendarScreenPage(
             ) {
                 Icon(
                     Icons.Default.Add,
-                    contentDescription = "添加记录",
+                    contentDescription = stringResource(R.string.home_add_record),
                     tint = MaterialTheme.colorScheme.onPrimary
                 )
             }

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- 小组件 Hero 头渐变（other · 夜）：色值与 App 内 HeroCard 同源（ui/theme/Color.kt） -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <gradient
-        android:angle="315"
-        android:startColor="#1E7A6E"
-        android:endColor="#0F5F54" />
-    <corners android:radius="14dp" />
-</shape>

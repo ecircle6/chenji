@@ -7,38 +7,35 @@ package com.birthapp.widget
  * 恒为 manifest 静态 fallback（110×110dp），真实宽高从系统 options 读
  * （OPTION_APPWIDGET_MIN_WIDTH × MIN_HEIGHT，放置/resize 时写入）。
  * 这里的函数只做「拿到真实尺寸之后」的数学换算，不碰系统读值，
- * 以便纯 JUnit 锁验收尺寸：4×2(高≈135dp)→2 行、4×3(≈208dp)→3 行、
- * ≥4×4(≥281dp)→Hero 大档 3 行；行数上限 5。
+ * 以便纯 JUnit 锁验收尺寸：4×2(高≈135dp)→3 行、4×4(≈281dp)→6 行。
  *
- * 行数公式：n 行需 n×ROW_HEIGHT + (n-1)×ROW_GAP ≤ 可用高，
- * 反解 n ≤ (可用高+ROW_GAP)/(ROW_HEIGHT+ROW_GAP) 取下整，
- * 桌面空间不够 1 行时退 1 行（行框 defaultWeight 均分后内容居中）。
+ * 行数语义（还原「版本 A」显示形态）：
+ * - 目标行数固定——宽档 3 行、大档 6 行（A 版行为，不是随高度自适应）；
+ * - 高度护栏——行框由 defaultWeight 均分，均分后行高低于 [MIN_ROW_HEIGHT]
+ *   就降行数，防止文字在真实尺寸过矮时被裁切（4×1 等高仅可放的场景）。
  */
 internal object WidgetLayout {
 
     // ---- 档位阈值（dp）----
-    /** 宽度低于该值走 2×2 紧凑单焦（2 格 ≈ 110~140dp） */
+    /** 宽度低于该值走 2×2 紧凑大字（2 格 ≈ 110~140dp） */
     const val COMPACT_MAX_WIDTH = 200
-    /** 高度达到该值走 Hero 大档（4 行及以上，与竖屏 4×4 ≈281dp 对齐） */
+    /** 高度达到该值走大档 6 行（4 行及以上，与竖屏 4×4 ≈281dp 对齐） */
     const val LARGE_MIN_HEIGHT = 210
 
-    // ---- 行高/行距（dp）----
-    const val ROW_HEIGHT = 44
-    const val ROW_GAP = 4
-    /** 行数上限：桌面拉多高都不超过 5 行 */
-    const val MAX_ROWS = 5
+    // ---- 列表 chrome（dp）：外边距×2 + 品牌头行 + 头行间距 ----
+    const val OUTER_PADDING = 12
+    const val HEADER_ROW_HEIGHT = 20
+    const val HEADER_GAP = 4
 
-    // ---- 宽档 chrome（dp）：外边距×2 + 问候行 + 头行距 ----
-    const val WIDE_OUTER_PADDING = 6
-    const val GREETING_ROW_HEIGHT = 20
-    const val GREETING_GAP = 4
-
-    // ---- 大档 chrome（dp）：外边距×2 + Hero + 头行「其他近期」+ 两处间距 ----
-    const val LARGE_OUTER_PADDING = 14
-    const val HERO_HEADER_HEIGHT = 70
-    const val LARGE_HEADER_GAP = 6
-    const val LARGE_TITLE_ROW = 14
-    const val LARGE_LIST_GAP = 4
+    // ---- 行数 ----
+    /** 宽档目标行数（4×2 / 4×3） */
+    const val WIDE_TARGET_ROWS = 3
+    /** 大档目标行数（≥4×4，与取数上限 MAX_ITEMS 一致） */
+    const val LARGE_TARGET_ROWS = 6
+    /** 行数上限：桌面拉多高都不超过 6 行 */
+    const val MAX_ROWS = 6
+    /** 单行最低高度：14sp 文字一行约 19dp，24dp 留出垂直余量 */
+    const val MIN_ROW_HEIGHT = 24
 
     enum class Tier { COMPACT, WIDE, LARGE }
 
@@ -49,29 +46,25 @@ internal object WidgetLayout {
         else -> Tier.WIDE
     }
 
-    /** 可用高度能放几行：n 行需 n×ROW_HEIGHT+(n-1)×ROW_GAP，钳到 1..MAX_ROWS */
-    fun rowsFor(availableHeightDp: Int): Int =
-        ((availableHeightDp + ROW_GAP) / (ROW_HEIGHT + ROW_GAP)).coerceIn(1, MAX_ROWS)
+    /** 目标行数：宽档 3 行、大档 6 行、紧凑档 1 行 */
+    fun targetRows(tier: Tier): Int = when (tier) {
+        Tier.COMPACT -> 1
+        Tier.WIDE -> WIDE_TARGET_ROWS
+        Tier.LARGE -> LARGE_TARGET_ROWS
+    }
 
-    /** 宽档留给纸笺行的可用高度（组件高 - 外边距 - 问候行 - 间距） */
-    fun wideListHeight(heightDp: Int): Int =
-        heightDp - WIDE_OUTER_PADDING * 2 - GREETING_ROW_HEIGHT - GREETING_GAP
-
-    /** 宽档行数（按组件真实高度换算，含 chrome 扣减） */
-    fun wideRows(heightDp: Int): Int = rowsFor(wideListHeight(heightDp))
-
-    /** 大档留给列表行的可用高度（组件高 - 外边距 - Hero - 头行 - 两处间距） */
-    fun largeListHeight(heightDp: Int): Int =
-        heightDp - LARGE_OUTER_PADDING * 2 - HERO_HEADER_HEIGHT - LARGE_HEADER_GAP -
-            LARGE_TITLE_ROW - LARGE_LIST_GAP
-
-    /** 大档行数（按组件真实高度换算，含 chrome 扣减） */
-    fun largeRows(heightDp: Int): Int = rowsFor(largeListHeight(heightDp))
+    /** 列表可用高度（组件高 - 外边距×2 - 品牌头行 - 头行间距） */
+    fun listHeight(heightDp: Int): Int =
+        heightDp - OUTER_PADDING * 2 - HEADER_ROW_HEIGHT - HEADER_GAP
 
     /**
-     * 行框被压到 52dp 以下时行内容放不下 50dp 常规行（36dp 头像 + 内边距），
-     * 需要切紧凑变体（32dp 头像 + 更小内边距/字号）防溢出裁切。
+     * 实际渲染行数：目标行数与高度护栏的交集。
+     * 可用高度均分给目标行数后行高不足 [MIN_ROW_HEIGHT] 时降行数
+     * （4×1 等高只有 ~62dp 可放两行），钳到 1..MAX_ROWS。
      */
-    fun rowNeedsDense(listHeightDp: Int, rows: Int): Boolean =
-        rows > 1 && listHeightDp / rows < 52
+    fun maxRowsFor(heightDp: Int, tier: Tier): Int = when (tier) {
+        Tier.COMPACT -> 1
+        else -> (listHeight(heightDp) / MIN_ROW_HEIGHT)
+            .coerceIn(1, minOf(targetRows(tier), MAX_ROWS))
+    }
 }

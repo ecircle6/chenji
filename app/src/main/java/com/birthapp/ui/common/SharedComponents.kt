@@ -20,11 +20,14 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.birthapp.R
 import com.birthapp.data.EventType
 import com.birthapp.ui.home.BirthdayDisplay
 import com.birthapp.ui.home.HomeTier
@@ -124,7 +127,7 @@ fun BirthdayCard(
                     if (isPaused) {
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "已暂停",
+                            text = stringResource(R.string.home_paused_badge),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier
@@ -136,7 +139,7 @@ fun BirthdayCard(
                     Spacer(modifier = Modifier.width(6.dp))
                     // 类型标签：soft 底 + eventAccent 色
                     Text(
-                        text = EventType.label(display.eventType),
+                        text = EventType.label(LocalContext.current.resources, display.eventType),
                         style = MaterialTheme.typography.labelSmall,
                         color = accentColor,
                         modifier = Modifier
@@ -180,7 +183,7 @@ fun BirthdayCard(
                         )
                     }
                     Text(
-                        text = " 天后",
+                        text = stringResource(R.string.common_days_later),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -212,7 +215,7 @@ fun EmptySearchResult(keyword: String) {
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "没有找到「$keyword」",
+            text = stringResource(R.string.home_empty_search_title, keyword),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -221,7 +224,7 @@ fun EmptySearchResult(keyword: String) {
         Spacer(modifier = Modifier.height(10.dp))
 
         Text(
-            text = "可以试试姓名或备注里的关键字",
+            text = stringResource(R.string.home_empty_search_hint),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -251,7 +254,7 @@ fun EmptyBirthdayList(onAddClick: () -> Unit) {
         Spacer(modifier = Modifier.height(28.dp))
 
         Text(
-            text = "还没有任何记录哦",
+            text = stringResource(R.string.home_empty_list_title),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -260,7 +263,7 @@ fun EmptyBirthdayList(onAddClick: () -> Unit) {
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "点击下方按钮，添加生日或纪念日\n让每一个重要的日子都不再被遗忘",
+            text = stringResource(R.string.home_empty_list_hint),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -275,7 +278,7 @@ fun EmptyBirthdayList(onAddClick: () -> Unit) {
                 .fillMaxWidth(0.6f)
                 .height(48.dp)
         ) {
-            Text("添加第一个记录", fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.home_empty_list_add), fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -369,7 +372,7 @@ fun UrgentCard(
                 Column(horizontalAlignment = Alignment.End) {
                     if (display.isToday) {
                         Text(
-                            text = "今天",
+                            text = stringResource(R.string.common_today),
                             style = MaterialTheme.typography.displaySmall,
                             color = accentColor
                         )
@@ -380,7 +383,7 @@ fun UrgentCard(
                             color = accentColor
                         )
                         Text(
-                            text = "天后",
+                            text = stringResource(R.string.common_days_later),
                             style = MaterialTheme.typography.labelSmall,
                             color = accentColor
                         )
@@ -395,12 +398,12 @@ fun UrgentCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    "提醒进度",
+                    stringResource(R.string.home_urgent_progress),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    "已过去 $elapsed 天",
+                    stringResource(R.string.home_urgent_elapsed, elapsed),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -465,7 +468,7 @@ fun DistantRow(
             overflow = TextOverflow.Ellipsis
         )
         Text(
-            text = "${display.countdown} 天后",
+            text = "${display.countdown} ${LocalContext.current.getString(R.string.common_days_later)}",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier

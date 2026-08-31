@@ -25,7 +25,7 @@ import org.robolectric.annotation.GraphicsMode
  * 渲染无状态的 HomeContent，用语义树断言列表/Hero/筛选/空态，点击验证回调触发。
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], qualifiers = "w411dp-h891dp", application = android.app.Application::class)
+@Config(sdk = [34], qualifiers = "zh-rCN-w411dp-h891dp", application = android.app.Application::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class HomeScreenTest {
 
@@ -84,6 +84,7 @@ class HomeScreenTest {
     @Test
     fun `列表_空数据_显示引导空态`() {
         render(birthdays = emptyList())
+        
         compose.onNodeWithText("还没有任何记录哦").assertIsDisplayed()
         compose.onNodeWithText("添加第一个记录").assertIsDisplayed()
     }

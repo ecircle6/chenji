@@ -7,6 +7,7 @@ import android.app.NotificationManager
 import com.birthapp.alarm.AlarmScheduler
 import com.birthapp.data.AppDatabase
 import com.birthapp.settings.ThemeStore
+import com.birthapp.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -29,10 +30,10 @@ class BirthApp : Application() {
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "生日与纪念日提醒",
+            getString(R.string.notif_channel_name),
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "家人朋友的生日、纪念日提醒通知"
+            description = getString(R.string.notif_channel_desc)
             enableVibration(true)
             // 锁屏下隐藏通知内容，防止生日隐私信息被旁人看到
             lockscreenVisibility = Notification.VISIBILITY_PRIVATE

@@ -1,5 +1,7 @@
 package com.birthapp.util
 
+import android.content.res.Resources
+import com.birthapp.R
 import com.birthapp.data.EventType
 
 /**
@@ -7,6 +9,7 @@ import com.birthapp.data.EventType
  *
  * 卡片、通知、后续的详情页与小组件都从这里取文案，
  * 目的是让缅怀这类庄重措辞只定义一处，不会出现某个入口漏改而说出"祝福快乐"的情况。
+ * 文案走资源（中英两套），函数接收 [Resources] 以便非 Compose 环境（ViewModel/通知）也能用。
  */
 object EventTextUtils {
 
@@ -17,6 +20,7 @@ object EventTextUtils {
      * 农历日期加属相加年龄本身已经很长，再加前缀会挤到换行。
      */
     fun infoLine(
+        resources: Resources,
         eventType: String,
         calendarType: String,
         dateLabel: String,
@@ -28,50 +32,70 @@ object EventTextUtils {
         val prefix = if (eventType == EventType.BIRTHDAY) {
             ""
         } else {
-            "${EventType.emoji(eventType)} ${EventType.label(eventType)}  ·  "
+            resources.getString(
+                R.string.info_line_prefix,
+                EventType.emoji(eventType),
+                EventType.label(resources, eventType)
+            )
         }
         val tail = if (EventType.usesAge(eventType)) {
             // 花括号不能省：紧跟中文时 Kotlin 会把"$zodiacEmoji属"整体当成变量名
-            "${zodiacEmoji}属${zodiac} · ${age}岁"
+            if (LocaleUtils.isEnglish(resources)) {
+                resources.getString(R.string.info_line_age_en, zodiacEmoji, zodiac, age)
+            } else {
+                resources.getString(R.string.info_line_age_zh, zodiacEmoji, zodiac, age)
+            }
         } else {
-            "第 $age 周年"
+            if (LocaleUtils.isEnglish(resources)) {
+                resources.getString(R.string.info_line_anniversary_en, age)
+            } else {
+                resources.getString(R.string.info_line_anniversary_zh, age)
+            }
         }
         return "$prefix$calendarEmoji $dateLabel  ·  $tail"
     }
 
     /** 卡片上"就是今天"的横幅。卡片已显示姓名，所以生日类不再重复姓名 */
-    fun cardBanner(eventType: String, name: String, years: Int): String = when (eventType) {
-        EventType.BABY -> "\uD83D\uDC76 宝宝今天 $years 岁啦！"
-        EventType.MARRIAGE -> "\uD83D\uDC8D 今天是结婚 $years 周年纪念日！"
-        EventType.LOVE -> "❤\uFE0F 在一起 $years 周年快乐！"
-        EventType.MEMORIAL -> "\uD83D\uDD6F\uFE0F 今天是${name}离开的第 $years 年"
-        EventType.OTHER -> "\uD83D\uDCCC 今天是「$name」第 $years 周年"
-        else -> "\uD83C\uDF82 今天 $years 岁生日！"
-    }
+    fun cardBanner(resources: Resources, eventType: String, name: String, years: Int): String =
+        when (eventType) {
+            EventType.BABY -> resources.getString(R.string.banner_baby, years)
+            EventType.MARRIAGE -> resources.getString(R.string.banner_marriage, years)
+            EventType.LOVE -> resources.getString(R.string.banner_love, years)
+            EventType.MEMORIAL -> resources.getString(R.string.banner_memorial, name, years)
+            EventType.OTHER -> resources.getString(R.string.banner_other, name, years)
+            else -> resources.getString(R.string.banner_birthday, years)
+        }
 
     /** 当天提醒的通知标题 */
-    fun notificationTitleToday(eventType: String, name: String, years: Int): String = when (eventType) {
-        EventType.BABY -> "$name 今天 $years 岁啦！"
-        EventType.MARRIAGE -> "今天是结婚 $years 周年纪念日！"
-        EventType.LOVE -> "在一起 $years 周年快乐！"
-        EventType.MEMORIAL -> "今天是 $name 离开的第 $years 年"
-        EventType.OTHER -> "今天是「$name」第 $years 周年"
-        else -> if (years > 0) "今天是 $name 的 ${years}岁生日！" else "今天是 $name 的生日！"
-    }
+    fun notificationTitleToday(resources: Resources, eventType: String, name: String, years: Int): String =
+        when (eventType) {
+            EventType.BABY -> resources.getString(R.string.notif_today_baby, name, years)
+            EventType.MARRIAGE -> resources.getString(R.string.notif_today_marriage, years)
+            EventType.LOVE -> resources.getString(R.string.notif_today_love, years)
+            EventType.MEMORIAL -> resources.getString(R.string.notif_today_memorial, name, years)
+            EventType.OTHER -> resources.getString(R.string.notif_today_other, name, years)
+            else -> if (years > 0) {
+                resources.getString(R.string.notif_today_birthday_age, name, years)
+            } else {
+                resources.getString(R.string.notif_today_birthday, name)
+            }
+        }
 
     /** 提前提醒的通知标题 */
-    fun notificationTitleAdvance(eventType: String, name: String, years: Int): String = when (eventType) {
-        EventType.MARRIAGE -> "结婚 $years 周年纪念日快到了"
-        EventType.LOVE -> "在一起 $years 周年快到了"
-        EventType.MEMORIAL -> "$name 离开的第 $years 年将至"
-        EventType.OTHER -> "「$name」第 $years 周年快到了"
-        else -> "$name 的生日快到了！"
-    }
+    fun notificationTitleAdvance(resources: Resources, eventType: String, name: String, years: Int): String =
+        when (eventType) {
+            EventType.MARRIAGE -> resources.getString(R.string.notif_advance_marriage, years)
+            EventType.LOVE -> resources.getString(R.string.notif_advance_love, years)
+            EventType.MEMORIAL -> resources.getString(R.string.notif_advance_memorial, name, years)
+            EventType.OTHER -> resources.getString(R.string.notif_advance_other, name, years)
+            else -> resources.getString(R.string.notif_advance_birthday, name)
+        }
 
     /** 通知正文。庄重类型不出现"祝福"字样 */
-    fun notificationText(eventType: String, dateInfo: String, advanceDays: Int): String = when {
-        advanceDays > 0 -> "还有 $advanceDays 天 · $dateInfo"
-        EventType.isSolemn(eventType) -> dateInfo
-        else -> "$dateInfo - 别忘了送上祝福！"
-    }
+    fun notificationText(resources: Resources, eventType: String, dateInfo: String, advanceDays: Int): String =
+        when {
+            advanceDays > 0 -> resources.getString(R.string.notif_text_advance, advanceDays, dateInfo)
+            EventType.isSolemn(eventType) -> dateInfo
+            else -> resources.getString(R.string.notif_text_bless, dateInfo)
+        }
 }

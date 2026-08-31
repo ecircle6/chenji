@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.birthapp.BirthApp
+import com.birthapp.R
 import com.birthapp.data.Birthday
 import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
@@ -42,6 +44,7 @@ import com.birthapp.settings.ThemeMode
 import com.birthapp.ui.theme.BirthAppTheme
 import com.birthapp.ui.theme.Coral500
 import com.birthapp.ui.theme.Teal500
+import com.birthapp.util.DateUtils
 import com.birthapp.widget.WidgetPinner
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -139,7 +142,9 @@ fun SettingsScreen(
                     putExtra(Intent.EXTRA_STREAM, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-                context.startActivity(Intent.createChooser(send, "把备份发给另一台手机"))
+                context.startActivity(
+                    Intent.createChooser(send, context.getString(R.string.settings_share_chooser))
+                )
             },
             onOpenSystemNotificationSettings = {
                 context.startActivity(
@@ -154,7 +159,7 @@ fun SettingsScreen(
                 if (!WidgetPinner.request(context, WidgetPinner.successPendingIntent(context))) {
                     Toast.makeText(
                         context,
-                        "当前桌面不支持直接添加，请长按桌面空白处 → 小组件 → 辰记",
+                        context.getString(R.string.settings_widget_not_supported),
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -204,7 +209,7 @@ fun SettingsContent(
         )
         AlertDialog(
             onDismissRequest = { showTimePicker = false },
-            title = { Text("默认提醒时间", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.settings_default_time), fontWeight = FontWeight.Bold) },
             text = { TimePicker(state = timePickerState) },
             confirmButton = {
                 TextButton(onClick = {
@@ -212,10 +217,10 @@ fun SettingsContent(
                     defaultHour = timePickerState.hour
                     defaultMinute = timePickerState.minute
                     showTimePicker = false
-                }) { Text("确定", color = Coral500, fontWeight = FontWeight.SemiBold) }
+                }) { Text(stringResource(R.string.common_confirm), color = Coral500, fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) { Text("取消") }
+                TextButton(onClick = { showTimePicker = false }) { Text(stringResource(R.string.common_cancel)) }
             },
             shape = MaterialTheme.shapes.extraLarge
         )
@@ -224,10 +229,10 @@ fun SettingsContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("设置", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.settings_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = callbacks.onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -243,7 +248,7 @@ fun SettingsContent(
                 .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            SettingsSectionLabel("深夜模式")
+            SettingsSectionLabel(stringResource(R.string.settings_section_theme))
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -282,9 +287,9 @@ fun SettingsContent(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("动态取色", fontWeight = FontWeight.Medium, fontSize = 15.sp)
+                                Text(stringResource(R.string.settings_dynamic_color), fontWeight = FontWeight.Medium, fontSize = 15.sp)
                                 Text(
-                                    "跟随系统壁纸配色（Material You）",
+                                    stringResource(R.string.settings_dynamic_color_desc),
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
                                 )
@@ -298,7 +303,7 @@ fun SettingsContent(
                 }
             }
 
-            SettingsSectionLabel("通知")
+            SettingsSectionLabel(stringResource(R.string.settings_section_notifications))
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -318,9 +323,9 @@ fun SettingsContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("默认提醒时间", fontWeight = FontWeight.Medium, fontSize = 15.sp)
+                            Text(stringResource(R.string.settings_default_time), fontWeight = FontWeight.Medium, fontSize = 15.sp)
                             Text(
-                                "新建记录默认在几点提醒",
+                                stringResource(R.string.settings_default_time_desc),
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
                             )
@@ -343,9 +348,9 @@ fun SettingsContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("提醒", fontWeight = FontWeight.Medium, fontSize = 15.sp)
+                            Text(stringResource(R.string.settings_reminders), fontWeight = FontWeight.Medium, fontSize = 15.sp)
                             Text(
-                                "关闭后不再提醒任何记录",
+                                stringResource(R.string.settings_reminders_desc),
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
                             )
@@ -369,9 +374,9 @@ fun SettingsContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("系统通知设置", fontWeight = FontWeight.Medium, fontSize = 15.sp)
+                            Text(stringResource(R.string.settings_system_notif), fontWeight = FontWeight.Medium, fontSize = 15.sp)
                             Text(
-                                "声音、震动、锁屏显示等",
+                                stringResource(R.string.settings_system_notif_desc),
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
                             )
@@ -385,7 +390,7 @@ fun SettingsContent(
                 }
             }
 
-            SettingsSectionLabel("数据备份")
+            SettingsSectionLabel(stringResource(R.string.settings_section_backup))
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -398,28 +403,28 @@ fun SettingsContent(
                 Column {
                     BackupActionRow(
                         icon = Icons.Outlined.Download,
-                        title = "导出备份到手机",
-                        desc = "存成一个文件，换手机、误删时可恢复",
+                        title = stringResource(R.string.settings_export),
+                        desc = stringResource(R.string.settings_export_desc),
                         onClick = callbacks.onExportClick
                     )
                     BackupDivider()
                     BackupActionRow(
                         icon = Icons.Outlined.Share,
-                        title = "把备份发到其他设备",
-                        desc = "通过微信 / QQ 等发给另一台手机",
+                        title = stringResource(R.string.settings_share_backup),
+                        desc = stringResource(R.string.settings_share_backup_desc),
                         onClick = callbacks.onShareBackup
                     )
                     BackupDivider()
                     BackupActionRow(
                         icon = Icons.Outlined.Upload,
-                        title = "导入备份",
-                        desc = "已有记录会保留，重复的自动跳过",
+                        title = stringResource(R.string.settings_import),
+                        desc = stringResource(R.string.settings_import_desc),
                         onClick = callbacks.onImportClick
                     )
                 }
             }
 
-            SettingsSectionLabel("关于")
+            SettingsSectionLabel(stringResource(R.string.settings_section_about))
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -432,15 +437,15 @@ fun SettingsContent(
                 Column {
                     BackupActionRow(
                         icon = Icons.Outlined.Widgets,
-                        title = "添加桌面小组件",
-                        desc = "长按应用图标或在这里随时添加",
+                        title = stringResource(R.string.settings_add_widget),
+                        desc = stringResource(R.string.settings_add_widget_desc),
                         onClick = callbacks.onAddWidget
                     )
                     BackupDivider()
                     BackupActionRow(
                         icon = Icons.Outlined.Info,
-                        title = "版本更新说明",
-                        desc = "当前版本 v${uiState.versionName} · 查看每次更新了什么",
+                        title = stringResource(R.string.settings_changelog),
+                        desc = stringResource(R.string.settings_changelog_desc, uiState.versionName),
                         onClick = { showChangelog = true }
                     )
                 }
@@ -462,7 +467,7 @@ fun SettingsContent(
 
         AlertDialog(
             onDismissRequest = { importPreview = null },
-            title = { Text("导入预览（${preview.items.size} 条）", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.settings_import_preview_title, preview.items.size), fontWeight = FontWeight.Bold) },
             text = {
                 Column(
                     // 条目多时会撑出屏幕：M3 AlertDialog 内容默认不可滚动，
@@ -475,7 +480,7 @@ fun SettingsContent(
                 ) {
                     if (duplicateCount > 0) {
                         Text(
-                            "发现 $duplicateCount 条与现有记录重复，默认跳过",
+                            stringResource(R.string.settings_import_duplicate, duplicateCount),
                             fontSize = 13.sp,
                             color = Coral500
                         )
@@ -493,13 +498,13 @@ fun SettingsContent(
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                                 )
                             }
-                            ImportChoicePill("跳过", choices[index] == ImportAction.SKIP) {
+                            ImportChoicePill(stringResource(R.string.settings_import_skip), choices[index] == ImportAction.SKIP) {
                                 choices = choices.toMutableList().also { it[index] = ImportAction.SKIP }
                             }
-                            ImportChoicePill("覆盖", choices[index] == ImportAction.OVERWRITE) {
+                            ImportChoicePill(stringResource(R.string.settings_import_overwrite), choices[index] == ImportAction.OVERWRITE) {
                                 choices = choices.toMutableList().also { it[index] = ImportAction.OVERWRITE }
                             }
-                            ImportChoicePill("导入", choices[index] == ImportAction.INSERT) {
+                            ImportChoicePill(stringResource(R.string.settings_import_insert), choices[index] == ImportAction.INSERT) {
                                 choices = choices.toMutableList().also { it[index] = ImportAction.INSERT }
                             }
                         }
@@ -516,7 +521,7 @@ fun SettingsContent(
                                 checked = restoreSettings,
                                 onCheckedChange = { restoreSettings = it }
                             )
-                            Text("同时恢复备份中的主题设置", fontSize = 13.sp)
+                            Text(stringResource(R.string.settings_import_restore_settings), fontSize = 13.sp)
                         }
                     }
                 }
@@ -525,10 +530,10 @@ fun SettingsContent(
                 TextButton(onClick = {
                     callbacks.onApplyImport(choices, restoreSettings)
                     importPreview = null
-                }) { Text("导入", color = Coral500, fontWeight = FontWeight.SemiBold) }
+                }) { Text(stringResource(R.string.settings_import_insert), color = Coral500, fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = {
-                TextButton(onClick = { importPreview = null }) { Text("取消") }
+                TextButton(onClick = { importPreview = null }) { Text(stringResource(R.string.common_cancel)) }
             },
             shape = MaterialTheme.shapes.extraLarge
         )
@@ -538,7 +543,7 @@ fun SettingsContent(
     if (showChangelog) {
         AlertDialog(
             onDismissRequest = { showChangelog = false },
-            title = { Text("版本更新说明", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.settings_changelog), fontWeight = FontWeight.Bold) },
             text = {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -547,7 +552,10 @@ fun SettingsContent(
                     Changelog.all.forEach { entry ->
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(
-                                "v${entry.version} · ${entry.title}${if (entry.version == uiState.versionName) "（当前版本）" else ""}",
+                                "v${entry.version} · ${entry.title}" +
+                                        if (entry.version == uiState.versionName) {
+                                            stringResource(R.string.settings_changelog_current)
+                                        } else "",
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 14.sp
                             )
@@ -563,7 +571,7 @@ fun SettingsContent(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showChangelog = false }) { Text("知道了") }
+                TextButton(onClick = { showChangelog = false }) { Text(stringResource(R.string.common_got_it)) }
             },
             shape = MaterialTheme.shapes.extraLarge
         )
@@ -571,13 +579,15 @@ fun SettingsContent(
 }
 
 /** 导入条目副标题：类型 + 日期（与首页信息行同一口径） */
+@Composable
 private fun importItemSubtitle(b: Birthday): String {
+    val resources = LocalContext.current.resources
     val dateLabel = if (b.calendarType == "lunar") {
-        "农历${LunarCalendar.formatLunarDate(b.birthMonth, b.birthDay)}"
+        resources.getString(R.string.date_lunar_prefix, LunarCalendar.formatLunarDate(b.birthMonth, b.birthDay))
     } else {
-        "${b.birthMonth}月${b.birthDay}日"
+        DateUtils.formatSolarMonthDay(resources, b.birthMonth, b.birthDay)
     }
-    return "${EventType.label(b.eventType)} · $dateLabel"
+    return "${EventType.label(resources, b.eventType)} · $dateLabel"
 }
 
 @Composable
@@ -669,13 +679,13 @@ private fun ThemeModeRow(
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = mode.label,
+                text = stringResource(mode.labelRes),
                 fontSize = 16.sp,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = mode.desc,
+                text = stringResource(mode.descRes),
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

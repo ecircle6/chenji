@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.birthapp.R
 import com.birthapp.data.EventType
 import com.birthapp.ui.common.AnimatedCountdownText
 import com.birthapp.ui.common.breathingGlow
@@ -74,7 +76,7 @@ fun DetailScreen(
                     putExtra(Intent.EXTRA_STREAM, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-                context.startActivity(Intent.createChooser(send, "分享这张卡片"))
+                context.startActivity(Intent.createChooser(send, context.getString(R.string.detail_share_chooser)))
             }
         }
     }
@@ -112,10 +114,10 @@ fun DetailContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("详情", fontWeight = FontWeight.Bold, fontSize = 22.sp) },
+                title = { Text(stringResource(R.string.detail_title), fontWeight = FontWeight.Bold, fontSize = 22.sp) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
@@ -126,19 +128,23 @@ fun DetailContent(
                     ) {
                         Icon(
                             if (state.isPinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
-                            contentDescription = if (state.isPinned) "取消置顶" else "置顶",
+                            contentDescription = if (state.isPinned) {
+                                stringResource(R.string.detail_unpin)
+                            } else {
+                                stringResource(R.string.detail_pin)
+                            },
                             tint = if (state.isPinned) Coral500 else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     // 分享卡片：生成一张带倒计时的图片发到微信/朋友圈
                     IconButton(onClick = onShare, enabled = state.id > 0) {
-                        Icon(Icons.Default.Share, contentDescription = "分享卡片")
+                        Icon(Icons.Default.Share, contentDescription = stringResource(R.string.detail_share_card))
                     }
                     IconButton(onClick = { onEditClick(state.id) }, enabled = state.id > 0) {
-                        Icon(Icons.Default.Edit, contentDescription = "编辑")
+                        Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.detail_edit))
                     }
                     IconButton(onClick = { showDeleteDialog = true }, enabled = state.id > 0) {
-                        Icon(Icons.Default.Delete, contentDescription = "删除", tint = Coral500)
+                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.common_delete), tint = Coral500)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -155,7 +161,7 @@ fun DetailContent(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "这条记录已经不存在了",
+                    text = stringResource(R.string.detail_not_found),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -211,7 +217,10 @@ fun DetailContent(
                     TagPill(text = "${state.typeEmoji} ${state.eventLabel}", color = accent)
                     TagPill(text = "${state.relationEmoji} ${state.relationLabel}", color = Teal500)
                     if (!state.isActive) {
-                        TagPill(text = "已暂停", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        TagPill(
+                            text = stringResource(R.string.home_paused_badge),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
@@ -227,7 +236,7 @@ fun DetailContent(
                         .breathingGlow(bannerFg)
                 ) {
                     Text(
-                        text = "就是今天",
+                        text = stringResource(R.string.common_just_today),
                         modifier = Modifier.padding(vertical = 20.dp),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
@@ -256,7 +265,7 @@ fun DetailContent(
                             }
                         )
                         Text(
-                            text = " 天后",
+                            text = " " + stringResource(R.string.common_days_later),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(bottom = 8.dp)
@@ -266,23 +275,27 @@ fun DetailContent(
             }
 
             // 日期信息
-            DetailCard(title = "日期") {
-                InfoRow(label = "记录", value = state.primaryDate)
+            DetailCard(title = stringResource(R.string.detail_section_date)) {
+                InfoRow(label = stringResource(R.string.detail_row_record), value = state.primaryDate)
                 if (state.convertedDate.isNotEmpty()) {
-                    InfoRow(label = "换算", value = state.convertedDate)
+                    InfoRow(label = stringResource(R.string.detail_row_converted), value = state.convertedDate)
                 }
                 // 不叫“下次生日”：缅怀、纪念日类型也用这一行
                 if (state.nextDate.isNotEmpty()) {
-                    InfoRow(label = "下次", value = state.nextDate)
+                    InfoRow(label = stringResource(R.string.detail_row_next), value = state.nextDate)
                 }
                 InfoRow(
-                    label = if (EventType.usesAge(state.eventType)) "年龄" else "周年",
+                    label = if (EventType.usesAge(state.eventType)) {
+                        stringResource(R.string.detail_row_age)
+                    } else {
+                        stringResource(R.string.detail_row_anniversary)
+                    },
                     value = state.ageLine
                 )
             }
 
             // 提醒设置
-            DetailCard(title = "提醒") {
+            DetailCard(title = stringResource(R.string.detail_section_reminder)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -290,16 +303,20 @@ fun DetailContent(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = if (state.isActive) "提醒已开启" else "提醒已暂停",
+                            text = if (state.isActive) {
+                                stringResource(R.string.detail_reminder_on)
+                            } else {
+                                stringResource(R.string.detail_reminder_off)
+                            },
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = if (state.isActive) {
-                                "关掉后不再收到通知，记录会保留"
+                                stringResource(R.string.detail_reminder_on_hint)
                             } else {
-                                "这条记录不会提醒，但仍留在列表里"
+                                stringResource(R.string.detail_reminder_off_hint)
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -318,15 +335,15 @@ fun DetailContent(
                 Spacer(modifier = Modifier.height(4.dp))
                 // 暂停时上面的开关标题已经写了“提醒已暂停”，这里不必再重复一遍
                 if (state.isActive) {
-                    InfoRow(label = "下次", value = state.nextReminderText)
+                    InfoRow(label = stringResource(R.string.detail_row_next), value = state.nextReminderText)
                 }
-                InfoRow(label = "方式", value = "${state.advanceText} · ${state.reminderTime}")
+                InfoRow(label = stringResource(R.string.detail_row_way), value = "${state.advanceText} · ${state.reminderTime}")
             }
 
             // 备注
-            DetailCard(title = "备注") {
+            DetailCard(title = stringResource(R.string.detail_section_notes)) {
                 Text(
-                    text = state.notes.ifBlank { "还没有写备注" },
+                    text = state.notes.ifBlank { stringResource(R.string.detail_notes_empty) },
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (state.notes.isBlank()) {
                         MaterialTheme.colorScheme.onSurfaceVariant
@@ -345,7 +362,7 @@ fun DetailContent(
                 shape = MaterialTheme.shapes.large,
                 colors = ButtonDefaults.buttonColors(containerColor = accent)
             ) {
-                Text("编辑", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                Text(stringResource(R.string.detail_edit), fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
             }
         }
     }
@@ -353,18 +370,18 @@ fun DetailContent(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("删除记录") },
-            text = { Text("确定要删除「${state.name}」的记录吗？\n删除后将不再提醒。") },
+            title = { Text(stringResource(R.string.detail_delete_title)) },
+            text = { Text(stringResource(R.string.detail_delete_text, state.name)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
                     onDelete()
                 }) {
-                    Text("删除", color = Coral500)
+                    Text(stringResource(R.string.common_delete), color = Coral500)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) { Text("取消") }
+                TextButton(onClick = { showDeleteDialog = false }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }

@@ -35,10 +35,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.birthapp.R
 import com.birthapp.data.Birthday
 import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
@@ -47,6 +50,7 @@ import com.birthapp.ui.theme.Coral500
 import com.birthapp.ui.theme.SlateInk
 import com.birthapp.ui.theme.Teal500
 import com.birthapp.util.EventCalc
+import com.birthapp.util.LocaleUtils
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -87,11 +91,11 @@ fun CalendarScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { displayedMonth = displayedMonth.minusMonths(1) }) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "上个月")
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.calendar_prev_month))
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    "${displayedMonth.year}年${displayedMonth.monthValue}月",
+                    monthTitle(displayedMonth),
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
@@ -103,14 +107,14 @@ fun CalendarScreen(
                 )
             }
             IconButton(onClick = { displayedMonth = displayedMonth.plusMonths(1) }) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "下个月")
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.calendar_next_month))
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 星期头（周一开头，中国习惯）
+        // 星期头（周一起始，中文单字/英文单字母）
         Row(modifier = Modifier.fillMaxWidth()) {
-            WEEKDAYS.forEach { w ->
+            LocalContext.current.resources.getStringArray(R.array.weekday_letter).forEach { w ->
                 Text(
                     w,
                     modifier = Modifier.weight(1f),
@@ -155,7 +159,7 @@ fun CalendarScreen(
     selectedDay?.let { (day, dayEvents) ->
         AlertDialog(
             onDismissRequest = { selectedDay = null },
-            title = { Text("${displayedMonth.monthValue}月${day}日", fontWeight = FontWeight.Bold) },
+            title = { Text(dayTitle(displayedMonth, day), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     dayEvents.forEach { e ->
@@ -175,7 +179,7 @@ fun CalendarScreen(
                             Column {
                                 Text(e.name, fontWeight = FontWeight.SemiBold)
                                 Text(
-                                    EventType.label(e.eventType),
+                                    EventType.label(LocalContext.current.resources, e.eventType),
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                 )
@@ -185,18 +189,49 @@ fun CalendarScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { selectedDay = null }) { Text("关闭") }
+                TextButton(onClick = { selectedDay = null }) { Text(stringResource(R.string.common_close)) }
             },
             shape = MaterialTheme.shapes.extraLarge
         )
     }
 }
 
-/** 当月农历月名（如「农历六月」），换算失败返回空串 */
+/** 月份标题：中文「2026年8月」，英文「Aug 2026」 */
+@Composable
+private fun monthTitle(month: YearMonth): String {
+    val resources = LocalContext.current.resources
+    return if (LocaleUtils.isEnglish(resources)) {
+        stringResource(
+            R.string.date_month_title_en,
+            resources.getStringArray(R.array.months_short)[(month.monthValue - 1).coerceIn(0, 11)],
+            month.year
+        )
+    } else {
+        stringResource(R.string.date_month_title_zh, month.year, month.monthValue)
+    }
+}
+
+/** 弹窗标题：中文「8月15日」，英文「Aug 15」 */
+@Composable
+private fun dayTitle(month: YearMonth, day: Int): String {
+    val resources = LocalContext.current.resources
+    return if (LocaleUtils.isEnglish(resources)) {
+        stringResource(
+            R.string.date_day_title_en,
+            resources.getStringArray(R.array.months_short)[(month.monthValue - 1).coerceIn(0, 11)],
+            day
+        )
+    } else {
+        stringResource(R.string.date_day_title_zh, month.monthValue, day)
+    }
+}
+
+/** 当月农历月名（如「农历六月」），换算失败返回空串；农历术语保持中文读法 */
+@Composable
 private fun lunarMonthName(month: YearMonth): String = runCatching {
     val mid = month.atDay(15)
     val lunar = LunarCalendar.solarToLunar(mid.year, mid.monthValue, mid.dayOfMonth)
-    "农历${LunarCalendar.formatLunarDate(lunar.month, 1)}"
+    LocalContext.current.getString(R.string.calendar_lunar_month, LunarCalendar.formatLunarDate(lunar.month, 1))
 }.getOrDefault("")
 
 @Composable
@@ -280,7 +315,7 @@ private fun RowScope.DayCell(
     }
 }
 
-private val WEEKDAYS = listOf("一", "二", "三", "四", "五", "六", "日")
+// 星期头改走资源数组（values 中文单字 / values-en 单字母），删除本地常量
 
 // ==================== Previews ====================
 

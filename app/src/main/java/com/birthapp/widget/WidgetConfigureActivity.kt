@@ -39,17 +39,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import com.birthapp.BirthApp
+import com.birthapp.R
 import com.birthapp.data.Birthday
 import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
 import com.birthapp.ui.theme.BirthAppTheme
 import com.birthapp.ui.theme.Coral500
 import com.birthapp.ui.theme.Teal500
+import com.birthapp.util.DateUtils
 import kotlinx.coroutines.launch
 
 /**
@@ -81,10 +84,10 @@ class WidgetConfigureActivity : ComponentActivity() {
                 Scaffold(
                     topBar = {
                         TopAppBar(
-                            title = { Text("小组件展示", fontWeight = FontWeight.Bold, fontSize = 20.sp) },
+                            title = { Text(stringResource(R.string.widget_configure_title), fontWeight = FontWeight.Bold, fontSize = 20.sp) },
                             navigationIcon = {
                                 IconButton(onClick = { finish() }) {
-                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                                 }
                             },
                             colors = TopAppBarDefaults.topAppBarColors(
@@ -100,7 +103,7 @@ class WidgetConfigureActivity : ComponentActivity() {
                             .padding(horizontal = 16.dp)
                     ) {
                         Text(
-                            "选择小组件上展示的内容",
+                            stringResource(R.string.widget_configure_desc),
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
@@ -110,8 +113,8 @@ class WidgetConfigureActivity : ComponentActivity() {
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             item {
                                 SelectionRow(
-                                    title = "自动（最近记录）",
-                                    subtitle = "自动展示最近的生日与纪念日",
+                                    title = stringResource(R.string.widget_configure_auto),
+                                    subtitle = stringResource(R.string.widget_configure_auto_subtitle),
                                     selected = current == WidgetConfigStore.AUTO,
                                     onClick = { select(appWidgetId, WidgetConfigStore.AUTO) }
                                 )
@@ -148,11 +151,11 @@ class WidgetConfigureActivity : ComponentActivity() {
     /** 记录副标题：类型 + 日期（与首页信息行同一套口径） */
     private fun recordSubtitle(b: Birthday): String {
         val dateLabel = if (b.calendarType == "lunar") {
-            "农历${LunarCalendar.formatLunarDate(b.birthMonth, b.birthDay)}"
+            getString(R.string.date_lunar_prefix, LunarCalendar.formatLunarDate(b.birthMonth, b.birthDay))
         } else {
-            "${b.birthMonth}月${b.birthDay}日"
+            DateUtils.formatSolarMonthDay(resources, b.birthMonth, b.birthDay)
         }
-        return "${EventType.label(b.eventType)} · $dateLabel"
+        return "${EventType.label(resources, b.eventType)} · $dateLabel"
     }
 }
 
@@ -191,7 +194,7 @@ private fun SelectionRow(
             if (selected) {
                 Icon(
                     Icons.Filled.CheckCircle,
-                    contentDescription = "已选择",
+                    contentDescription = stringResource(R.string.widget_configure_selected),
                     tint = Coral500,
                     modifier = Modifier.padding(end = 4.dp)
                 )

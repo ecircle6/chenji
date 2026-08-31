@@ -11,10 +11,13 @@ import android.graphics.RadialGradient
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
+import com.birthapp.R
 import com.birthapp.data.Birthday
 import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
+import com.birthapp.util.DateUtils
 import com.birthapp.util.EventCalc
+import com.birthapp.util.LocaleUtils
 import java.io.File
 import java.io.FileOutputStream
 import java.time.DayOfWeek
@@ -67,27 +70,29 @@ object ShareCardGenerator {
     private const val COLOR_DIGIT_BG_TOP = 0xFF2A2A2A.toInt()
     private const val COLOR_DIGIT_BG_BOTTOM = 0xFF1A1A1A.toInt()
 
-    /** 生成卡片位图（1080×1920，圆角外透明），保存到 cacheDir/share/ */
-    fun generate(context: Context, birthday: Birthday): File {
-        val bitmap = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888)
-        draw(Canvas(bitmap), birthday)
-        val dir = File(context.cacheDir, "share")
-        dir.mkdirs()
-        val file = File(dir, "share_${birthday.id}.png")
-        FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-        return file
-    }
+/**
+ * 生成卡片位图（1080×1920，圆角外透明），保存到 cacheDir/share/
+ */
+fun generate(context: Context, birthday: Birthday): File {
+    val bitmap = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888)
+    draw(Canvas(bitmap), birthday, context.resources)
+    val dir = File(context.cacheDir, "share")
+    dir.mkdirs()
+    val file = File(dir, "share_${birthday.id}.png")
+    FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    return file
+}
 
-    fun draw(canvas: Canvas, b: Birthday) {
-        if (EventType.isSolemn(b.eventType)) drawMemorial(canvas, b)
-        else drawAurora(canvas, b)
-    }
+fun draw(canvas: Canvas, b: Birthday, resources: android.content.res.Resources) {
+    if (EventType.isSolemn(b.eventType)) drawMemorial(canvas, b, resources)
+    else drawAurora(canvas, b, resources)
+}
 
     // ================================================================
     // A · 极光毛玻璃（1080×1920 竖版）
     // ================================================================
 
-    private fun drawAurora(canvas: Canvas, b: Birthday) {
+    private fun drawAurora(canvas: Canvas, b: Birthday, resources: android.content.res.Resources) {
         val cardRect = RectF(0f, 0f, W.toFloat(), H.toFloat())
 
         // 0. 整卡先铺中性深色底：圆角外的角部不再透明，浅色背景下也不露白角
@@ -144,14 +149,14 @@ object ShareCardGenerator {
         // 内容（内边距 94 水平 / 81 垂直，标签/名字/日期左对齐堆叠）
         val innerLeft = glassRect.left + 94f
         var top = glassRect.top + 81f
-        drawTextTop(canvas, tagText(b.eventType), innerLeft, top,
+        drawTextTop(canvas, tagText(resources, b.eventType), innerLeft, top,
             Paint().apply { color = tagColor(b.eventType); textSize = 44f })
         top += 55f + 40f   // 标签行 + 下边距 12px→40
         drawTextTop(canvas, b.name, innerLeft, top, Paint().apply {
             color = COLOR_TITLE; textSize = 88f; typeface = Typeface.DEFAULT_BOLD
         })
         top += 110f + 27f  // 名字行 + 下边距 8px→27
-        drawTextTop(canvas, dateLine(b), innerLeft, top, Paint().apply { color = COLOR_SUB; textSize = 44f })
+        drawTextTop(canvas, dateLine(b, resources), innerLeft, top, Paint().apply { color = COLOR_SUB; textSize = 44f })
         top += 55f + 67f   // 日期行 + 下边距 20px→67
 
         // 倒计时在剩余空间垂直居中（CSS margin-top/bottom:auto）
@@ -159,7 +164,7 @@ object ShareCardGenerator {
         val countCenterY = top + (innerBottom - top) / 2f
         val countdown = EventCalc.countdown(b)
         if (countdown == 0) {
-            drawCenteredText(canvas, "🎉 就是今天", innerLeft, countCenterY, Paint().apply {
+            drawCenteredText(canvas, resources.getString(R.string.share_just_today), innerLeft, countCenterY, Paint().apply {
                 color = COLOR_TITLE; textSize = 88f; typeface = Typeface.DEFAULT_BOLD
             }, centerVertical = true, alignLeft = true)
         } else {
@@ -169,18 +174,27 @@ object ShareCardGenerator {
             val unitPaint = Paint().apply { color = COLOR_SUB; textSize = 47f }
             val baseline = centerBaseline(countCenterY, numPaint)
             canvas.drawText("$countdown", innerLeft, baseline, numPaint)
-            canvas.drawText("天后", innerLeft + numPaint.measureText("$countdown") + 27f, baseline, unitPaint)
+            canvas.drawText(
+                resources.getString(R.string.share_days_unit),
+                innerLeft + numPaint.measureText("$countdown") + 27f, baseline, unitPaint
+            )
         }
 
-        // 6. 底部三栏：月份/日期/星期
+        // 6. 底部三栏：月份/日期/星期（中文「8月/15日/周六」，英文「Aug/15/Sat」）
         val triTop = glassRect.bottom + 67f
         val colGap = 34f
         val colW = (W - PAD * 2 - colGap * 2) / 3f
         val nextDate = EventCalc.nextSolarDate(b).toLocalDate()
+        val monthValue = if (LocaleUtils.isEnglish(resources)) {
+            resources.getStringArray(R.array.months_short)[(nextDate.monthValue - 1).coerceIn(0, 11)]
+        } else {
+            "${nextDate.monthValue}月"
+        }
+        val dayValue = if (LocaleUtils.isEnglish(resources)) "${nextDate.dayOfMonth}" else "${nextDate.dayOfMonth}日"
         val cols = listOf(
-            Triple("${nextDate.monthValue}月", "月份", COLOR_MONTH),
-            Triple("${nextDate.dayOfMonth}日", "日期", COLOR_DAY),
-            Triple(weekdayName(nextDate.dayOfWeek), "星期", COLOR_WEEK)
+            Triple(monthValue, resources.getString(R.string.share_col_month), COLOR_MONTH),
+            Triple(dayValue, resources.getString(R.string.share_col_day), COLOR_DAY),
+            Triple(weekdayName(resources, nextDate.dayOfWeek), resources.getString(R.string.share_col_weekday), COLOR_WEEK)
         )
         cols.forEachIndexed { i, (value, key, colColor) ->
             val left = PAD + i * (colW + colGap)
@@ -202,7 +216,7 @@ object ShareCardGenerator {
     // B · 深夜烛火（1080×1920 竖版）
     // ================================================================
 
-    private fun drawMemorial(canvas: Canvas, b: Birthday) {
+    private fun drawMemorial(canvas: Canvas, b: Birthday, resources: android.content.res.Resources) {
         val cardRect = RectF(0f, 0f, W.toFloat(), H.toFloat())
 
         // 0. 整卡先铺中性深色底：圆角外的角部不再透明，浅色背景下也不露白角
@@ -258,7 +272,10 @@ object ShareCardGenerator {
         }
         // 「天」18px→61 #666，与数字底对齐（下边距 10px→34）
         val unitPaint = Paint().apply { color = COLOR_MEM_DATE; textSize = 61f }
-        canvas.drawText("天", cx + totalW / 2f + 20f, top + digitH - 34f - unitPaint.descent(), unitPaint)
+        canvas.drawText(
+            resources.getString(R.string.share_day_unit),
+            cx + totalW / 2f + 20f, top + digitH - 34f - unitPaint.descent(), unitPaint
+        )
         top += digitH + 148f
 
         // 分隔线 60% 宽（527）居中
@@ -276,19 +293,26 @@ object ShareCardGenerator {
         top += 85f * 2 + 54f
 
         // 日期 11px→37 #666
-        drawCenteredText(canvas, memorialDate(b), cx, top,
+        drawCenteredText(canvas, memorialDate(b, resources), cx, top,
             Paint().apply { color = COLOR_MEM_DATE; textSize = 37f })
 
         // 贴底品牌 10px→34 #555 字距 3px→0.3em（padding-top 24px→81）
         val brandPaint = Paint().apply { color = COLOR_BRAND_B; textSize = 34f; letterSpacing = 0.3f }
         val fm = brandPaint.fontMetrics
-        drawCenteredText(canvas, "辰 记", cx, H - padV - (fm.bottom - fm.top) / 2f, brandPaint, centerVertical = true)
+        drawCenteredText(canvas, resources.getString(R.string.share_brand), cx, H - padV - (fm.bottom - fm.top) / 2f, brandPaint, centerVertical = true)
     }
 
-    private fun memorialDate(b: Birthday): String = if (b.calendarType == "lunar") {
-        "农历${LunarCalendar.formatLunarDate(b.birthMonth, b.birthDay)} · ${b.birthYear}年"
-    } else {
-        "${b.birthMonth}月${b.birthDay}日 · ${b.birthYear}年"
+    private fun memorialDate(b: Birthday, resources: android.content.res.Resources): String {
+        val lunarPart = if (b.calendarType == "lunar") {
+            resources.getString(R.string.date_lunar_prefix, LunarCalendar.formatLunarDate(b.birthMonth, b.birthDay))
+        } else {
+            DateUtils.formatSolarMonthDay(resources, b.birthMonth, b.birthDay)
+        }
+        return if (LocaleUtils.isEnglish(resources)) {
+            resources.getString(R.string.share_memorial_date_en, lunarPart, b.birthYear)
+        } else {
+            resources.getString(R.string.share_memorial_date_zh, lunarPart, b.birthYear)
+        }
     }
 
     // ================================================================
@@ -331,21 +355,47 @@ object ShareCardGenerator {
         else -> COLOR_TAG                          // 默认 青绿
     }
 
-    private fun tagText(eventType: String): String = when (eventType) {
-        EventType.MARRIAGE -> "💕 纪念日提醒"
-        EventType.BABY -> "🍼 宝宝生日"
-        EventType.LOVE -> "💑 情侣纪念"
-        EventType.OTHER -> "📌 纪念日提醒"
-        else -> "🎂 生日提醒"
+    private fun tagText(resources: android.content.res.Resources, eventType: String): String = when (eventType) {
+        EventType.MARRIAGE -> resources.getString(R.string.share_tag_marriage)
+        EventType.BABY -> resources.getString(R.string.share_tag_baby)
+        EventType.LOVE -> resources.getString(R.string.share_tag_love)
+        EventType.OTHER -> resources.getString(R.string.share_tag_other)
+        else -> resources.getString(R.string.share_tag_birthday)
     }
 
-    private fun dateLine(b: Birthday): String = if (b.calendarType == "lunar") {
-        "农历${b.birthYear}年${LunarCalendar.formatLunarDate(b.birthMonth, b.birthDay)} · 农历"
-    } else "${b.birthYear}年${b.birthMonth}月${b.birthDay}日 · 阳历"
-
-    private fun weekdayName(dow: DayOfWeek): String = when (dow) {
-        DayOfWeek.MONDAY -> "周一"; DayOfWeek.TUESDAY -> "周二"; DayOfWeek.WEDNESDAY -> "周三"
-        DayOfWeek.THURSDAY -> "周四"; DayOfWeek.FRIDAY -> "周五"; DayOfWeek.SATURDAY -> "周六"
-        DayOfWeek.SUNDAY -> "周日"
+    private fun dateLine(b: Birthday, resources: android.content.res.Resources): String {
+        val kind = if (b.calendarType == "lunar") {
+            resources.getString(R.string.share_kind_lunar)
+        } else {
+            resources.getString(R.string.share_kind_solar)
+        }
+        // 中文原样：「农历1997年腊月初八 · 农历」/「1997年1月5日 · 阳历」；
+        // 英文用模板带年份：「Lunar 腊月初八, 1997 · Lunar」/「Jan 5, 1997 · Solar」。
+        // 农历术语（腊月初八）是文化数据，保持中文读法
+        return if (LocaleUtils.isEnglish(resources)) {
+            if (b.calendarType == "lunar") {
+                // 「Lunar 腊月初八, 1997 · Lunar」：农历术语保持中文读法，年份数字尾巴
+                resources.getString(
+                    R.string.date_lunar_prefix,
+                    LunarCalendar.formatLunarDate(b.birthMonth, b.birthDay)
+                ) + ", " + b.birthYear + " · " + kind
+            } else {
+                resources.getString(
+                    R.string.share_date_line_en,
+                    b.birthYear,
+                    resources.getStringArray(R.array.months_short)[(b.birthMonth - 1).coerceIn(0, 11)],
+                    b.birthDay
+                ) + " · " + kind
+            }
+        } else {
+            if (b.calendarType == "lunar") {
+                "农历${b.birthYear}年${LunarCalendar.formatLunarDate(b.birthMonth, b.birthDay)} · $kind"
+            } else {
+                DateUtils.formatSolarDate(resources, b.birthYear, b.birthMonth, b.birthDay) + " · " + kind
+            }
+        }
     }
+
+    private fun weekdayName(resources: android.content.res.Resources, dow: DayOfWeek): String =
+        resources.getStringArray(R.array.weekday_short)[dow.value - 1]
 }

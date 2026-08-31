@@ -11,6 +11,7 @@ import com.birthapp.R
 import com.birthapp.alarm.AlarmScheduler
 import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
+import com.birthapp.util.DateUtils
 import com.birthapp.util.EventTextUtils
 import com.birthapp.util.ZodiacUtils
 import java.time.LocalDate
@@ -32,17 +33,17 @@ class NotificationHelper(private val context: Context) {
         val years = if (birthYear > 0) ZodiacUtils.getAge(birthYear, currentYear) else 0
     
         val dateInfo = if (calendarType == "lunar") {
-            "农历${LunarCalendar.formatLunarDate(birthMonth, birthDay)}"
+            context.getString(R.string.date_lunar_prefix, LunarCalendar.formatLunarDate(birthMonth, birthDay))
         } else {
-            "${birthMonth}月${birthDay}日"
+            DateUtils.formatSolarMonthDay(context.resources, birthMonth, birthDay)
         }
-    
+
         val title = if (advanceDays == 0) {
-            EventTextUtils.notificationTitleToday(eventType, name, years)
+            EventTextUtils.notificationTitleToday(context.resources, eventType, name, years)
         } else {
-            EventTextUtils.notificationTitleAdvance(eventType, name, years)
+            EventTextUtils.notificationTitleAdvance(context.resources, eventType, name, years)
         }
-        val text = EventTextUtils.notificationText(eventType, dateInfo, advanceDays)
+        val text = EventTextUtils.notificationText(context.resources, eventType, dateInfo, advanceDays)
 
         val tapIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

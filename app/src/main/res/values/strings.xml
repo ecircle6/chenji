@@ -1,3 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  辰记文案全集（默认 = 中文，与历史行为一致）。
+  结构：通用 → 按页面分节（首页/详情/添加编辑/设置/日历/分享/小组件/通知/VM 提示）。
+  所有带参数的用 %1$s / %1$d 占位（可排序，避免翻译时调序出错）。
+  i18n 原则：UI 可见文案全部走资源；农历术语（月名/生肖名等文化词）作为数据语义保留中文。
+-->
 <resources>
     <string name="app_name">辰记</string>
     <string name="widget_label">辰记</string>
@@ -5,4 +12,349 @@
     <!-- 长按应用图标的快捷方式文案（system 可读，必须走资源） -->
     <string name="shortcut_add_widget">添加小组件</string>
     <string name="shortcut_add_widget_long">把辰记小组件放到桌面</string>
+
+    <!-- ============ 通用 ============ -->
+    <string name="common_confirm">确定</string>
+    <string name="common_cancel">取消</string>
+    <string name="common_delete">删除</string>
+    <string name="common_back">返回</string>
+    <string name="common_close">关闭</string>
+    <string name="common_got_it">知道了</string>
+    <string name="common_today">今天</string>
+    <string name="common_tomorrow">明天</string>
+    <string name="common_days_later">天后</string>
+    <string name="common_just_today">就是今天</string>
+    <string name="changelog_new_version">新版本 v%1$s</string>
+
+    <!-- ============ 日期/星期/月份 ============ -->
+    <string name="date_solar_full_zh">%1$d年%2$d月%3$d日</string>
+    <string name="date_solar_full_en">%2$s %3$d, %1$d</string>
+    <string name="date_solar_month_day_zh">%1$d月%2$d日</string>
+    <string name="date_solar_month_day_en">%1$s %2$d</string>
+    <string name="date_lunar_prefix">农历%1$s</string>
+    <string name="date_leap_prefix">闰</string>
+    <string name="date_solar_kind">阳历</string>
+    <string name="date_lunar_kind">农历</string>
+    <!-- 英文月份缩写（Jan..Dec），中文为「1月..12月」；与 date_*_en 模板配套 -->
+    <string-array name="months_short">
+        <item>1月</item><item>2月</item><item>3月</item><item>4月</item><item>5月</item><item>6月</item>
+        <item>7月</item><item>8月</item><item>9月</item><item>10月</item><item>11月</item><item>12月</item>
+    </string-array>
+    <!-- 星期简称：问候语行与分享卡三栏用 -->
+    <string-array name="weekday_short">
+        <item>周一</item><item>周二</item><item>周三</item><item>周四</item><item>周五</item><item>周六</item><item>周日</item>
+    </string-array>
+    <!-- 星期单字：月历表头用 -->
+    <string-array name="weekday_letter">
+        <item>一</item><item>二</item><item>三</item><item>四</item><item>五</item><item>六</item><item>日</item>
+    </string-array>
+    <!-- 月份标签：远景分组「X 月」用（与原 "$eventMonth 月" 的带空格写法一致，英文用缩写） -->
+    <string-array name="month_label">
+        <item>1 月</item><item>2 月</item><item>3 月</item><item>4 月</item><item>5 月</item><item>6 月</item>
+        <item>7 月</item><item>8 月</item><item>9 月</item><item>10 月</item><item>11 月</item><item>12 月</item>
+    </string-array>
+    <string name="date_cross_year_label_zh">%1$d 年</string>
+    <string name="date_cross_year_label_en">%1$d</string>
+    <string name="date_month_title_zh">%1$d年%2$d月</string>
+    <string name="date_month_title_en">%1$s %2$d</string>
+    <string name="date_day_title_zh">%1$d月%2$d日</string>
+    <string name="date_day_title_en">%1$s %2$d</string>
+
+    <!-- 生肖/关系（key 保持中文语义，显示按语言走资源） -->
+    <string-array name="zodiac_names">
+        <item>鼠</item><item>牛</item><item>虎</item><item>兔</item><item>龙</item><item>蛇</item>
+        <item>马</item><item>羊</item><item>猴</item><item>鸡</item><item>狗</item><item>猪</item>
+    </string-array>
+    <!-- 英文生肖名。默认目录也放一份：aapt2 只为默认配置存在的资源生成 R 字段，
+         但取值只在 LocaleUtils.isEnglish 为真时发生（那时解析到 values-en 的这份） -->
+    <string-array name="zodiac_names_en">
+        <item>Rat</item><item>Ox</item><item>Tiger</item><item>Rabbit</item><item>Dragon</item><item>Snake</item>
+        <item>Horse</item><item>Goat</item><item>Monkey</item><item>Rooster</item><item>Dog</item><item>Pig</item>
+    </string-array>
+    <string name="relation_family">家人</string>
+    <string name="relation_friend">朋友</string>
+    <string name="relation_colleague">同事</string>
+    <string name="relation_other">其他</string>
+
+    <!-- ============ 事件类型 ============ -->
+    <string name="type_birthday">生日</string>
+    <string name="type_love">情侣纪念</string>
+    <string name="type_marriage">结婚纪念</string>
+    <string name="type_baby">宝宝生日</string>
+    <string name="type_memorial">缅怀</string>
+    <string name="type_other">其他纪念</string>
+    <string name="type_field_birthday">出生日期</string>
+    <string name="type_field_love">纪念日期</string>
+    <string name="type_field_marriage">结婚日期</string>
+    <string name="type_field_memorial">离开的日子</string>
+    <string name="type_field_other">纪念日期</string>
+    <string name="type_name_birthday">姓名</string>
+    <string name="type_name_other">称呼 / 标题</string>
+
+    <!-- 列表信息行（infoLine）：%1$s=emoji %2$s=类型名（非生日类型前缀）；尾部 %3$s=生肖 %4$d=岁数/周年 -->
+    <string name="info_line_prefix">%1$s %2$s  ·  </string>
+    <string name="info_line_age_zh">%1$s属%2$s · %3$d岁</string>
+    <string name="info_line_age_en">%1$s %2$s · %3$d</string>
+    <string name="info_line_anniversary_zh">第 %1$d 周年</string>
+    <string name="info_line_anniversary_en">Anniversary %1$d</string>
+
+    <!-- 今天横幅（cardBanner） -->
+    <string name="banner_birthday">🎂 今天 %1$d 岁生日！</string>
+    <string name="banner_baby">🍼 宝宝今天 %1$d 岁啦！</string>
+    <string name="banner_marriage">💍 今天是结婚 %1$d 周年纪念日！</string>
+    <string name="banner_love">❤️ 在一起 %1$d 周年快乐！</string>
+    <string name="banner_memorial">🕯️ 今天是%1$s离开的第 %2$d 年</string>
+    <string name="banner_other">📌 今天是「%1$s」第 %2$d 周年</string>
+
+    <!-- ============ 首页 ============ -->
+    <string name="home_search_placeholder">搜姓名或备注</string>
+    <string name="home_clear">清空</string>
+    <string name="home_exit_search">退出搜索</string>
+    <string name="home_search">搜索</string>
+    <string name="home_settings">设置</string>
+    <string name="home_add_record">添加记录</string>
+    <string name="home_all">全部</string>
+    <string name="home_more_filters">更多筛选</string>
+    <string name="home_filter_clear">清除</string>
+    <string name="home_filter_relation">关系</string>
+    <string name="home_filter_type">类型</string>
+    <string name="home_filter_zodiac">生肖</string>
+    <string name="home_filter_unlimited">不限</string>
+    <string name="home_filter_none">未筛选</string>
+    <string name="home_filter_empty_title">这个筛选下没有记录</string>
+    <string name="home_filter_empty_hint">换个条件看看，或点“全部”回到完整列表</string>
+    <string name="home_confirm_delete_title">确认删除</string>
+    <string name="home_confirm_delete_text">确定要删除「%1$s」的记录吗？\n删除后将不再提醒。</string>
+    <string name="home_empty_search_title">没有找到「%1$s」</string>
+    <string name="home_empty_search_hint">可以试试姓名或备注里的关键字</string>
+    <string name="home_empty_list_title">还没有任何记录哦</string>
+    <string name="home_empty_list_hint">点击下方按钮，添加生日或纪念日\n让每一个重要的日子都不再被遗忘</string>
+    <string name="home_empty_list_add">添加第一个记录</string>
+    <string name="home_urgent_progress">提醒进度</string>
+    <string name="home_urgent_elapsed">已过去 %1$d 天</string>
+    <string name="home_paused_badge">已暂停</string>
+    <string name="home_hero_coming">即将到来</string>
+    <!-- 问候语池：按年积日轮换 -->
+    <string-array name="greeting_pool">
+        <item>愿你被时光温柔以待</item>
+        <item>每一个日子都值得铭记</item>
+        <item>时光不老，我们不散</item>
+        <item>珍惜当下，铭记过往</item>
+        <item>岁月漫长，值得等待</item>
+    </string-array>
+
+    <!-- ============ 详情页 ============ -->
+    <string name="detail_title">详情</string>
+    <string name="detail_unpin">取消置顶</string>
+    <string name="detail_pin">置顶</string>
+    <string name="detail_share_card">分享卡片</string>
+    <string name="detail_edit">编辑</string>
+    <string name="detail_not_found">这条记录已经不存在了</string>
+    <string name="detail_reminder_on">提醒已开启</string>
+    <string name="detail_reminder_off">提醒已暂停</string>
+    <string name="detail_reminder_on_hint">关掉后不再收到通知，记录会保留</string>
+    <string name="detail_reminder_off_hint">这条记录不会提醒，但仍留在列表里</string>
+    <string name="detail_section_date">日期</string>
+    <string name="detail_row_record">记录</string>
+    <string name="detail_row_converted">换算</string>
+    <string name="detail_row_next">下次</string>
+    <string name="detail_row_age">年龄</string>
+    <string name="detail_row_anniversary">周年</string>
+    <string name="detail_section_reminder">提醒</string>
+    <string name="detail_row_way">方式</string>
+    <string name="detail_section_notes">备注</string>
+    <string name="detail_notes_empty">还没有写备注</string>
+    <string name="detail_delete_title">删除记录</string>
+    <string name="detail_delete_text">确定要删除「%1$s」的记录吗？\n删除后将不再提醒。</string>
+    <string name="detail_share_chooser">分享这张卡片</string>
+    <string name="detail_primary_lunar">农历 %1$d年%2$s%3$s</string>
+    <string name="detail_primary_solar">阳历 %1$s</string>
+    <string name="detail_corresponding_solar">对应阳历 %1$s</string>
+    <string name="detail_corresponding_lunar">对应农历 %1$s</string>
+    <string name="detail_next_solar">阳历 %1$s</string>
+    <string name="detail_age_line">%1$s 属%2$s · %3$d岁</string>
+    <string name="detail_anniversary_line">第 %1$d 周年</string>
+    <string name="detail_next_reminder_paused">提醒已暂停</string>
+    <string name="detail_next_reminder_none">暂无提醒计划</string>
+    <string name="detail_in_days">还有 %1$d 天</string>
+    <string name="detail_next_reminder_format">%1$s %2$s（%3$s）</string>
+    <string name="detail_advance_today_only">当天提醒</string>
+    <string name="detail_advance_item_today">当天</string>
+    <string name="detail_advance_item_days">提前%1$d天</string>
+    <string name="detail_advance_tail">%1$s提醒</string>
+    <string name="detail_record_not_found">记录不存在</string>
+
+    <!-- ============ 添加/编辑页 ============ -->
+    <string name="addedit_title_edit">编辑记录</string>
+    <string name="addedit_title_add">添加记录</string>
+    <string name="addedit_section_type">类型</string>
+    <string name="addedit_section_emoji">头像 Emoji（可选，留空自动）</string>
+    <string name="addedit_emoji_auto">自动头像</string>
+    <string name="addedit_emoji_restore">恢复自动</string>
+    <string name="addedit_emoji_choose">选择 Emoji</string>
+    <string name="addedit_section_birthday_pref">生日偏好</string>
+    <string name="addedit_section_date_pref">日期偏好</string>
+    <string name="addedit_birthday_pref_hint">选择按哪种日历过生日，切换时日期自动换算</string>
+    <string name="addedit_date_pref_hint">选择按哪种日历纪念，切换时日期自动换算</string>
+    <string name="addedit_solar">☀ 阳历</string>
+    <string name="addedit_lunar">🌙 农历</string>
+    <string name="addedit_solar_section">%1$s（阳历）</string>
+    <string name="addedit_lunar_section">%1$s（农历）</string>
+    <string name="addedit_section_reminder_time">提醒时间</string>
+    <string name="addedit_section_advance">提前提醒</string>
+    <string name="addedit_advance_today">当天</string>
+    <string name="addedit_advance_day">%1$d天</string>
+    <string name="addedit_advance_custom">自定义</string>
+    <string name="addedit_advance_custom_selected">自定义 ×%1$d</string>
+    <string name="addedit_section_relation">关系分类</string>
+    <string name="addedit_notes_label">备注</string>
+    <string name="addedit_save">保存</string>
+    <string name="addedit_choose_time">选择提醒时间</string>
+    <string name="addedit_calendar_choose">日历选择</string>
+    <string name="addedit_year">年份</string>
+    <string name="addedit_month">月份</string>
+    <string name="addedit_day">日期</string>
+    <string name="addedit_year_option">%1$d年</string>
+    <string name="addedit_month_option">%1$d月</string>
+    <string name="addedit_day_option">%1$d日</string>
+    <string name="addedit_custom_days_title">自定义提前天数</string>
+    <string name="addedit_custom_days_label">提前天数</string>
+    <string name="addedit_custom_days_unit">天</string>
+    <string name="addedit_custom_days_add">添加</string>
+    <string name="addedit_custom_days_invalid">请输入 0~365 之间的天数</string>
+    <string name="addedit_custom_days_duplicate">该天数已在列表中</string>
+    <string name="addedit_custom_days_limit">最多 %1$d 个提前级别</string>
+    <string name="addedit_custom_days_hint">可输入 0~365，例如 15 表示提前 15 天提醒</string>
+    <string name="addedit_custom_days_added">已添加（点击移除）</string>
+    <string name="addedit_custom_days_chip">%1$d天 ✕</string>
+    <string name="addedit_custom_days_done">完成</string>
+    <string name="addedit_emoji_sheet_title">选择头像 Emoji</string>
+    <string name="addedit_emoji_auto_chip">🏷️ 自动</string>
+    <string name="addedit_confirm_delete_title">确认删除</string>
+    <string name="addedit_confirm_delete_text">确定要删除「%1$s」的记录吗？</string>
+    <string name="addedit_lunar_leap">闰月</string>
+    <string name="addedit_lunar_preview_zh">对应阳历：%1$d年%2$d月%3$d日</string>
+    <string name="addedit_lunar_preview_en">Solar: %2$s %3$d, %1$d</string>
+    <string name="addedit_lunar_missing">⚠️ 该农历日期在当前年份可能不存在</string>
+
+    <!-- ============ 设置页 ============ -->
+    <string name="settings_title">设置</string>
+    <string name="settings_section_theme">深夜模式</string>
+    <string name="settings_dynamic_color">动态取色</string>
+    <string name="settings_dynamic_color_desc">跟随系统壁纸配色（Material You）</string>
+    <string name="settings_section_notifications">通知</string>
+    <string name="settings_default_time">默认提醒时间</string>
+    <string name="settings_default_time_desc">新建记录默认在几点提醒</string>
+    <string name="settings_reminders">提醒</string>
+    <string name="settings_reminders_desc">关闭后不再提醒任何记录</string>
+    <string name="settings_system_notif">系统通知设置</string>
+    <string name="settings_system_notif_desc">声音、震动、锁屏显示等</string>
+    <string name="settings_section_backup">数据备份</string>
+    <string name="settings_export">导出备份到手机</string>
+    <string name="settings_export_desc">存成一个文件，换手机、误删时可恢复</string>
+    <string name="settings_share_backup">把备份发到其他设备</string>
+    <string name="settings_share_backup_desc">通过微信 / QQ 等发给另一台手机</string>
+    <string name="settings_import">导入备份</string>
+    <string name="settings_import_desc">已有记录会保留，重复的自动跳过</string>
+    <string name="settings_section_about">关于</string>
+    <string name="settings_add_widget">添加桌面小组件</string>
+    <string name="settings_add_widget_desc">长按应用图标或在这里随时添加</string>
+    <string name="settings_changelog">版本更新说明</string>
+    <string name="settings_changelog_desc">当前版本 v%1$s · 查看每次更新了什么</string>
+    <string name="settings_changelog_current">（当前版本）</string>
+    <string name="settings_import_preview_title">导入预览（%1$d 条）</string>
+    <string name="settings_import_duplicate">发现 %1$d 条与现有记录重复，默认跳过</string>
+    <string name="settings_import_skip">跳过</string>
+    <string name="settings_import_overwrite">覆盖</string>
+    <string name="settings_import_insert">导入</string>
+    <string name="settings_import_restore_settings">同时恢复备份中的主题设置</string>
+    <string name="settings_share_chooser">把备份发给另一台手机</string>
+    <string name="settings_widget_not_supported">当前桌面不支持直接添加，请长按桌面空白处 → 小组件 → 辰记</string>
+    <string name="settings_theme_mode_system">跟随系统</string>
+    <string name="settings_theme_mode_system_desc">随手机的深色模式自动切换</string>
+    <string name="settings_theme_mode_light">始终浅色</string>
+    <string name="settings_theme_mode_light_desc">无论系统如何都用浅色</string>
+    <string name="settings_theme_mode_dark">始终深色</string>
+    <string name="settings_theme_mode_dark_desc">无论系统如何都用深色</string>
+
+    <!-- ============ 日历页 ============ -->
+    <string name="calendar_prev_month">上个月</string>
+    <string name="calendar_next_month">下个月</string>
+    <string name="calendar_lunar_month">农历%1$s</string>
+    <string name="nav_home">首页</string>
+    <string name="nav_calendar">日历</string>
+
+    <!-- ============ 小组件 ============ -->
+    <string name="widget_empty">还没有记录\n点这里添加</string>
+    <string name="widget_countdown_today">就是今天</string>
+    <string name="widget_countdown_tomorrow">明天</string>
+    <string name="widget_countdown_days">%1$d 天后</string>
+    <string name="widget_configure_title">小组件展示</string>
+    <string name="widget_configure_desc">选择小组件上展示的内容</string>
+    <string name="widget_configure_auto">自动（最近记录）</string>
+    <string name="widget_configure_auto_subtitle">自动展示最近的生日与纪念日</string>
+    <string name="widget_configure_selected">已选择</string>
+    <string name="widget_pin_success">小组件已添加到桌面</string>
+
+    <!-- ============ 通知 ============ -->
+    <string name="notif_channel_name">生日与纪念日提醒</string>
+    <string name="notif_channel_desc">家人朋友的生日、纪念日提醒通知</string>
+    <string name="notif_today_baby">%1$s 今天 %2$d 岁啦！</string>
+    <string name="notif_today_marriage">今天是结婚 %1$d 周年纪念日！</string>
+    <string name="notif_today_love">在一起 %1$d 周年快乐！</string>
+    <string name="notif_today_memorial">今天是 %1$s 离开的第 %2$d 年</string>
+    <string name="notif_today_other">今天是「%1$s」第 %2$d 周年</string>
+    <string name="notif_today_birthday_age">今天是 %1$s 的 %2$d岁生日！</string>
+    <string name="notif_today_birthday">今天是 %1$s 的生日！</string>
+    <string name="notif_advance_marriage">结婚 %1$d 周年纪念日快到了</string>
+    <string name="notif_advance_love">在一起 %1$d 周年快到了</string>
+    <string name="notif_advance_memorial">%1$s 离开的第 %2$d 年将至</string>
+    <string name="notif_advance_other">「%1$s」第 %2$d 周年快到了</string>
+    <string name="notif_advance_birthday">%1$s 的生日快到了！</string>
+    <string name="notif_text_advance">还有 %1$d 天 · %2$s</string>
+    <string name="notif_text_bless">%1$s - 别忘了送上祝福！</string>
+
+    <!-- ============ 分享卡片 ============ -->
+    <string name="share_tag_birthday">🎂 生日提醒</string>
+    <string name="share_tag_marriage">💕 纪念日提醒</string>
+    <string name="share_tag_baby">🍼 宝宝生日</string>
+    <string name="share_tag_love">💑 情侣纪念</string>
+    <string name="share_tag_memorial">📌 纪念日提醒</string>
+    <string name="share_tag_other">📌 纪念日提醒</string>
+    <string name="share_just_today">🎉 就是今天</string>
+    <string name="share_days_unit">天后</string>
+    <string name="share_day_unit">天</string>
+    <string name="share_date_line_zh">%1$d年%2$d月%3$d日 · %4$s</string>
+    <string name="share_date_line_en">%2$s %3$d, %1$d · %4$s</string>
+    <string name="share_kind_lunar">农历</string>
+    <string name="share_kind_solar">阳历</string>
+    <string name="share_memorial_date_zh">%1$s · %2$d年</string>
+    <string name="share_memorial_date_en">%1$s · %2$d</string>
+    <string name="share_col_month">月份</string>
+    <string name="share_col_day">日期</string>
+    <string name="share_col_weekday">星期</string>
+    <string name="share_brand">辰 记</string>
+    <!-- B 风格诗句与 IN MEMORY 属设计元素，保持原文不译 -->
+
+    <!-- ============ VM 与系统提示 ============ -->
+    <string name="vm_backup_saved">备份已保存</string>
+    <string name="vm_export_failed">导出失败，请换个位置再试</string>
+    <string name="vm_share_failed">生成备份失败</string>
+    <string name="vm_import_too_large">文件太大，不像是辰记的备份</string>
+    <string name="vm_import_unreadable">无法读取所选文件</string>
+    <string name="vm_import_failed">导入失败，请确认选的是辰记的备份文件</string>
+    <string name="vm_nothing_imported">没有导入任何记录</string>
+    <string name="vm_imported_new">新增 %1$d 条</string>
+    <string name="vm_imported_overwritten">覆盖 %1$d 条</string>
+    <string name="vm_import_done">导入完成：%1$s</string>
+    <string name="vm_import_retry">导入失败，请重试</string>
+    <string name="vm_no_records">还没有记录，添加之后再来备份</string>
+    <string name="vm_export_unwritable">无法写入所选位置</string>
+    <string name="vm_backup_invalid">不是有效的备份文件</string>
+    <string name="vm_backup_not_chenji">不是辰记导出的备份文件</string>
+    <string name="vm_backup_version_unsupported">备份文件版本不支持</string>
+    <string name="vm_backup_no_data">备份文件里没有记录数据</string>
+    <string name="vm_backup_too_many">备份文件里的记录数超出上限</string>
+    <string name="vm_backup_record_incomplete">备份文件里第 %1$d 条记录不完整</string>
+    <string name="delete_accessibility">删除</string>
 </resources>

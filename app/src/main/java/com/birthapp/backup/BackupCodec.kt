@@ -1,5 +1,6 @@
 package com.birthapp.backup
 
+import com.birthapp.R
 import com.birthapp.data.Birthday
 import com.birthapp.data.EventType
 import org.json.JSONArray
@@ -89,17 +90,17 @@ object BackupCodec {
 
     /**
      * 解析备份文本。不是本 App 的备份、结构不完整时抛 [IllegalArgumentException]，
-     * 由调用方转成用户能看懂的提示。
+     * 由调用方转成用户能看懂的提示（提示文案走资源，按当前语言）。
      */
-    fun decode(text: String): List<Birthday> {
+    fun decode(text: String, context: android.content.Context): List<Birthday> {
         val root = runCatching { JSONObject(text) }
-            .getOrElse { throw IllegalArgumentException("不是有效的备份文件", it) }
-        require(root.optString("app") == APP_MARK) { "不是辰记导出的备份文件" }
-        require(root.optInt("format", 0) in 1..FORMAT_VERSION) { "备份文件版本不支持" }
+            .getOrElse { throw IllegalArgumentException(context.getString(R.string.vm_backup_invalid), it) }
+        require(root.optString("app") == APP_MARK) { context.getString(R.string.vm_backup_not_chenji) }
+        require(root.optInt("format", 0) in 1..FORMAT_VERSION) { context.getString(R.string.vm_backup_version_unsupported) }
 
         val arr = root.optJSONArray("records")
-            ?: throw IllegalArgumentException("备份文件里没有记录数据")
-        require(arr.length() <= MAX_RECORDS) { "备份文件里的记录数超出上限" }
+            ?: throw IllegalArgumentException(context.getString(R.string.vm_backup_no_data))
+        require(arr.length() <= MAX_RECORDS) { context.getString(R.string.vm_backup_too_many) }
 
         val result = ArrayList<Birthday>(arr.length())
         for (i in 0 until arr.length()) {
@@ -110,7 +111,7 @@ object BackupCodec {
             val day = o.optInt("birthDay", -1)
             // 核心四项缺一不可，其余字段都有安全的默认值可兜底
             require(name.isNotEmpty() && year > 0 && month in 1..12 && day in 1..31) {
-                "备份文件里第 ${i + 1} 条记录不完整"
+                context.getString(R.string.vm_backup_record_incomplete, i + 1)
             }
             result.add(
                 Birthday(

@@ -56,12 +56,12 @@ class ShareCardGeneratorTest {
     @Test
     fun `位图尺寸_两种风格统一1080乘1920竖版`() {
         val normal = Bitmap.createBitmap(1080, 1920, Bitmap.Config.ARGB_8888)
-        ShareCardGenerator.draw(Canvas(normal), birthday())
+        ShareCardGenerator.draw(Canvas(normal), birthday(), context.resources)
         assertEquals(1080, normal.width)
         assertEquals(1920, normal.height)
 
         val memorial = Bitmap.createBitmap(1080, 1920, Bitmap.Config.ARGB_8888)
-        ShareCardGenerator.draw(Canvas(memorial), birthday(eventType = EventType.MEMORIAL))
+        ShareCardGenerator.draw(Canvas(memorial), birthday(eventType = EventType.MEMORIAL), context.resources)
         assertEquals(1080, memorial.width)
         assertEquals(1920, memorial.height)
     }
@@ -72,12 +72,12 @@ class ShareCardGeneratorTest {
         val normal = Bitmap.createBitmap(1080, 1920, Bitmap.Config.ARGB_8888)
         val canvasN = Canvas(normal)
         for (type in EventType.ALL) {
-            ShareCardGenerator.draw(canvasN, birthday(eventType = type))
+            ShareCardGenerator.draw(canvasN, birthday(eventType = type), context.resources)
         }
         assertTrue(!normal.isRecycled)
 
         val memorial = Bitmap.createBitmap(1080, 1920, Bitmap.Config.ARGB_8888)
-        ShareCardGenerator.draw(Canvas(memorial), birthday(eventType = EventType.MEMORIAL))
+        ShareCardGenerator.draw(Canvas(memorial), birthday(eventType = EventType.MEMORIAL), context.resources)
         assertTrue(!memorial.isRecycled)
     }
 

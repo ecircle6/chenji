@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.birthapp.BirthApp
+import com.birthapp.R
 import com.birthapp.alarm.AlarmScheduler
 import com.birthapp.data.AppDatabase
 import com.birthapp.data.Birthday
@@ -171,17 +172,20 @@ class HomeViewModel @JvmOverloads constructor(
     private fun Birthday.toDisplay(): BirthdayDisplay {
         val today = LocalDate.now()
         val currentYear = today.year
+        // 展示文案按当前语言走资源（showing 在简体中文/英文系统的行为与旧版一致）
+        val resources = getApplication<Application>().resources
 
         val countdown = EventCalc.countdown(this, today)
 
         val age = ZodiacUtils.getAge(birthYear, currentYear)
         val zodiac = ZodiacUtils.getZodiacName(birthYear)
+        val zodiacDisplay = ZodiacUtils.zodiacDisplayName(resources, birthYear)
         val zodiacEmoji = ZodiacUtils.getZodiacEmoji(birthYear)
 
         val dateLabel = if (calendarType == "lunar") {
-            "农历${LunarCalendar.formatLunarDate(birthMonth, birthDay)}"
+            resources.getString(R.string.date_lunar_prefix, LunarCalendar.formatLunarDate(birthMonth, birthDay))
         } else {
-            "${birthMonth}月${birthDay}日"
+            DateUtils.formatSolarMonthDay(resources, birthMonth, birthDay)
         }
 
         // 下一次事件的阳历日期：远景行月份分组用（只算一次）
@@ -194,7 +198,7 @@ class HomeViewModel @JvmOverloads constructor(
             zodiac = zodiac,
             zodiacEmoji = zodiacEmoji,
             dateLabel = dateLabel,
-            relationLabel = ZodiacUtils.getRelationLabel(relation),
+            relationLabel = ZodiacUtils.getRelationLabel(resources, relation),
             relationEmoji = ZodiacUtils.getRelationEmoji(relation),
             isToday = countdown == 0,
             isPaused = !isActive,
@@ -203,14 +207,15 @@ class HomeViewModel @JvmOverloads constructor(
             typeEmoji = EventType.emoji(eventType),
             isSolemn = EventType.isSolemn(eventType),
             infoLine = EventTextUtils.infoLine(
+                resources = resources,
                 eventType = eventType,
                 calendarType = calendarType,
                 dateLabel = dateLabel,
                 zodiacEmoji = zodiacEmoji,
-                zodiac = zodiac,
+                zodiac = zodiacDisplay,
                 age = age
             ),
-            todayBanner = EventTextUtils.cardBanner(eventType, name, age),
+            todayBanner = EventTextUtils.cardBanner(resources, eventType, name, age),
             // v4 新增字段
             displayEmoji = emoji.ifBlank {
                 if (eventType == EventType.BIRTHDAY) name.first().toString()

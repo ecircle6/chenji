@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- 小组件 Hero 头渐变（birthday · 日）：色值与 App 内 HeroCard 同源（ui/theme/Color.kt） -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <gradient
-        android:angle="315"
-        android:startColor="#FFC98A"
-        android:endColor="#FF8A5C" />
-    <corners android:radius="14dp" />
-</shape>

@@ -23,7 +23,7 @@ import java.time.Duration
  * 验证：支持 pin 时无失败提示 + 超时自动结束；不支持时弹引导；错误 action 直接结束。
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], qualifiers = "zh-rCN")
 class WidgetPinRequestActivityTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()

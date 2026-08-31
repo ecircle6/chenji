@@ -12,9 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.birthapp.R
 import com.birthapp.data.EventType
 import com.birthapp.ui.common.AnimatedCountdownText
 import com.birthapp.ui.common.breathingGlow
@@ -93,7 +95,11 @@ fun HeroCard(
                 Column(modifier = Modifier.weight(1f)) {
                     // 「即将到来」 / 「就是今天」
                     Text(
-                        text = if (isToday) "就是今天" else "即将到来",
+                        text = if (isToday) {
+                            stringResource(R.string.common_just_today)
+                        } else {
+                            stringResource(R.string.home_hero_coming)
+                        },
                         style = MaterialTheme.typography.labelMedium,
                         color = Color.White.copy(alpha = 0.85f)
                     )
@@ -117,7 +123,7 @@ fun HeroCard(
                             color = Color.White
                         )
                         Text(
-                            text = if (isToday) "" else " 天后",
+                            text = if (isToday) "" else " " + stringResource(R.string.common_days_later),
                             style = MaterialTheme.typography.titleMedium,
                             color = Color.White.copy(alpha = 0.85f),
                             modifier = Modifier.padding(bottom = 8.dp)
@@ -167,12 +173,12 @@ private fun HeroProgressBar(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "提醒进度",
+                text = stringResource(R.string.home_urgent_progress),
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.White.copy(alpha = 0.85f)
             )
             Text(
-                text = "已过去 $elapsed 天",
+                text = stringResource(R.string.home_urgent_elapsed, elapsed),
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.White.copy(alpha = 0.85f)
             )

@@ -6,6 +6,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.birthapp.BirthApp
+import com.birthapp.R
 import com.birthapp.alarm.AlarmScheduler
 import com.birthapp.backup.BackupCodec
 import com.birthapp.backup.BackupMerge
@@ -62,12 +63,12 @@ class SettingsViewModel @JvmOverloads constructor(
                     getApplication<Application>().contentResolver
                         .openOutputStream(uri, "wt")
                         ?.use { it.write(text.toByteArray(Charsets.UTF_8)) }
-                        ?: throw IllegalArgumentException("无法写入所选位置")
+                        ?: throw IllegalArgumentException(res(R.string.vm_export_unwritable))
                 }
             }
             result
-                .onSuccess { toast("备份已保存") }
-                .onFailure { toast(friendlyMessage(it, "导出失败，请换个位置再试")) }
+                .onSuccess { toast(res(R.string.vm_backup_saved)) }
+                .onFailure { toast(friendlyMessage(it, res(R.string.vm_export_failed))) }
         }
     }
 
@@ -89,7 +90,7 @@ class SettingsViewModel @JvmOverloads constructor(
             }
             result
                 .onSuccess { _events.emit(SettingsEvent.ShareFile(it)) }
-                .onFailure { toast(friendlyMessage(it, "生成备份失败")) }
+                .onFailure { toast(friendlyMessage(it, res(R.string.vm_share_failed))) }
         }
     }
 
@@ -104,12 +105,12 @@ class SettingsViewModel @JvmOverloads constructor(
                         ?.use { input ->
                             val bytes = input.readBytes()
                             // 正常备份最多几百 KB，超大文件肯定是选错了
-                            require(bytes.size <= MAX_IMPORT_BYTES) { "文件太大，不像是辰记的备份" }
+                            require(bytes.size <= MAX_IMPORT_BYTES) { res(R.string.vm_import_too_large) }
                             String(bytes, Charsets.UTF_8)
                         }
-                        ?: throw IllegalArgumentException("无法读取所选文件")
+                        ?: throw IllegalArgumentException(res(R.string.vm_import_unreadable))
                 }
-                val incoming = BackupCodec.decode(text)
+                val incoming = BackupCodec.decode(text, getApplication())
                 val items = BackupMerge.classify(database.birthdayDao().getAllOnce(), incoming)
                 val settings = BackupCodec.decodeSettings(text)
                 items to settings
@@ -120,7 +121,7 @@ class SettingsViewModel @JvmOverloads constructor(
                     pendingImportSettings = settings
                     _events.emit(SettingsEvent.ImportPreview(items, settings))
                 }
-                .onFailure { toast(friendlyMessage(it, "导入失败，请确认选的是辰记的备份文件")) }
+                .onFailure { toast(friendlyMessage(it, res(R.string.vm_import_failed))) }
         }
     }
 
@@ -182,15 +183,15 @@ class SettingsViewModel @JvmOverloads constructor(
             result
                 .onSuccess { (inserted, overwritten) ->
                     if (inserted == 0 && overwritten == 0) {
-                        toast("没有导入任何记录")
+                        toast(res(R.string.vm_nothing_imported))
                     } else {
                         val parts = mutableListOf<String>()
-                        if (inserted > 0) parts.add("新增 $inserted 条")
-                        if (overwritten > 0) parts.add("覆盖 $overwritten 条")
-                        toast("导入完成：${parts.joinToString("，")}")
+                        if (inserted > 0) parts.add(res(R.string.vm_imported_new, inserted))
+                        if (overwritten > 0) parts.add(res(R.string.vm_imported_overwritten, overwritten))
+                        toast(res(R.string.vm_import_done, parts.joinToString("，")))
                     }
                 }
-                .onFailure { toast(friendlyMessage(it, "导入失败，请重试")) }
+                .onFailure { toast(friendlyMessage(it, res(R.string.vm_import_retry))) }
         }
     }
 
@@ -199,13 +200,17 @@ class SettingsViewModel @JvmOverloads constructor(
 
     private suspend fun recordsForExport() =
         database.birthdayDao().getAllOnce().also {
-            require(it.isNotEmpty()) { "还没有记录，添加之后再来备份" }
+            require(it.isNotEmpty()) { res(R.string.vm_no_records) }
         }
 
     private fun currentThemeMode(): String = themeStore.mode.value.name
     private fun currentDynamicColor(): Boolean = themeStore.dynamicColor.value
 
     private suspend fun toast(text: String) = _events.emit(SettingsEvent.Toast(text))
+
+    /** 资源取文案（含格式化参数） */
+    private fun res(id: Int, vararg args: Any): String =
+        getApplication<Application>().getString(id, *args)
 
     /** 自己抛的 IllegalArgumentException 里都是给用户看的话，直接用；其余给兜底文案 */
     private fun friendlyMessage(e: Throwable, fallback: String): String =

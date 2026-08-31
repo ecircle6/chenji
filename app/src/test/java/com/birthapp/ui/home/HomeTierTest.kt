@@ -1,16 +1,25 @@
 package com.birthapp.ui.home
 
+import androidx.test.core.app.ApplicationProvider
 import com.birthapp.data.EventType
 import com.birthapp.ui.preview.PreviewData
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.time.LocalDate
 
 /**
  * 首页三层化 + 月份分组的纯函数测试（HomeTier.kt）。
  * 与 HomeScreen 渲染解耦：这里只验证分层/进度/分组规则本身。
+ * 月份标签走资源（zh-rCN 下断言中文文案）。
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(qualifiers = "zh-rCN")
 class HomeTierTest {
+
+    private val resources get() = ApplicationProvider.getApplicationContext<android.content.Context>().resources
 
     private fun display(
         id: Long,
@@ -65,9 +74,9 @@ class HomeTierTest {
     @Test
     fun `monthLabel_同年显示月_跨年显示年份`() {
         val today = LocalDate.of(2026, 8, 14)
-        assertEquals("9 月", HomeTier.monthLabel(2026, 9, today))
-        assertEquals("12 月", HomeTier.monthLabel(2026, 12, today))
-        assertEquals("2027 年", HomeTier.monthLabel(2027, 1, today))
+        assertEquals("9 月", HomeTier.monthLabel(resources, 2026, 9, today))
+        assertEquals("12 月", HomeTier.monthLabel(resources, 2026, 12, today))
+        assertEquals("2027 年", HomeTier.monthLabel(resources, 2027, 1, today))
     }
 
     // ===================== 构建异构列表 =====================
@@ -79,7 +88,8 @@ class HomeTierTest {
                 display(id = 1, countdown = 300, eventYear = 2027, eventMonth = 5, paused = true),
                 display(id = 2, countdown = 100, eventYear = 2026, eventMonth = 12, pinned = true),
                 display(id = 3, countdown = 60, eventYear = 2026, eventMonth = 11)
-            )
+            ),
+            resources
         )
         val cards = rows.filterIsInstance<HomeListItem.Card>()
         assertEquals(listOf(2L, 3L, 1L), cards.map { it.display.birthday.id })
@@ -92,7 +102,8 @@ class HomeTierTest {
                 display(id = 1, countdown = 40, eventYear = 2026, eventMonth = 10),
                 display(id = 2, countdown = 3, eventYear = 2026, eventMonth = 8),
                 display(id = 3, countdown = 15, eventYear = 2026, eventMonth = 9)
-            )
+            ),
+            resources
         )
         val cards = rows.filterIsInstance<HomeListItem.Card>()
         assertEquals(
@@ -110,7 +121,8 @@ class HomeTierTest {
             listOf(
                 display(id = 1, countdown = 100, eventYear = 2026, eventMonth = 12),
                 display(id = 2, countdown = 120, eventYear = 2026, eventMonth = 12)
-            )
+            ),
+            resources
         )
         assertEquals(
             1,
@@ -128,7 +140,8 @@ class HomeTierTest {
             listOf(
                 display(id = 1, countdown = 100, eventYear = nextYear, eventMonth = 1),
                 display(id = 2, countdown = 300, eventYear = nextYear, eventMonth = 12)
-            )
+            ),
+            resources
         )
         val headers = rows.filterIsInstance<HomeListItem.MonthHeader>()
         assertEquals(2, headers.size)

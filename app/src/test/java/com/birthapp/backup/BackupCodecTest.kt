@@ -12,8 +12,14 @@ import org.junit.Test
  *
  * 核心保障：一台手机 encode 出来的文本，另一台手机 decode 回去后，
  * 用户输入过的每个字段都原样保留（id、下次提醒日期这类运行时状态除外）。
+ * 错误消息文案走资源，在 zh-rCN 下断言中文（与 App 默认语言一致）。
  */
+@org.junit.runner.RunWith(org.robolectric.RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(qualifiers = "zh-rCN")
 class BackupCodecTest {
+
+    private val context: android.content.Context =
+        androidx.test.core.app.ApplicationProvider.getApplicationContext()
 
     private fun sample(
         name: String = "张三",
@@ -42,7 +48,7 @@ class BackupCodecTest {
             ),
             sample(name = "李四", eventType = EventType.LOVE),
         )
-        val decoded = BackupCodec.decode(BackupCodec.encode(original))
+        val decoded = BackupCodec.decode(BackupCodec.encode(original), context)
 
         assertEquals(original.size, decoded.size)
         for (i in original.indices) {
@@ -72,37 +78,37 @@ class BackupCodecTest {
 
     @Test
     fun `空列表也能往返_records为空数组`() {
-        assertEquals(0, BackupCodec.decode(BackupCodec.encode(emptyList())).size)
+        assertEquals(0, BackupCodec.decode(BackupCodec.encode(emptyList()), context).size)
     }
 
     @Test
     fun `不是JSON_报不是有效的备份文件`() {
-        assertThrowsMessage("不是有效的备份文件") { BackupCodec.decode("随便一段文字") }
+        assertThrowsMessage("不是有效的备份文件") { BackupCodec.decode("随便一段文字", context) }
     }
 
     @Test
     fun `别的App的JSON_报不是辰记的备份`() {
         val alien = """{"app":"com.other.app","format":1,"records":[]}"""
-        assertThrowsMessage("不是辰记导出的备份文件") { BackupCodec.decode(alien) }
+        assertThrowsMessage("不是辰记导出的备份文件") { BackupCodec.decode(alien, context) }
     }
 
     @Test
     fun `缺app标记_同样拒绝`() {
         assertThrowsMessage("不是辰记导出的备份文件") {
-            BackupCodec.decode("""{"format":1,"records":[]}""")
+            BackupCodec.decode("""{"format":1,"records":[]}""", context)
         }
     }
 
     @Test
     fun `未来版本号_报版本不支持`() {
         val future = """{"app":"com.birthapp","format":99,"records":[]}"""
-        assertThrowsMessage("备份文件版本不支持") { BackupCodec.decode(future) }
+        assertThrowsMessage("备份文件版本不支持") { BackupCodec.decode(future, context) }
     }
 
     @Test
     fun `没有records字段_报没有记录数据`() {
         assertThrowsMessage("备份文件里没有记录数据") {
-            BackupCodec.decode("""{"app":"com.birthapp","format":1}""")
+            BackupCodec.decode("""{"app":"com.birthapp","format":1}""", context)
         }
     }
 
@@ -114,7 +120,7 @@ class BackupCodecTest {
               {"name":"","birthYear":1990,"birthMonth":1,"birthDay":1}
             ]}
         """.trimIndent()
-        assertThrowsMessage("第 2 条记录不完整") { BackupCodec.decode(bad) }
+        assertThrowsMessage("第 2 条记录不完整") { BackupCodec.decode(bad, context) }
     }
 
     @Test
@@ -124,7 +130,7 @@ class BackupCodecTest {
               {"name":"甲","birthYear":1990,"birthMonth":13,"birthDay":1}
             ]}
         """.trimIndent()
-        assertThrowsMessage("第 1 条记录不完整") { BackupCodec.decode(bad) }
+        assertThrowsMessage("第 1 条记录不完整") { BackupCodec.decode(bad, context) }
     }
 
     @Test
@@ -134,7 +140,7 @@ class BackupCodecTest {
               {"name":"甲","birthYear":1990,"birthMonth":6,"birthDay":15}
             ]}
         """.trimIndent()
-        val b = BackupCodec.decode(minimal).single()
+        val b = BackupCodec.decode(minimal, context).single()
         assertEquals("solar", b.calendarType)
         assertEquals(false, b.isLeapMonth)
         assertEquals(listOf(0), b.advanceDays)
@@ -156,7 +162,7 @@ class BackupCodecTest {
                "reminderHour":30,"reminderMinute":-5}
             ]}
         """.trimIndent()
-        val b = BackupCodec.decode(dirty).single()
+        val b = BackupCodec.decode(dirty, context).single()
         assertEquals("solar", b.calendarType)   // 不认识的历法一律按公历
         assertEquals(listOf(365), b.advanceDays)
         assertEquals(23, b.reminderHour)
@@ -172,7 +178,7 @@ class BackupCodecTest {
                "advanceDays":3,"isActive":true}
             ]}
         """.trimIndent()
-        val b = BackupCodec.decode(v1).single()
+        val b = BackupCodec.decode(v1, context).single()
         assertEquals(listOf(3), b.advanceDays)
         assertEquals(false, b.pinned)
     }
@@ -184,7 +190,7 @@ class BackupCodecTest {
             calendarType = "solar", advanceDays = listOf(0, 7, 30),
             pinned = true,
         )
-        val decoded = BackupCodec.decode(BackupCodec.encode(listOf(original))).single()
+        val decoded = BackupCodec.decode(BackupCodec.encode(listOf(original)), context).single()
         assertEquals(listOf(0, 7, 30), decoded.advanceDays)
         assertEquals(true, decoded.pinned)
     }
@@ -196,7 +202,7 @@ class BackupCodecTest {
               {"name":"甲","birthYear":1990,"birthMonth":6,"birthDay":15,"advanceDays":[]}
             ]}
         """.trimIndent()
-        assertEquals(listOf(0), BackupCodec.decode(empty).single().advanceDays)
+        assertEquals(listOf(0), BackupCodec.decode(empty, context).single().advanceDays)
     }
 
     @Test
@@ -207,7 +213,7 @@ class BackupCodecTest {
               {"name":"丙","birthYear":1992,"birthMonth":3,"birthDay":8,"calendarType":"solar"}
             ]}
         """.trimIndent()
-        assertEquals("", BackupCodec.decode(old).single().emoji)
+        assertEquals("", BackupCodec.decode(old, context).single().emoji)
     }
 
     @Test
@@ -216,7 +222,7 @@ class BackupCodecTest {
             name = "丁", birthYear = 2001, birthMonth = 8, birthDay = 1,
             calendarType = "solar", emoji = "🐶"
         )
-        val decoded = BackupCodec.decode(BackupCodec.encode(listOf(original))).single()
+        val decoded = BackupCodec.decode(BackupCodec.encode(listOf(original)), context).single()
         assertEquals("🐶", decoded.emoji)
     }
 
@@ -233,7 +239,7 @@ class BackupCodecTest {
         assertEquals("DARK", settings?.themeMode)
         assertEquals(true, settings?.dynamicColor)
         // 记录部分不受 settings 影响
-        assertEquals(1, BackupCodec.decode(text).size)
+        assertEquals(1, BackupCodec.decode(text, context).size)
     }
 
     @Test

@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -34,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,7 +56,7 @@ import com.birthapp.ui.home.HomeScreen
 import com.birthapp.ui.navigation.MainNavigationBar
 import com.birthapp.ui.settings.SettingsScreen
 import com.birthapp.ui.theme.BirthAppTheme
-import java.util.Locale
+import com.birthapp.R
 
 /**
  * 底部 tab 切换策略：
@@ -81,15 +81,6 @@ class MainActivity : ComponentActivity() {
     // 通知点击的详情跳转请求。存记录 id 而不是布尔值：App 活着时点通知走
     // onNewIntent，同一条通知被点两次需要能再次跳转，所以导航完成后要清空
     private val pendingDetailId = mutableStateOf<Long?>(null)
-
-    // 强制应用使用中文环境，确保日历选择器等系统控件显示中文
-    override fun attachBaseContext(newBase: Context) {
-        val locale = Locale.SIMPLIFIED_CHINESE
-        Locale.setDefault(locale)
-        val config = Configuration(newBase.resources.configuration)
-        config.setLocale(locale)
-        super.attachBaseContext(newBase.createConfigurationContext(config))
-    }
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -157,7 +148,7 @@ class MainActivity : ComponentActivity() {
                         onDismissRequest = { showChangelog = false },
                         title = {
                             Text(
-                                "新版本 v${packageInfo?.versionName ?: ""}",
+                                stringResource(R.string.changelog_new_version, packageInfo?.versionName ?: ""),
                                 fontWeight = FontWeight.Bold
                             )
                         },
@@ -174,7 +165,7 @@ class MainActivity : ComponentActivity() {
                             }
                         },
                         confirmButton = {
-                            TextButton(onClick = { showChangelog = false }) { Text("知道了") }
+                            TextButton(onClick = { showChangelog = false }) { Text(stringResource(R.string.common_got_it)) }
                         },
                         shape = RoundedCornerShape(24.dp)
                     )

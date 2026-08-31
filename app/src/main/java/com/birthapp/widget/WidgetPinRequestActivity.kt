@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
+import com.birthapp.R
 
 /**
  * 「长按图标 → 添加小组件」的透明中转页。
@@ -37,7 +38,7 @@ class WidgetPinRequestActivity : Activity() {
         if (!ok) {
             Toast.makeText(
                 this,
-                "当前桌面不支持直接添加，请长按桌面空白处 → 小组件 → 辰记",
+                getString(R.string.settings_widget_not_supported),
                 Toast.LENGTH_LONG
             ).show()
         }

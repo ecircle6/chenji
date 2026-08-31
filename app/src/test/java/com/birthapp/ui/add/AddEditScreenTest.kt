@@ -23,7 +23,7 @@ import org.robolectric.annotation.GraphicsMode
  * 断言默认表单、保存按钮启停、切换与各回调触发。
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], qualifiers = "w411dp-h891dp", application = android.app.Application::class)
+@Config(sdk = [34], qualifiers = "zh-rCN-w411dp-h891dp", application = android.app.Application::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class AddEditScreenTest {
 

@@ -1,5 +1,7 @@
 package com.birthapp.util
 
+import android.content.res.Resources
+import com.birthapp.R
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -38,19 +40,33 @@ object DateUtils {
         }
     }
 
-    /**
-     * 格式化阳历日期为中文
-     */
-    fun formatSolarDate(year: Int, month: Int, day: Int): String {
-        return "${year}年${month}月${day}日"
-    }
+    /** 英文月份缩写（Jan..Dec），与 values/values-en 的 months_short 数组同名 */
+    private fun shortMonth(resources: Resources, month: Int): String =
+        resources.getStringArray(R.array.months_short)[(month - 1).coerceIn(0, 11)]
 
     /**
-     * 格式化月日为简短中文
+     * 格式化阳历日期：中文「1997年1月5日」，英文「Jan 5, 1997」（模板见资源）
      */
-    fun formatSolarMonthDay(month: Int, day: Int): String {
-        return "${month}月${day}日"
-    }
+    fun formatSolarDate(resources: Resources, year: Int, month: Int, day: Int): String =
+        if (LocaleUtils.isEnglish(resources)) {
+            resources.getString(R.string.date_solar_full_en, shortMonth(resources, month), day, year)
+        } else {
+            resources.getString(R.string.date_solar_full_zh, year, month, day)
+        }
+
+    /**
+     * 格式化月日：中文「1月5日」，英文「Jan 5」
+     */
+    fun formatSolarMonthDay(resources: Resources, month: Int, day: Int): String =
+        if (LocaleUtils.isEnglish(resources)) {
+            resources.getString(R.string.date_solar_month_day_en, shortMonth(resources, month), day)
+        } else {
+            resources.getString(R.string.date_solar_month_day_zh, month, day)
+        }
+
+    /** 星期简称：中文「周一」，英文「Mon」 */
+    fun weekdayShort(resources: Resources, dayOfWeek: java.time.DayOfWeek): String =
+        resources.getStringArray(R.array.weekday_short)[dayOfWeek.value - 1]
 
     /**
      * 格式化提醒时间

@@ -18,7 +18,7 @@ import org.robolectric.annotation.GraphicsMode
  * 共享组件 Compose UI 测试：BirthdayCard（紧凑布局）与两种空态。
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], qualifiers = "w411dp-h891dp", application = android.app.Application::class)
+@Config(sdk = [34], qualifiers = "zh-rCN-w411dp-h891dp", application = android.app.Application::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class SharedComponentsTest {
 

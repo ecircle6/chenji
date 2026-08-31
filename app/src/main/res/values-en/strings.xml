@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Chenji – English strings.
+  中文版为默认资源（values/strings.xml）；此文件在系统语言为英文时生效。
+  农历术语（month/day names of the Chinese calendar）与生肖名在英文下仍以中文呈现：
+  它们是文化数据语义而非界面文案，模板（如 "Lunar %1$s"）已本地化。
+-->
+<resources>
+    <string name="app_name">Chenji</string>
+    <string name="widget_label">Chenji</string>
+    <string name="widget_description">See upcoming birthdays and anniversaries on your home screen</string>
+    <!-- System-visible shortcut label (must be a resource) -->
+    <string name="shortcut_add_widget">Add widget</string>
+    <string name="shortcut_add_widget_long">Put the Chenji widget on your home screen</string>
+
+    <!-- ============ Common ============ -->
+    <string name="common_confirm">OK</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_delete">Delete</string>
+    <string name="common_back">Back</string>
+    <string name="common_close">Close</string>
+    <string name="common_got_it">Got it</string>
+    <string name="common_today">Today</string>
+    <string name="common_tomorrow">Tomorrow</string>
+    <string name="common_days_later">days left</string>
+    <string name="common_just_today">It\'s today</string>
+    <string name="changelog_new_version">What\'s new in v%1$s</string>
+
+    <!-- ============ Date / weekday / month ============ -->
+    <string name="date_solar_full_zh">%1$d年%2$d月%3$d日</string>
+    <string name="date_solar_full_en">%2$s %3$d, %1$d</string>
+    <string name="date_solar_month_day_zh">%1$d月%2$d日</string>
+    <string name="date_solar_month_day_en">%1$s %2$d</string>
+    <string name="date_lunar_prefix">Lunar %1$s</string>
+    <string name="date_leap_prefix">leap </string>
+    <string name="date_solar_kind">Solar</string>
+    <string name="date_lunar_kind">Lunar</string>
+    <string-array name="months_short">
+        <item>Jan</item><item>Feb</item><item>Mar</item><item>Apr</item><item>May</item><item>Jun</item>
+        <item>Jul</item><item>Aug</item><item>Sep</item><item>Oct</item><item>Nov</item><item>Dec</item>
+    </string-array>
+    <string-array name="weekday_short">
+        <item>Mon</item><item>Tue</item><item>Wed</item><item>Thu</item><item>Fri</item><item>Sat</item><item>Sun</item>
+    </string-array>
+    <string-array name="weekday_letter">
+        <item>M</item><item>T</item><item>W</item><item>T</item><item>F</item><item>S</item><item>S</item>
+    </string-array>
+    <string-array name="month_label">
+        <item>Jan</item><item>Feb</item><item>Mar</item><item>Apr</item><item>May</item><item>Jun</item>
+        <item>Jul</item><item>Aug</item><item>Sep</item><item>Oct</item><item>Nov</item><item>Dec</item>
+    </string-array>
+    <string name="date_cross_year_label_zh">%1$d 年</string>
+    <string name="date_cross_year_label_en">%1$d</string>
+    <string name="date_month_title_zh">%1$d年%2$d月</string>
+    <string name="date_month_title_en">%1$s %2$d</string>
+    <string name="date_day_title_zh">%1$d月%2$d日</string>
+    <string name="date_day_title_en">%1$s %2$d</string>
+
+    <!-- Zodiac/relation: keys stay Chinese internally; display follows the locale -->
+    <string-array name="zodiac_names">
+        <item>鼠</item><item>牛</item><item>虎</item><item>兔</item><item>龙</item><item>蛇</item>
+        <item>马</item><item>羊</item><item>猴</item><item>鸡</item><item>狗</item><item>猪</item>
+    </string-array>
+    <string-array name="zodiac_names_en">
+        <item>Rat</item><item>Ox</item><item>Tiger</item><item>Rabbit</item><item>Dragon</item><item>Snake</item>
+        <item>Horse</item><item>Goat</item><item>Monkey</item><item>Rooster</item><item>Dog</item><item>Pig</item>
+    </string-array>
+    <string name="relation_family">Family</string>
+    <string name="relation_friend">Friend</string>
+    <string name="relation_colleague">Colleague</string>
+    <string name="relation_other">Other</string>
+
+    <!-- ============ Event types ============ -->
+    <string name="type_birthday">Birthday</string>
+    <string name="type_love">Anniversary</string>
+    <string name="type_marriage">Wedding</string>
+    <string name="type_baby">Baby\'s day</string>
+    <string name="type_memorial">In memory</string>
+    <string name="type_other">Other</string>
+    <string name="type_field_birthday">Date of birth</string>
+    <string name="type_field_love">Anniversary date</string>
+    <string name="type_field_marriage">Wedding date</string>
+    <string name="type_field_memorial">The day you left</string>
+    <string name="type_field_other">Anniversary date</string>
+    <string name="type_name_birthday">Name</string>
+    <string name="type_name_other">Name / title</string>
+
+    <!-- info line: %1$s=emoji %2$s=type name (non-birthday prefix); tail %3$s=zodiac %4$d=age/years -->
+    <string name="info_line_prefix">%1$s %2$s  ·  </string>
+    <string name="info_line_age_zh">%1$s属%2$s · %3$d岁</string>
+    <string name="info_line_age_en">%1$s %2$s · %3$d</string>
+    <string name="info_line_anniversary_zh">第 %1$d 周年</string>
+    <string name="info_line_anniversary_en">Anniversary %1$d</string>
+
+    <!-- Today banners -->
+    <string name="banner_birthday">🎂 %1$d today!</string>
+    <string name="banner_baby">🍼 Baby is %1$d today!</string>
+    <string name="banner_marriage">💍 %1$dth wedding anniversary today!</string>
+    <string name="banner_love">❤️ %1$d years together!</string>
+    <string name="banner_memorial">🕯️ %1$s left us %2$d years ago today</string>
+    <string name="banner_other">📌 %1$s · %2$dth anniversary today</string>
+
+    <!-- ============ Home ============ -->
+    <string name="home_search_placeholder">Search name or notes</string>
+    <string name="home_clear">Clear</string>
+    <string name="home_exit_search">Exit search</string>
+    <string name="home_search">Search</string>
+    <string name="home_settings">Settings</string>
+    <string name="home_add_record">Add record</string>
+    <string name="home_all">All</string>
+    <string name="home_more_filters">More filters</string>
+    <string name="home_filter_clear">Clear</string>
+    <string name="home_filter_relation">Relation</string>
+    <string name="home_filter_type">Type</string>
+    <string name="home_filter_zodiac">Zodiac</string>
+    <string name="home_filter_unlimited">Any</string>
+    <string name="home_filter_none">No filter</string>
+    <string name="home_filter_empty_title">No records match this filter</string>
+    <string name="home_filter_empty_hint">Try different conditions, or tap “All” to go back to the full list</string>
+    <string name="home_confirm_delete_title">Delete record?</string>
+    <string name="home_confirm_delete_text">Delete “%1$s”?\nIt will no longer be reminded.</string>
+    <string name="home_empty_search_title">Nothing found for “%1$s”</string>
+    <string name="home_empty_search_hint">Try a keyword from the name or notes</string>
+    <string name="home_empty_list_title">No records yet</string>
+    <string name="home_empty_list_hint">Tap the button below to add a birthday or anniversary\nso no important day is ever forgotten</string>
+    <string name="home_empty_list_add">Add your first record</string>
+    <string name="home_urgent_progress">Reminder progress</string>
+    <string name="home_urgent_elapsed">%1$d day(s) passed</string>
+    <string name="home_paused_badge">Paused</string>
+    <string name="home_hero_coming">Coming up</string>
+    <string-array name="greeting_pool">
+        <item>May time treat you gently</item>
+        <item>Every day worth remembering</item>
+        <item>Time never fades true bonds</item>
+        <item>Cherish the present, remember the past</item>
+        <item>Long days, worth the wait</item>
+    </string-array>
+
+    <!-- ============ Detail ============ -->
+    <string name="detail_title">Detail</string>
+    <string name="detail_unpin">Unpin</string>
+    <string name="detail_pin">Pin to top</string>
+    <string name="detail_share_card">Share card</string>
+    <string name="detail_edit">Edit</string>
+    <string name="detail_not_found">This record no longer exists</string>
+    <string name="detail_reminder_on">Reminder on</string>
+    <string name="detail_reminder_off">Reminder paused</string>
+    <string name="detail_reminder_on_hint">Turning it off stops notifications; the record is kept</string>
+    <string name="detail_reminder_off_hint">No reminders for this record, but it stays in the list</string>
+    <string name="detail_section_date">Date</string>
+    <string name="detail_row_record">Record</string>
+    <string name="detail_row_converted">Converted</string>
+    <string name="detail_row_next">Next</string>
+    <string name="detail_row_age">Age</string>
+    <string name="detail_row_anniversary">Year</string>
+    <string name="detail_section_reminder">Reminder</string>
+    <string name="detail_row_way">When</string>
+    <string name="detail_section_notes">Notes</string>
+    <string name="detail_notes_empty">No notes yet</string>
+    <string name="detail_delete_title">Delete record</string>
+    <string name="detail_delete_text">Delete “%1$s”?\nIt will no longer be reminded.</string>
+    <string name="detail_share_chooser">Share this card</string>
+    <string name="detail_primary_lunar">Lunar %1$d %2$s%3$s</string>
+    <string name="detail_primary_solar">Solar %1$s</string>
+    <string name="detail_corresponding_solar">Solar equivalent %1$s</string>
+    <string name="detail_corresponding_lunar">Lunar equivalent %1$s</string>
+    <string name="detail_next_solar">Solar %1$s</string>
+    <string name="detail_age_line">%1$s %2$s · %3$d</string>
+    <string name="detail_anniversary_line">Anniversary %1$d</string>
+    <string name="detail_next_reminder_paused">Reminder paused</string>
+    <string name="detail_next_reminder_none">No reminder scheduled</string>
+    <string name="detail_in_days">in %1$d day(s)</string>
+    <string name="detail_next_reminder_format">%1$s %2$s (%3$s)</string>
+    <string name="detail_advance_today_only">Remind on the day</string>
+    <string name="detail_advance_item_today">today</string>
+    <string name="detail_advance_item_days">%1$d days before</string>
+    <string name="detail_advance_tail">Remind %1$s</string>
+    <string name="detail_record_not_found">Record not found</string>
+
+    <!-- ============ Add / Edit ============ -->
+    <string name="addedit_title_edit">Edit record</string>
+    <string name="addedit_title_add">Add record</string>
+    <string name="addedit_section_type">Type</string>
+    <string name="addedit_section_emoji">Avatar emoji (optional, auto if empty)</string>
+    <string name="addedit_emoji_auto">Auto avatar</string>
+    <string name="addedit_emoji_restore">Back to auto</string>
+    <string name="addedit_emoji_choose">Choose emoji</string>
+    <string name="addedit_section_birthday_pref">Birthday calendar</string>
+    <string name="addedit_section_date_pref">Date calendar</string>
+    <string name="addedit_birthday_pref_hint">Choose which calendar the birthday follows; dates convert automatically</string>
+    <string name="addedit_date_pref_hint">Choose which calendar to commemorate by; dates convert automatically</string>
+    <string name="addedit_solar">☀ Solar</string>
+    <string name="addedit_lunar">🌙 Lunar</string>
+    <string name="addedit_solar_section">%1$s (solar)</string>
+    <string name="addedit_lunar_section">%1$s (lunar)</string>
+    <string name="addedit_section_reminder_time">Reminder time</string>
+    <string name="addedit_section_advance">Advance reminder</string>
+    <string name="addedit_advance_today">On the day</string>
+    <string name="addedit_advance_day">%1$d day(s) before</string>
+    <string name="addedit_advance_custom">Custom</string>
+    <string name="addedit_advance_custom_selected">Custom ×%1$d</string>
+    <string name="addedit_section_relation">Relation</string>
+    <string name="addedit_notes_label">Notes</string>
+    <string name="addedit_save">Save</string>
+    <string name="addedit_choose_time">Choose reminder time</string>
+    <string name="addedit_calendar_choose">Calendar</string>
+    <string name="addedit_year">Year</string>
+    <string name="addedit_month">Month</string>
+    <string name="addedit_day">Day</string>
+    <string name="addedit_year_option">%1$d</string>
+    <string name="addedit_month_option">%1$d</string>
+    <string name="addedit_day_option">%1$d</string>
+    <string name="addedit_custom_days_title">Custom advance days</string>
+    <string name="addedit_custom_days_label">Days before</string>
+    <string name="addedit_custom_days_unit">day(s)</string>
+    <string name="addedit_custom_days_add">Add</string>
+    <string name="addedit_custom_days_invalid">Enter a number between 0 and 365</string>
+    <string name="addedit_custom_days_duplicate">Already in the list</string>
+    <string name="addedit_custom_days_limit">Up to %1$d advance levels</string>
+    <string name="addedit_custom_days_hint">0–365, e.g. 15 reminds you 15 days before</string>
+    <string name="addedit_custom_days_added">Added (tap to remove)</string>
+    <string name="addedit_custom_days_chip">%1$d ✕</string>
+    <string name="addedit_custom_days_done">Done</string>
+    <string name="addedit_emoji_sheet_title">Choose an avatar emoji</string>
+    <string name="addedit_emoji_auto_chip">🏷️ Auto</string>
+    <string name="addedit_confirm_delete_title">Delete record?</string>
+    <string name="addedit_confirm_delete_text">Delete “%1$s”?</string>
+    <string name="addedit_lunar_leap">Leap month</string>
+    <string name="addedit_lunar_preview_zh">对应阳历：%1$d年%2$d月%3$d日</string>
+    <string name="addedit_lunar_preview_en">Solar: %2$s %3$d, %1$d</string>
+    <string name="addedit_lunar_missing">⚠️ This lunar date may not exist in the selected year</string>
+
+    <!-- ============ Settings ============ -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_theme">Dark mode</string>
+    <string name="settings_dynamic_color">Dynamic color</string>
+    <string name="settings_dynamic_color_desc">Follow the wallpaper palette (Material You)</string>
+    <string name="settings_section_notifications">Notifications</string>
+    <string name="settings_default_time">Default reminder time</string>
+    <string name="settings_default_time_desc">Used for new records</string>
+    <string name="settings_reminders">Reminders</string>
+    <string name="settings_reminders_desc">Master switch; off stops all reminders</string>
+    <string name="settings_system_notif">System notification settings</string>
+    <string name="settings_system_notif_desc">Sound, vibration, lock screen, etc.</string>
+    <string name="settings_section_backup">Backup</string>
+    <string name="settings_export">Export backup to phone</string>
+    <string name="settings_export_desc">Save as a file for a new phone or accidental deletion</string>
+    <string name="settings_share_backup">Send backup to another device</string>
+    <string name="settings_share_backup_desc">Send via WeChat / QQ to another phone</string>
+    <string name="settings_import">Import backup</string>
+    <string name="settings_import_desc">Existing records are kept; duplicates are skipped</string>
+    <string name="settings_section_about">About</string>
+    <string name="settings_add_widget">Add home-screen widget</string>
+    <string name="settings_add_widget_desc">Long-press the app icon, or add it here anytime</string>
+    <string name="settings_changelog">What\'s new</string>
+    <string name="settings_changelog_desc">Current version v%1$s · see what changed each release</string>
+    <string name="settings_changelog_current">(current)</string>
+    <string name="settings_import_preview_title">Import preview (%1$d items)</string>
+    <string name="settings_import_duplicate">%1$d item(s) duplicate existing records; skipping by default</string>
+    <string name="settings_import_skip">Skip</string>
+    <string name="settings_import_overwrite">Overwrite</string>
+    <string name="settings_import_insert">Import</string>
+    <string name="settings_import_restore_settings">Also restore the theme settings from the backup</string>
+    <string name="settings_share_chooser">Send backup to another phone</string>
+    <string name="settings_widget_not_supported">This launcher cannot add widgets directly. Long-press an empty spot on the home screen → Widgets → Chenji</string>
+    <string name="settings_theme_mode_system">Follow system</string>
+    <string name="settings_theme_mode_system_desc">Follows the phone\'s dark-mode setting</string>
+    <string name="settings_theme_mode_light">Light always</string>
+    <string name="settings_theme_mode_light_desc">Always uses the light theme</string>
+    <string name="settings_theme_mode_dark">Dark always</string>
+    <string name="settings_theme_mode_dark_desc">Always uses the dark theme</string>
+
+    <!-- ============ Calendar ============ -->
+    <string name="calendar_prev_month">Previous month</string>
+    <string name="calendar_next_month">Next month</string>
+    <string name="calendar_lunar_month">Lunar %1$s</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_calendar">Calendar</string>
+
+    <!-- ============ Widget ============ -->
+    <string name="widget_empty">No records yet\nTap here to add</string>
+    <string name="widget_countdown_today">It\'s today</string>
+    <string name="widget_countdown_tomorrow">Tomorrow</string>
+    <string name="widget_countdown_days">%1$d days later</string>
+    <string name="widget_configure_title">Widget content</string>
+    <string name="widget_configure_desc">Choose what the widget shows</string>
+    <string name="widget_configure_auto">Automatic (recent records)</string>
+    <string name="widget_configure_auto_subtitle">Automatically shows the closest birthdays and anniversaries</string>
+    <string name="widget_configure_selected">Selected</string>
+    <string name="widget_pin_success">Widget added to your home screen</string>
+
+    <!-- ============ Notifications ============ -->
+    <string name="notif_channel_name">Birthday and anniversary reminders</string>
+    <string name="notif_channel_desc">Reminders for family and friends\' birthdays and anniversaries</string>
+    <string name="notif_today_baby">%1$s turns %2$d today!</string>
+    <string name="notif_today_marriage">%1$dth wedding anniversary today!</string>
+    <string name="notif_today_love">%1$d years together!</string>
+    <string name="notif_today_memorial">%1$s left us %2$d years ago today</string>
+    <string name="notif_today_other">%1$s · %2$dth anniversary today</string>
+    <string name="notif_today_birthday_age">%1$s turns %2$d today</string>
+    <string name="notif_today_birthday">It\'s %1$s\'s birthday today</string>
+    <string name="notif_advance_marriage">%1$dth wedding anniversary is coming</string>
+    <string name="notif_advance_love">%1$d years together is coming</string>
+    <string name="notif_advance_memorial">%1$s · %2$d years since you left</string>
+    <string name="notif_advance_other">%1$s · %2$dth anniversary is coming</string>
+    <string name="notif_advance_birthday">%1$s\'s birthday is coming!</string>
+    <string name="notif_text_advance">%1$d days left · %2$s</string>
+    <string name="notif_text_bless">%1$s - don\'t forget to send your best wishes!</string>
+
+    <!-- ============ Share card ============ -->
+    <string name="share_tag_birthday">🎂 Birthday reminder</string>
+    <string name="share_tag_marriage">💕 Anniversary reminder</string>
+    <string name="share_tag_baby">🍼 Baby\'s day</string>
+    <string name="share_tag_love">💑 Anniversary</string>
+    <string name="share_tag_memorial">📌 Anniversary reminder</string>
+    <string name="share_tag_other">📌 Anniversary reminder</string>
+    <string name="share_just_today">🎉 It\'s today</string>
+    <string name="share_days_unit">days left</string>
+    <string name="share_day_unit">days</string>
+    <string name="share_date_line_zh">%1$d年%2$d月%3$d日 · %4$s</string>
+    <string name="share_date_line_en">%2$s %3$d, %1$d</string>
+    <string name="share_kind_lunar">Lunar</string>
+    <string name="share_kind_solar">Solar</string>
+    <string name="share_memorial_date_zh">%1$s · %2$d年</string>
+    <string name="share_memorial_date_en">%1$s · %2$d</string>
+    <string name="share_col_month">Month</string>
+    <string name="share_col_day">Day</string>
+    <string name="share_col_weekday">Weekday</string>
+    <string name="share_brand">Chenji</string>
+    <!-- B-style poem and "IN MEMORY" are design elements and stay as-is -->
+
+    <!-- ============ ViewModels & system messages ============ -->
+    <string name="vm_backup_saved">Backup saved</string>
+    <string name="vm_export_failed">Export failed, try another location</string>
+    <string name="vm_share_failed">Failed to create backup</string>
+    <string name="vm_import_too_large">File too large to be a Chenji backup</string>
+    <string name="vm_import_unreadable">Cannot read the selected file</string>
+    <string name="vm_import_failed">Import failed, make sure it is a Chenji backup file</string>
+    <string name="vm_nothing_imported">Nothing imported</string>
+    <string name="vm_imported_new">%1$d added</string>
+    <string name="vm_imported_overwritten">%1$d overwritten</string>
+    <string name="vm_import_done">Import finished: %1$s</string>
+    <string name="vm_import_retry">Import failed, please retry</string>
+    <string name="vm_no_records">No records yet — add some before backing up</string>
+    <string name="vm_export_unwritable">Cannot write to the chosen location</string>
+    <string name="vm_backup_invalid">Not a valid backup file</string>
+    <string name="vm_backup_not_chenji">Not a Chenji backup file</string>
+    <string name="vm_backup_version_unsupported">Backup version not supported</string>
+    <string name="vm_backup_no_data">No records in the backup file</string>
+    <string name="vm_backup_too_many">Too many records in the backup file</string>
+    <string name="vm_backup_record_incomplete">Record #%1$d in the backup is incomplete</string>
+    <string name="delete_accessibility">Delete</string>
+</resources>

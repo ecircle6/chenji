@@ -84,7 +84,7 @@ class SettingsViewModelTest {
             val file = File(app.cacheDir, "backup")
                 .listFiles()?.firstOrNull { it.name.endsWith(".json") }
             assertTrue("备份文件应已写入", file != null && file.exists() && file.length() > 0)
-            val decoded = BackupCodec.decode(file!!.readText())
+            val decoded = BackupCodec.decode(file!!.readText(), app)
             assertEquals(1, decoded.size)
             assertEquals("小明", decoded.first().name)
             // 正常环境（真机/模拟器）发 ShareFile；Robolectric 下 FileProvider

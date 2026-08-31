@@ -25,7 +25,7 @@ import java.time.YearMonth
  * 有事件的日期可弹窗进详情。月历是首页改版后新独立页，必须补 UI 保护。
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], qualifiers = "w411dp-h891dp", application = android.app.Application::class)
+@Config(sdk = [34], qualifiers = "zh-rCN-w411dp-h891dp", application = android.app.Application::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class CalendarScreenTest {
 

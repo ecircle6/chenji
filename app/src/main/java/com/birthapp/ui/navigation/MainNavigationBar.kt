@@ -9,11 +9,13 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import com.birthapp.R
 
-/** 底部导航的两个 tab 定义：路由 + 文案 + 图标 */
+/** 底部导航的两个 tab 定义：路由 + 文案资源 id + 图标 */
 private val TABS = listOf(
-    Triple("home", "首页", Icons.Filled.Home),
-    Triple("calendar", "日历", Icons.Filled.CalendarMonth)
+    Triple("home", R.string.nav_home, Icons.Filled.Home),
+    Triple("calendar", R.string.nav_calendar, Icons.Filled.CalendarMonth)
 )
 
 /**
@@ -28,12 +30,12 @@ fun MainNavigationBar(
     onTabSelected: (String) -> Unit
 ) {
     NavigationBar {
-        TABS.forEach { (route, label, icon) ->
+        TABS.forEach { (route, labelRes, icon) ->
             NavigationBarItem(
                 selected = currentRoute == route,
                 onClick = { onTabSelected(route) },
                 icon = { Icon(imageVector = icon, contentDescription = null) },
-                label = { Text(label) }
+                label = { Text(stringResource(labelRes)) }
             )
         }
     }

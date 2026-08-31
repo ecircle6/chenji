@@ -1,17 +1,18 @@
 package com.birthapp.settings
 
 import android.content.Context
+import com.birthapp.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * 深色模式的三种取向。label 直接用于设置页展示。
+ * 深色模式的三种取向。label/desc 用资源 id，设置页展示跟随系统语言。
  */
-enum class ThemeMode(val label: String, val desc: String) {
-    SYSTEM("跟随系统", "随手机的深色模式自动切换"),
-    LIGHT("始终浅色", "无论系统如何都用浅色"),
-    DARK("始终深色", "无论系统如何都用深色")
+enum class ThemeMode(val labelRes: Int, val descRes: Int) {
+    SYSTEM(R.string.settings_theme_mode_system, R.string.settings_theme_mode_system_desc),
+    LIGHT(R.string.settings_theme_mode_light, R.string.settings_theme_mode_light_desc),
+    DARK(R.string.settings_theme_mode_dark, R.string.settings_theme_mode_dark_desc)
 }
 
 /**

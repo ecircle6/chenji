@@ -16,6 +16,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -24,11 +26,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.birthapp.R
 import com.birthapp.alarm.AlarmScheduler
 import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
 import com.birthapp.ui.common.eventAccent
 import com.birthapp.ui.theme.*
+import com.birthapp.util.LocaleUtils
 import java.time.YearMonth
 import java.util.Calendar
 
@@ -109,20 +113,24 @@ fun AddEditContent(
             TopAppBar(
                 title = {
                     Text(
-                        if (state.isEditMode) "编辑记录" else "添加记录",
+                        if (state.isEditMode) {
+                            stringResource(R.string.addedit_title_edit)
+                        } else {
+                            stringResource(R.string.addedit_title_add)
+                        },
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     if (state.isEditMode) {
                         IconButton(onClick = { showDeleteDialog = true }) {
-                            Icon(Icons.Default.Delete, contentDescription = "删除", tint = Coral500)
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.common_delete), tint = Coral500)
                         }
                     }
                 },
@@ -141,7 +149,7 @@ fun AddEditContent(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             // Event type selector
-            SectionLabel("类型")
+            SectionLabel(stringResource(R.string.addedit_section_type))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 EventType.ALL.chunked(3).forEach { rowTypes ->
                     Row(
@@ -164,7 +172,7 @@ fun AddEditContent(
                                 )
                             ) {
                                 Text(
-                                    text = "${EventType.emoji(type)} ${EventType.label(type)}",
+                                    text = "${EventType.emoji(type)} ${EventType.label(LocalContext.current.resources, type)}",
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 10.dp, horizontal = 2.dp),
@@ -184,7 +192,7 @@ fun AddEditContent(
             OutlinedTextField(
                 value = state.name,
                 onValueChange = onUpdateName,
-                label = { Text(EventType.nameFieldLabel(state.eventType)) },
+                label = { Text(EventType.nameFieldLabel(LocalContext.current.resources, state.eventType)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.large,
@@ -196,7 +204,7 @@ fun AddEditContent(
 
             // Emoji 头像选择器：表单只留预览 + 两个入口，全量选项放进底部面板，
             // 避免 24 个方块平铺在表单里显得杂乱；空 = 自动（生日→姓名首字，其他→类型 emoji）
-            SectionLabel("头像 Emoji（可选，留空自动）")
+            SectionLabel(stringResource(R.string.addedit_section_emoji))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -226,7 +234,11 @@ fun AddEditContent(
                     contentPadding = PaddingValues(horizontal = 10.dp)
                 ) {
                     Text(
-                        if (state.emoji.isEmpty()) "自动头像" else "恢复自动",
+                        if (state.emoji.isEmpty()) {
+                            stringResource(R.string.addedit_emoji_auto)
+                        } else {
+                            stringResource(R.string.addedit_emoji_restore)
+                        },
                         color = if (state.emoji.isEmpty()) Teal500 else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = if (state.emoji.isEmpty()) FontWeight.Bold else FontWeight.Medium
                     )
@@ -238,16 +250,19 @@ fun AddEditContent(
                     shape = MaterialTheme.shapes.medium,
                     colors = ButtonDefaults.buttonColors(containerColor = Teal500)
                 ) {
-                    Text("选择 Emoji", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.addedit_emoji_choose), fontWeight = FontWeight.Bold)
                 }
             }
 
             // Calendar type toggle
             val isBirthdayLike = EventType.usesAge(state.eventType)
-            SectionLabel(if (isBirthdayLike) "生日偏好" else "日期偏好")
+            SectionLabel(
+                if (isBirthdayLike) stringResource(R.string.addedit_section_birthday_pref)
+                else stringResource(R.string.addedit_section_date_pref)
+            )
             Text(
-                if (isBirthdayLike) "选择按哪种日历过生日，切换时日期自动换算"
-                else "选择按哪种日历纪念，切换时日期自动换算",
+                if (isBirthdayLike) stringResource(R.string.addedit_birthday_pref_hint)
+                else stringResource(R.string.addedit_date_pref_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
                 modifier = Modifier.padding(bottom = 4.dp)
@@ -262,7 +277,7 @@ fun AddEditContent(
                         activeContentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
-                    Text("☀ 阳历", fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.addedit_solar), fontWeight = FontWeight.Medium)
                 }
                 SegmentedButton(
                     selected = state.calendarType == "lunar",
@@ -273,14 +288,14 @@ fun AddEditContent(
                         activeContentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
-                    Text("\uD83C\uDF19 农历", fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.addedit_lunar), fontWeight = FontWeight.Medium)
                 }
             }
 
             // Date picker
             if (state.calendarType == "solar") {
                 SolarDatePickerSection(
-                    dateLabel = EventType.dateFieldLabel(state.eventType),
+                    dateLabel = EventType.dateFieldLabel(LocalContext.current.resources, state.eventType),
                     year = state.birthYear,
                     month = state.birthMonth,
                     day = state.birthDay,
@@ -291,7 +306,7 @@ fun AddEditContent(
                 )
             } else {
                 LunarDatePickerSection(
-                    dateLabel = EventType.dateFieldLabel(state.eventType),
+                    dateLabel = EventType.dateFieldLabel(LocalContext.current.resources, state.eventType),
                     year = state.birthYear,
                     month = state.birthMonth,
                     day = state.birthDay,
@@ -304,7 +319,7 @@ fun AddEditContent(
             }
 
             // Reminder time
-            SectionLabel("提醒时间")
+            SectionLabel(stringResource(R.string.addedit_section_reminder_time))
             Surface(
                 onClick = { showTimePicker = true },
                 modifier = Modifier.fillMaxWidth(),
@@ -338,8 +353,12 @@ fun AddEditContent(
             }
 
             // Advance days
-            SectionLabel("提前提醒")
-            val advanceOptions = PRESET_ADVANCE_DAYS.map { it to if (it == 0) "当天" else "${it}天" }
+            SectionLabel(stringResource(R.string.addedit_section_advance))
+            val resources = LocalContext.current.resources
+            val advanceOptions = PRESET_ADVANCE_DAYS.map {
+                it to if (it == 0) resources.getString(R.string.addedit_advance_today)
+                else resources.getString(R.string.addedit_advance_day, it)
+            }
             val presetDays = PRESET_ADVANCE_DAYS
             val isCustomSelected = state.advanceDays.any { it !in presetDays }
             // 用 FlowRow 而不是 Row：6 个选项在窄屏一行放不下时会整体折到第二行，
@@ -385,7 +404,11 @@ fun AddEditContent(
                     )
                 ) {
                     Text(
-                        text = if (isCustomSelected) "自定义 ×${state.advanceDays.count { it !in presetDays }}" else "自定义",
+                        text = if (isCustomSelected) {
+                            resources.getString(R.string.addedit_advance_custom_selected, state.advanceDays.count { it !in presetDays })
+                        } else {
+                            resources.getString(R.string.addedit_advance_custom)
+                        },
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                         fontWeight = if (isCustomSelected) FontWeight.SemiBold else FontWeight.Normal,
                         color = if (isCustomSelected) MaterialTheme.colorScheme.onPrimary
@@ -398,12 +421,12 @@ fun AddEditContent(
             }
 
             // Relation
-            SectionLabel("关系分类")
+            SectionLabel(stringResource(R.string.addedit_section_relation))
             val relations = listOf(
-                "family" to "家人" to Coral500,
-                "friend" to "朋友" to Teal500,
-                "colleague" to "同事" to SunnyYellow700,
-                "other" to "其他" to Coral400
+                "family" to stringResource(R.string.relation_family) to Coral500,
+                "friend" to stringResource(R.string.relation_friend) to Teal500,
+                "colleague" to stringResource(R.string.relation_colleague) to SunnyYellow700,
+                "other" to stringResource(R.string.relation_other) to Coral400
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -438,7 +461,7 @@ fun AddEditContent(
             OutlinedTextField(
                 value = state.notes,
                 onValueChange = onUpdateNotes,
-                label = { Text("备注") },
+                label = { Text(stringResource(R.string.addedit_notes_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,
                 maxLines = 4,
@@ -460,7 +483,7 @@ fun AddEditContent(
                 colors = ButtonDefaults.buttonColors(containerColor = Coral500)
             ) {
                 Text(
-                    "保存",
+                    stringResource(R.string.addedit_save),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
@@ -480,16 +503,16 @@ fun AddEditContent(
         )
         AlertDialog(
             onDismissRequest = { showTimePicker = false },
-            title = { Text("选择提醒时间", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.addedit_choose_time), fontWeight = FontWeight.Bold) },
             text = { TimePicker(state = timePickerState) },
             confirmButton = {
                 TextButton(onClick = {
                     onUpdateReminderTime(timePickerState.hour, timePickerState.minute)
                     showTimePicker = false
-                }) { Text("确定", color = Coral500, fontWeight = FontWeight.SemiBold) }
+                }) { Text(stringResource(R.string.common_confirm), color = Coral500, fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) { Text("取消") }
+                TextButton(onClick = { showTimePicker = false }) { Text(stringResource(R.string.common_cancel)) }
             },
             shape = MaterialTheme.shapes.extraLarge
         )
@@ -514,10 +537,10 @@ fun AddEditContent(
                         onUpdateBirthDay(cal.get(Calendar.DAY_OF_MONTH))
                     }
                     showDatePicker = false
-                }) { Text("确定", color = Coral500, fontWeight = FontWeight.SemiBold) }
+                }) { Text(stringResource(R.string.common_confirm), color = Coral500, fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("取消") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.common_cancel)) }
             },
             shape = MaterialTheme.shapes.extraLarge
         ) {
@@ -535,7 +558,7 @@ fun AddEditContent(
         val customLevels = state.advanceDays.filter { it !in PRESET_ADVANCE_DAYS }
         AlertDialog(
             onDismissRequest = { showCustomDaysDialog = false },
-            title = { Text("自定义提前天数", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.addedit_custom_days_title), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
@@ -549,8 +572,8 @@ fun AddEditContent(
                                     customDaysInput = input
                                 }
                             },
-                            label = { Text("提前天数") },
-                            suffix = { Text("天") },
+                            label = { Text(stringResource(R.string.addedit_custom_days_label)) },
+                            suffix = { Text(stringResource(R.string.addedit_custom_days_unit)) },
                             singleLine = true,
                             isError = customDaysInput.isNotEmpty() && (!inputValid || alreadyAdded),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -567,14 +590,14 @@ fun AddEditContent(
                                 onAddCustomAdvanceDay(inputDays!!)
                                 customDaysInput = ""
                             }
-                        ) { Text("添加", color = Teal500, fontWeight = FontWeight.SemiBold) }
+                        ) { Text(stringResource(R.string.addedit_custom_days_add), color = Teal500, fontWeight = FontWeight.SemiBold) }
                     }
                     Text(
                         when {
-                            customDaysInput.isNotEmpty() && !inputValid -> "请输入 0~365 之间的天数"
-                            alreadyAdded -> "该天数已在列表中"
-                            atLimit -> "最多 ${AlarmScheduler.MAX_ADVANCE_LEVELS} 个提前级别"
-                            else -> "可输入 0~365，例如 15 表示提前 15 天提醒"
+                            customDaysInput.isNotEmpty() && !inputValid -> stringResource(R.string.addedit_custom_days_invalid)
+                            alreadyAdded -> stringResource(R.string.addedit_custom_days_duplicate)
+                            atLimit -> stringResource(R.string.addedit_custom_days_limit, AlarmScheduler.MAX_ADVANCE_LEVELS)
+                            else -> stringResource(R.string.addedit_custom_days_hint)
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = if (customDaysInput.isNotEmpty() && !inputValid || alreadyAdded || atLimit)
@@ -583,7 +606,7 @@ fun AddEditContent(
                     if (customLevels.isNotEmpty()) {
                         HorizontalDivider()
                         Text(
-                            "已添加（点击移除）",
+                            stringResource(R.string.addedit_custom_days_added),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
                         )
@@ -599,7 +622,7 @@ fun AddEditContent(
                                     border = null
                                 ) {
                                     Text(
-                                        text = "${day}天 ✕",
+                                        text = stringResource(R.string.addedit_custom_days_chip, day),
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onPrimary,
@@ -615,11 +638,11 @@ fun AddEditContent(
             },
             confirmButton = {
                 TextButton(onClick = { showCustomDaysDialog = false }) {
-                    Text("完成", color = Coral500, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.addedit_custom_days_done), color = Coral500, fontWeight = FontWeight.SemiBold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showCustomDaysDialog = false }) { Text("取消") }
+                TextButton(onClick = { showCustomDaysDialog = false }) { Text(stringResource(R.string.common_cancel)) }
             },
             shape = MaterialTheme.shapes.extraLarge
         )
@@ -640,14 +663,14 @@ fun AddEditContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    "选择头像 Emoji",
+                    stringResource(R.string.addedit_emoji_sheet_title),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 // 「自动」chip（清除手动选择，恢复自动头像）
                 EmojiChip(
-                    emoji = "🏷️ 自动",
+                    emoji = stringResource(R.string.addedit_emoji_auto_chip),
                     isSelected = state.emoji.isEmpty(),
                     onClick = {
                         onUpdateEmoji("")
@@ -678,16 +701,16 @@ fun AddEditContent(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("确认删除", fontWeight = FontWeight.Bold) },
-            text = { Text("确定要删除「${state.name}」的记录吗？") },
+            title = { Text(stringResource(R.string.addedit_confirm_delete_title), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.addedit_confirm_delete_text, state.name)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
                     onDelete()
-                }) { Text("删除", color = Coral500, fontWeight = FontWeight.SemiBold) }
+                }) { Text(stringResource(R.string.common_delete), color = Coral500, fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) { Text("取消") }
+                TextButton(onClick = { showDeleteDialog = false }) { Text(stringResource(R.string.common_cancel)) }
             },
             shape = MaterialTheme.shapes.extraLarge
         )
@@ -772,7 +795,7 @@ private fun SolarDatePickerSection(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        SectionLabel("$dateLabel（阳历）")
+        SectionLabel(stringResource(R.string.addedit_solar_section, dateLabel))
         Surface(
             onClick = onOpenCalendar,
             shape = MaterialTheme.shapes.small,
@@ -785,12 +808,12 @@ private fun SolarDatePickerSection(
             ) {
                 Icon(
                     Icons.Default.Event,
-                    contentDescription = "日历选择",
+                    contentDescription = stringResource(R.string.addedit_calendar_choose),
                     tint = Coral500,
                     modifier = Modifier.height(16.dp)
                 )
                 Text(
-                    "日历选择",
+                    stringResource(R.string.addedit_calendar_choose),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Coral500
@@ -804,24 +827,24 @@ private fun SolarDatePickerSection(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         DateDropdown(
-            label = "年份",
-            options = (1920..2100).map { "${it}年" },
+            label = stringResource(R.string.addedit_year),
+            options = (1920..2100).map { stringResource(R.string.addedit_year_option, it) },
             selectedIndex = (year - 1920).coerceIn(0, 180),
             onSelected = { onYearChange(it + 1920) },
             accentColor = Coral500,
             modifier = Modifier.weight(1f)
         )
         DateDropdown(
-            label = "月份",
-            options = (1..12).map { "${it}月" },
+            label = stringResource(R.string.addedit_month),
+            options = (1..12).map { stringResource(R.string.addedit_month_option, it) },
             selectedIndex = (month - 1).coerceIn(0, 11),
             onSelected = { onMonthChange(it + 1) },
             accentColor = Coral500,
             modifier = Modifier.weight(1f)
         )
         DateDropdown(
-            label = "日期",
-            options = (1..maxDays).map { "${it}日" },
+            label = stringResource(R.string.addedit_day),
+            options = (1..maxDays).map { stringResource(R.string.addedit_day_option, it) },
             selectedIndex = (day - 1).coerceIn(0, maxDays - 1),
             onSelected = { onDayChange(it + 1) },
             accentColor = Coral500,
@@ -859,22 +882,22 @@ private fun LunarDatePickerSection(
 
     val hasLeapMonth = try { LunarCalendar.leapMonth(year) != 0 } catch (_: Exception) { false }
 
-    SectionLabel("$dateLabel（农历）")
+    SectionLabel(stringResource(R.string.addedit_lunar_section, dateLabel))
 
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         DateDropdown(
-            label = "年份",
-            options = (1920..2100).map { "${it}年" },
+            label = stringResource(R.string.addedit_year),
+            options = (1920..2100).map { stringResource(R.string.addedit_year_option, it) },
             selectedIndex = (year - 1920).coerceIn(0, 180),
             onSelected = { onYearChange(it + 1920) },
             accentColor = Teal500,
             modifier = Modifier.weight(1f)
         )
         DateDropdown(
-            label = "月份",
+            label = stringResource(R.string.addedit_month),
             options = lunarMonthNames,
             selectedIndex = (month - 1).coerceIn(0, 11),
             onSelected = { onMonthChange(it + 1) },
@@ -882,7 +905,7 @@ private fun LunarDatePickerSection(
             modifier = Modifier.weight(1f)
         )
         DateDropdown(
-            label = "日期",
+            label = stringResource(R.string.addedit_day),
             options = lunarDayNames.subList(0, maxDays.coerceIn(1, 30)),
             selectedIndex = (day - 1).coerceIn(0, maxDays - 1),
             onSelected = { onDayChange(it + 1) },
@@ -898,7 +921,7 @@ private fun LunarDatePickerSection(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            "闰月",
+            stringResource(R.string.addedit_lunar_leap),
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Medium,
             color = if (hasLeapMonth) MaterialTheme.colorScheme.onSurface
@@ -922,8 +945,21 @@ private fun LunarDatePickerSection(
             shape = MaterialTheme.shapes.medium,
             color = CardLavender
         ) {
+            val resources = LocalContext.current.resources
             Text(
-                "\uD83D\uDCC5 对应阳历：${solarPreview.year}年${solarPreview.month}月${solarPreview.day}日",
+                if (LocaleUtils.isEnglish(resources)) {
+                    stringResource(
+                        R.string.addedit_lunar_preview_en,
+                        solarPreview.year,
+                        resources.getStringArray(R.array.months_short)[(solarPreview.month - 1).coerceIn(0, 11)],
+                        solarPreview.day
+                    )
+                } else {
+                    stringResource(
+                        R.string.addedit_lunar_preview_zh,
+                        solarPreview.year, solarPreview.month, solarPreview.day
+                    )
+                },
                 modifier = Modifier.padding(14.dp),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
@@ -937,7 +973,7 @@ private fun LunarDatePickerSection(
             color = Coral500.copy(alpha = 0.1f)
         ) {
             Text(
-                "⚠️ 该农历日期在当前年份可能不存在",
+                stringResource(R.string.addedit_lunar_missing),
                 modifier = Modifier.padding(14.dp),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Coral500

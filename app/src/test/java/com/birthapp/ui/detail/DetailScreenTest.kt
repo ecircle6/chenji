@@ -21,7 +21,7 @@ import org.robolectric.annotation.GraphicsMode
  * 详情页 Compose UI 测试：渲染无状态的 DetailContent，断言关键信息与回调触发。
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], qualifiers = "w411dp-h891dp", application = android.app.Application::class)
+@Config(sdk = [34], qualifiers = "zh-rCN-w411dp-h891dp", application = android.app.Application::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class DetailScreenTest {
 

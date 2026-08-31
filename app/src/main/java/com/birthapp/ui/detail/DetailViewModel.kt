@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.birthapp.BirthApp
+import com.birthapp.R
 import com.birthapp.alarm.AlarmScheduler
 import com.birthapp.alarm.calculateNextTriggerTime
 import com.birthapp.alarm.normalizeAdvanceLevels
@@ -156,16 +157,24 @@ class DetailViewModel @JvmOverloads constructor(
     private fun Birthday.toDetailState(): DetailUiState {
         val today = LocalDate.now()
         val currentYear = today.year
+        // 展示文案按当前语言走资源（中文/英文系统显示各自语言）
+        val resources = getApplication<Application>().resources
 
         // 下一次事件发生的阳历日期：今年的已经过了就取明年
         val nextSolar = EventCalc.nextSolarDate(this, today)
         val countdown = DateUtils.daysUntilDate(nextSolar.toLocalDate())
 
         val primaryDate = if (calendarType == "lunar") {
-            val leapPrefix = if (isLeapMonth) "闰" else ""
-            "农历 ${birthYear}年$leapPrefix${LunarCalendar.formatLunarDate(birthMonth, birthDay)}"
+            val leapPrefix = if (isLeapMonth) resources.getString(R.string.date_leap_prefix) else ""
+            resources.getString(
+                R.string.detail_primary_lunar,
+                birthYear, leapPrefix, LunarCalendar.formatLunarDate(birthMonth, birthDay)
+            )
         } else {
-            "阳历 ${DateUtils.formatSolarDate(birthYear, birthMonth, birthDay)}"
+            resources.getString(
+                R.string.detail_primary_solar,
+                DateUtils.formatSolarDate(resources, birthYear, birthMonth, birthDay)
+            )
         }
 
         // 换算行：两个方向都必须拿出生当天去换算，不能拿下次生日那天——
@@ -176,43 +185,57 @@ class DetailViewModel @JvmOverloads constructor(
         val convertedDate = if (calendarType == "lunar") {
             runCatching {
                 val solar = LunarCalendar.lunarToSolar(birthYear, birthMonth, birthDay, isLeapMonth)
-                "对应阳历 ${DateUtils.formatSolarDate(solar.year, solar.month, solar.day)}"
+                resources.getString(
+                    R.string.detail_corresponding_solar,
+                    DateUtils.formatSolarDate(resources, solar.year, solar.month, solar.day)
+                )
             }.getOrDefault("")
         } else {
             runCatching {
                 val lunar = LunarCalendar.solarToLunar(birthYear, birthMonth, birthDay)
-                val leapPrefix = if (lunar.isLeapMonth) "闰" else ""
-                "对应农历 $leapPrefix${LunarCalendar.formatLunarDate(lunar.month, lunar.day)}"
+                val leapPrefix = if (lunar.isLeapMonth) resources.getString(R.string.date_leap_prefix) else ""
+                resources.getString(
+                    R.string.detail_corresponding_lunar,
+                    leapPrefix + LunarCalendar.formatLunarDate(lunar.month, lunar.day)
+                )
             }.getOrDefault("")
         }
 
         val age = ZodiacUtils.getAge(birthYear, currentYear)
+        val zodiacDisplay = ZodiacUtils.zodiacDisplayName(resources, birthYear)
         val ageLine = if (EventType.usesAge(eventType)) {
-            "${ZodiacUtils.getZodiacEmoji(birthYear)} 属${ZodiacUtils.getZodiacName(birthYear)} · ${age}岁"
+            resources.getString(
+                R.string.detail_age_line,
+                ZodiacUtils.getZodiacEmoji(birthYear), zodiacDisplay, age
+            )
         } else {
-            "第 $age 周年"
+            resources.getString(R.string.detail_anniversary_line, age)
         }
 
         // 用闹钟自己算的时刻，保证页面显示的和真正会响的是同一个时间；
         // 多级提醒时取所有级别里最早触发的那个
         val nextReminderText = if (!isActive) {
-            "提醒已暂停"
+            resources.getString(R.string.detail_next_reminder_paused)
         } else {
             val triggerMillis = advanceDays
                 .mapNotNull { calculateNextTriggerTime(this, it) }
                 .minOrNull()
             if (triggerMillis == null) {
-                "暂无提醒计划"
+                resources.getString(R.string.detail_next_reminder_none)
             } else {
                 val dt = LocalDateTime.ofInstant(Instant.ofEpochMilli(triggerMillis), ZoneId.systemDefault())
                 val days = DateUtils.daysUntilDate(dt.toLocalDate())
                 val whenText = when {
-                    days == 0 -> "今天"
-                    days == 1 -> "明天"
-                    else -> "还有 $days 天"
+                    days == 0 -> resources.getString(R.string.common_today)
+                    days == 1 -> resources.getString(R.string.common_tomorrow)
+                    else -> resources.getString(R.string.detail_in_days, days)
                 }
-                "${DateUtils.formatSolarDate(dt.year, dt.monthValue, dt.dayOfMonth)} " +
-                        "${DateUtils.formatReminderTime(dt.hour, dt.minute)}（$whenText）"
+                resources.getString(
+                    R.string.detail_next_reminder_format,
+                    DateUtils.formatSolarDate(resources, dt.year, dt.monthValue, dt.dayOfMonth),
+                    DateUtils.formatReminderTime(dt.hour, dt.minute),
+                    whenText
+                )
             }
         }
 
@@ -222,19 +245,22 @@ class DetailViewModel @JvmOverloads constructor(
             id = id,
             name = name,
             eventType = eventType,
-            eventLabel = EventType.label(eventType),
+            eventLabel = EventType.label(resources, eventType),
             typeEmoji = EventType.emoji(eventType),
             isSolemn = EventType.isSolemn(eventType),
-            relationLabel = ZodiacUtils.getRelationLabel(relation),
+            relationLabel = ZodiacUtils.getRelationLabel(resources, relation),
             relationEmoji = ZodiacUtils.getRelationEmoji(relation),
             primaryDate = primaryDate,
             convertedDate = convertedDate,
-            nextDate = "阳历 ${DateUtils.formatSolarDate(nextSolar.year, nextSolar.month, nextSolar.day)}",
+            nextDate = resources.getString(
+                R.string.detail_next_solar,
+                DateUtils.formatSolarDate(resources, nextSolar.year, nextSolar.month, nextSolar.day)
+            ),
             ageLine = ageLine,
             countdown = countdown,
             isToday = countdown == 0,
             nextReminderText = nextReminderText,
-            advanceText = advanceText(advanceDays),
+            advanceText = advanceText(resources, advanceDays),
             reminderTime = DateUtils.formatReminderTime(reminderHour, reminderMinute),
             notes = notes,
             isActive = isActive,
@@ -243,12 +269,16 @@ class DetailViewModel @JvmOverloads constructor(
     }
 
     /** 多级提前提醒文案：单级显示"提前 N 天提醒 / 当天提醒"，多级用 · 连接 */
-    private fun advanceText(levels: List<Int>): String {
+    private fun advanceText(resources: android.content.res.Resources, levels: List<Int>): String {
         val normalized = normalizeAdvanceLevels(levels)
         return if (normalized.size == 1 && normalized.first() == 0) {
-            "当天提醒"
+            resources.getString(R.string.detail_advance_today_only)
         } else {
-            normalized.joinToString(" · ") { if (it == 0) "当天" else "提前${it}天" } + "提醒"
+            val items = normalized.joinToString(" · ") {
+                if (it == 0) resources.getString(R.string.detail_advance_item_today)
+                else resources.getString(R.string.detail_advance_item_days, it)
+            }
+            resources.getString(R.string.detail_advance_tail, items)
         }
     }
 }

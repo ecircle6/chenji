@@ -45,9 +45,15 @@ object HomeTier {
 
     // ===================== 月份标签 =====================
 
-    /** 远景行月份分隔标题：同年显示「X 月」，跨年显示「YYYY 年」 */
-    fun monthLabel(eventYear: Int, eventMonth: Int, today: LocalDate): String =
-        if (eventYear == today.year) "$eventMonth 月" else "$eventYear 年"
+    /** 远景行月份分隔标题：同年显示「X 月」（英文按月份缩写），跨年显示「YYYY 年」/「YYYY」 */
+    fun monthLabel(resources: android.content.res.Resources, eventYear: Int, eventMonth: Int, today: LocalDate): String =
+        if (eventYear == today.year) {
+            resources.getStringArray(com.birthapp.R.array.month_label)[(eventMonth - 1).coerceIn(0, 11)]
+        } else if (com.birthapp.util.LocaleUtils.isEnglish(resources)) {
+            resources.getString(com.birthapp.R.string.date_cross_year_label_en, eventYear)
+        } else {
+            resources.getString(com.birthapp.R.string.date_cross_year_label_zh, eventYear)
+        }
 
     // ===================== 构建异构列表 =====================
 
@@ -57,7 +63,10 @@ object HomeTier {
      * 排序前提：输入已按「置顶→暂停→倒计时」排好（由 HomeViewModel 保证）。
      * 行顺序：置顶卡 → 紧急卡(0-7) → 标准卡(8-30) → 月份分隔+远景行(>30) → 暂停卡(灰显)
      */
-    fun buildRows(list: List<BirthdayDisplay>): List<HomeListItem> {
+    fun buildRows(
+        list: List<BirthdayDisplay>,
+        resources: android.content.res.Resources
+    ): List<HomeListItem> {
         val today = LocalDate.now()
         val pinned = list.filter { it.isPinned }
         val active = list.filter { !it.isPinned && !it.isPaused }
@@ -83,7 +92,7 @@ object HomeTier {
             if (key != lastYearMonth) {
                 result.add(
                     HomeListItem.MonthHeader(
-                        label = monthLabel(display.nextEventYear, display.nextEventMonth, today),
+                        label = monthLabel(resources, display.nextEventYear, display.nextEventMonth, today),
                         yearMonth = key
                     )
                 )

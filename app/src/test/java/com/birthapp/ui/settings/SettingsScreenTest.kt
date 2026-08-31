@@ -23,7 +23,7 @@ import org.robolectric.annotation.GraphicsMode
  * 断言分组、主题单选回调、提醒开关状态与默认时间显示。
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], qualifiers = "w411dp-h891dp", application = android.app.Application::class)
+@Config(sdk = [34], qualifiers = "zh-rCN-w411dp-h891dp", application = android.app.Application::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class SettingsScreenTest {
 

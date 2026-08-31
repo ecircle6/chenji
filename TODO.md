@@ -350,17 +350,29 @@
   - 坑记录：阿里云镜像在海外网络返回 502 导致 CI 解析失败 → `settings.gradle.kts` 按环境分流（CI=`true` 走官方源 / 本地走阿里云镜像加速）
   - 注意：wrapper 默认官方下载地址，国内网络慢时可改 gradle-wrapper.properties 为腾讯镜像
 
-- [ ] **小组件显示窗口还原「版本 A 白底列表」形态**（2026-08-31 拍板，列 TODO 待实施；对比页 `widget-versions-compare.html` 可复看三版本×三档位效果）
+- [x] **小组件显示窗口还原「版本 A 白底列表」形态**（2026-08-31 拍板并实施，v2.1.20；对比页 `widget-versions-compare.html` 可复看三版本×三档位效果）
   - 决策：用户对照对比页后拍板，把小组件显示窗口还原到 8.29 前（v2.1.9，白底列表时代）的功能状态
-  - 还原内容：2×2 居中大字（emoji + 名字 + 「N 天后」整句，倒计时按类型配色）；4×2「辰记」品牌头 + 右侧「＋」+ **3 行**弹性列表行（emoji + 名字 + 倒计时文字，`defaultWeight` 均分高度）；大档**6 行**（MAX_ITEMS 6，空行垫底防单条悬空）；空态两行字无按钮；**行不可点**（整卡点开 App，移除行→详情直达）；随之移除：Hero 渐变头 / 🌙问候语 / 纸笺行（色条·头像块·类型·急·日期·关系）/「共 N 个日子」
+  - 还原内容：2×2 居中大字（emoji + 名字 + 「N 天后」整句，倒计时按类型配色——今天珊瑚/常规青绿/缅怀灰蓝，不引类型色槽）；4×2「辰记」品牌头 + 右侧「＋」+ **3 行**弹性列表行（emoji + 名字 + 倒计时文字，`defaultWeight` 均分高度）；大档**6 行**（MAX_ITEMS 6，空行垫底防单条悬空）；空态两行字无按钮；**行不可点**（整卡点开 App）；随之移除：Hero 渐变头 / 🌙问候语 / 纸笺行（色条·头像块·类型·急·日期·关系）/「共 N 个日子」
   - **勘误（对比页初版标注有误）**：A 版 4×4 的 6 行是弹性均分（行变矮），**不是**溢出裁切；A 版真正已知缺陷是 Responsive 三档在尺寸不匹配时退最小档被拉伸（v2.1.18 实锤，正是其改 Single 的动因）
-  - 路线论证（实施前再确认）：**推荐「A 显示 × 当前可靠机制」**——保留 v2.1.19 的 Single + options 真实尺寸 + Receiver 覆写即时重绘，渲染与交互完整还原 A（所见即 A 且任意桌面尺寸正常）；不推荐恢复 Responsive（会把退档拉伸缺陷带回来，模拟器验证大概率失败——A/B 时代小组件渲染从未在模拟器验证过）
-  - 收尾（实施时）：v2.1.20 / versionCode 23 + Changelog 条目 + README 第 13 行改回列表形态 + 对比页更新（勘误 + 新增「版本 D · 还原 A」行）+ 模拟器实测清单（3×2 三行 / 4 行高六行 / 2×2 大字 / 点行开 App / 空态 / 深色）
+  - **路线论证（实施前再确认）**：推荐「A 显示 × 当前可靠机制」——保留 v2.1.19 的 Single + options 真实尺寸 + Receiver 覆写即时重绘，渲染与交互完整还原 A（所见即 A 且任意桌面尺寸正常）；不推荐恢复 Responsive（会把退档拉伸缺陷带回来，模拟器验证大概率失败——A/B 时代小组件渲染从未在模拟器验证过）
+  - **实施（2026-08-31）**：
+    - `BirthWidget.kt` 按 A 版 1:1 还原渲染与交互（WidgetItem 精简回 name/emoji/countdown/isSolemn；撤销 WidgetData；删纸笺行/Hero/问候语/detailIntent 行点击；countdownText 整句与 countdownColor 三色规则；空态两行字无按钮），保留 v2.1.19 的 realWidgetSize + SizeMode.Single + Receiver 重绘机制，maxRows 用「目标行数（宽 3 / 大 6）× 高度护栏（行高下限 24dp，过矮降行数防裁切）」——固定行数语义即 A 版行为，护栏接住真实尺寸下的极端矮高
+    - `WidgetLayout.kt` 重写：tierOf 不变；targetRows/maxRowsFor/listHeight 替代原 rowsFor/wideRows/largeRows/dense 换算；`WidgetLayoutTest` 重写为 15 用例（档位分流/目标行数/·4×2→3 行·4×4→6 行·过矮护栏/紧凑恒 1 行）
+    - `WidgetTheme.kt` 精简为三色（coral/teal/solemn）+ 基础面文字，删 Hero 渐变/wash/violet/白字系列；删除 8 个 widget_hero drawable
+  - 收尾：v2.1.20 / versionCode 23 + Changelog 条目 + README 第 13 行改回列表形态 + 模拟器实测（3×2 三行 / 4 行高六行 / 2×2 大字 / 点行开 App / 空态 / 深色）
 
-- [ ] **i18n 字符串抽取（中/英）**
+- [x] **i18n 字符串抽取（中/英）**（2026-08-31 实施，v2.1.20）
   - 现状：全部文案硬编码中文，`strings.xml` 仅 4 条；`attachBaseContext` 强设中文屏蔽了 Android 13+ 按应用语言设置
   - 方案：文案迁入 `strings.xml`（中/英双语），移除强设中文逻辑
   - 参照：MemoD 中英双语跟随系统
+  - **实施（2026-08-31）**：
+    - 资源组织：`values/strings.xml` 为默认（中文，历史行为零变化）+ `values-en/strings.xml` 英文两套全量文案；带参数一律 `%1$s/%1$d` 占位可排序；新增 `util/LocaleUtils.kt`（isEnglish 判定口径）
+    - 数据语义保留中文：农历月日名（LunarCalendar 输出）、生肖名（筛选 key/数据语义，展示按语言走 `zodiac_names`/`zodiac_names_en` 资源数组映射）、Changelog 历史文案、备份格式内部字段
+    - 建模范式：EventType.label/dateFieldLabel/nameFieldLabel、ZodiacUtils.getRelationLabel 全部改 Res 变体（labelRes + label(resources, type)）；日期格式化（DateUtils.formatSolarDate/MonthDay/weekdayShort）、问候语池（Greeting）、月份标签（HomeTier.monthLabel）、信息行（EventTextUtils.infoLine/cardBanner/notification*）加 resources 参数与模板；ViewModel 层（Home/Detail/Settings）用 getApplication().getString 生成展示文案；BackupCodec.decode 改 (text, context) 资源化异常消息
+    - 覆盖全部 UI 面：首页/详情/添加编辑/设置/日历/底栏/小组件/配置页/通知（渠道名+标题模板）/MainActivity 升级弹窗/分享卡片（Canvas 直绘按 locale 本地化）/Toast 全部走资源
+    - 移除：`MainActivity.attachBaseContext` 强设中文——跟随系统语言（`values` 默认中文，非中英文系统按中文显示，行为保守）
+    - 坑记录：① 只在 values-en 定义的资源不生成 R 字段——`zodiac_names_en` 两份都放（默认目录兜底 R 生成，取值只在 isEnglish 分支）② Robolectric 的 @Config qualifiers 里语言限定符**必须在最前**（"zh-rCN-w411dp-h891dp" 才生效；连字符在后和空格分隔都会失效）③ values-en 里 `\'` 是非法的（Android 字符串转义不认反斜杠撇号），直接写单引号 ④ 测试断言中文文案的类统一加语言限定符（Compose UI 测试 6 个 + ViewModel/工具/BackupCodec/WidgetPin 等）
+  - 验收：全量单测 **220 用例全绿** + assembleDebug/assembleRelease 通过；模拟器中文环境回归无变化（默认资源=中文）
 
 - [x] **edge-to-edge + Material You 动态取色**（2026-08-14 完成）
   - 实现：`MainActivity` 调 `enableEdgeToEdge()`（targetSdk 35 下 Android 15 强制），`Theme.kt` 删除已废弃的 `statusBarColor` 手动涂色（保留图标明暗控制）；`ThemeStore` 加 `dynamicColor` 开关（prefs 持久化，默认关保持品牌 Coral/Teal 配色），`BirthAppTheme` 在 Android 12+ 且开启时用 `dynamicLightColorScheme/dynamicDarkColorScheme`；设置页深夜模式卡片加"动态取色"Switch（SDK<31 隐藏）

@@ -1,22 +1,20 @@
 package com.birthapp.widget
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 小组件布局纯函数测试：档位分流 + 行数换算。
+ * 小组件布局纯函数测试：档位分流 + 行数换算（还原「版本 A」）。
  * 锁验收尺寸——真实 options 竖屏语义：
- * 110×110 静态回退 → 紧凑单焦；4×2(266×135) → 宽档 2 行；
- * 4×3(266×208) → 宽档 3 行；4×4(266×281) → 大档 3 行；行数上限 5。
+ * 110×110 静态回退 → 紧凑大字；4×2(266×135) → 宽档 3 行；
+ * 4×3(266×208) → 宽档 3 行；4×4(266×281) → 大档 6 行；行数上限 6。
  */
 class WidgetLayoutTest {
 
     // ---- 档位分流 ----
 
     @Test
-    fun `manifest静态回退110x110_走紧凑单焦`() {
+    fun `manifest静态回退110x110_走紧凑大字`() {
         assertEquals(WidgetLayout.Tier.COMPACT, WidgetLayout.tierOf(110, 110))
     }
 
@@ -50,83 +48,65 @@ class WidgetLayoutTest {
         assertEquals(WidgetLayout.Tier.LARGE, WidgetLayout.tierOf(465, 224))
     }
 
-    // ---- 行数公式 ----
+    // ---- 目标行数（A 版固定）----
 
     @Test
-    fun `可用高不足1行_退1行`() {
-        assertEquals(1, WidgetLayout.rowsFor(0))
-        assertEquals(1, WidgetLayout.rowsFor(-20))
-        assertEquals(1, WidgetLayout.rowsFor(91))
+    fun `目标行数_宽档3行_大档6行_紧凑1行`() {
+        assertEquals(1, WidgetLayout.targetRows(WidgetLayout.Tier.COMPACT))
+        assertEquals(3, WidgetLayout.targetRows(WidgetLayout.Tier.WIDE))
+        assertEquals(6, WidgetLayout.targetRows(WidgetLayout.Tier.LARGE))
     }
 
-    @Test
-    fun `2行边界_92dp恰好两行`() {
-        assertEquals(2, WidgetLayout.rowsFor(92))
-        assertEquals(1, WidgetLayout.rowsFor(91))
-    }
+    // ---- 实际行数（目标 × 高度护栏）----
 
     @Test
-    fun `3行边界_140dp恰好三行`() {
-        assertEquals(3, WidgetLayout.rowsFor(140))
-        assertEquals(2, WidgetLayout.rowsFor(139))
-    }
-
-    @Test
-    fun `行数上限5_空间再多也只5行`() {
-        assertEquals(5, WidgetLayout.rowsFor(1000))
-        assertEquals(5, WidgetLayout.rowsFor(236))
-        assertEquals(4, WidgetLayout.rowsFor(235))
-    }
-
-    // ---- 宽档：4×2 → 2 行、4×3 → 3 行 ----
-
-    @Test
-    fun `4x2高135_宽档2行`() {
-        assertEquals(2, WidgetLayout.wideRows(135))
+    fun `4x2高135_宽档3行`() {
+        assertEquals(3, WidgetLayout.maxRowsFor(135, WidgetLayout.Tier.WIDE))
     }
 
     @Test
     fun `4x3高208_宽档3行`() {
-        assertEquals(3, WidgetLayout.wideRows(208))
+        assertEquals(3, WidgetLayout.maxRowsFor(208, WidgetLayout.Tier.WIDE))
     }
 
     @Test
-    fun `宽档拉高逐步加行_上限5`() {
-        assertEquals(2, WidgetLayout.wideRows(176 - 1))
-        assertEquals(3, WidgetLayout.wideRows(176))
-        assertEquals(5, WidgetLayout.wideRows(400))
-    }
-
-    // ---- 大档：≥4×4 → Hero + 3 行 ----
-
-    @Test
-    fun `4x4高281_大档3行`() {
-        assertEquals(3, WidgetLayout.largeRows(281))
+    fun `4x4高281_大档6行`() {
+        assertEquals(6, WidgetLayout.maxRowsFor(281, WidgetLayout.Tier.LARGE))
     }
 
     @Test
-    fun `大档拉高逐步加行_上限5`() {
-        assertEquals(5, WidgetLayout.largeRows(400))
-        assertEquals(4, WidgetLayout.largeRows(355))
-        assertEquals(3, WidgetLayout.largeRows(281))
-    }
-
-    // ---- 行框挤压实态 ----
-
-    @Test
-    fun `4x2两行行框约50dp_需紧凑变体`() {
-        val listHeight = WidgetLayout.wideListHeight(135)
-        assertTrue(WidgetLayout.rowNeedsDense(listHeight, 2))
+    fun `横屏465x224_大档6行`() {
+        assertEquals(6, WidgetLayout.maxRowsFor(224, WidgetLayout.Tier.LARGE))
     }
 
     @Test
-    fun `行框富余_普通行即可`() {
-        assertFalse(WidgetLayout.rowNeedsDense(172, 3))
-        assertFalse(WidgetLayout.rowNeedsDense(159, 3))
+    fun `高度富余_不超目标与上限`() {
+        assertEquals(6, WidgetLayout.maxRowsFor(400, WidgetLayout.Tier.LARGE))
+        assertEquals(3, WidgetLayout.maxRowsFor(400, WidgetLayout.Tier.WIDE))
     }
 
     @Test
-    fun `只有1行_永不切紧凑`() {
-        assertFalse(WidgetLayout.rowNeedsDense(20, 1))
+    fun `过矮高度_护栏降行数`() {
+        // 4×1 高 110：可用高 62dp，只够 2 行（防文字溢出裁切）
+        assertEquals(2, WidgetLayout.maxRowsFor(110, WidgetLayout.Tier.WIDE))
+        // 单格高 ~95：可用高 47dp，退 1 行
+        assertEquals(1, WidgetLayout.maxRowsFor(95, WidgetLayout.Tier.WIDE))
+        assertEquals(1, WidgetLayout.maxRowsFor(60, WidgetLayout.Tier.LARGE))
+    }
+
+    @Test
+    fun `紧凑档_恒为1行`() {
+        assertEquals(1, WidgetLayout.maxRowsFor(400, WidgetLayout.Tier.COMPACT))
+        assertEquals(1, WidgetLayout.maxRowsFor(60, WidgetLayout.Tier.COMPACT))
+    }
+
+    // ---- 列表可用高度 ----
+
+    @Test
+    fun `列表可用高_扣掉外边距与品牌头`() {
+        // 135 − 12×2 − 20 − 4 = 87
+        assertEquals(87, WidgetLayout.listHeight(135))
+        // 281 − 12×2 − 20 − 4 = 233
+        assertEquals(233, WidgetLayout.listHeight(281))
     }
 }

@@ -21,7 +21,7 @@ import org.robolectric.annotation.Config
  * 置顶与暂停开关写库、删除。
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = android.app.Application::class)
+@Config(sdk = [34], application = android.app.Application::class, qualifiers = "zh-rCN")
 class DetailViewModelTest {
 
     private lateinit var db: AppDatabase

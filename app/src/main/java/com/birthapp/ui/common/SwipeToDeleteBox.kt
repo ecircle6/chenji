@@ -20,6 +20,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
+import com.birthapp.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -100,7 +102,7 @@ fun SwipeToDeleteBox(
         ) {
             Icon(
                 Icons.Default.Delete,
-                contentDescription = "删除",
+                contentDescription = stringResource(R.string.delete_accessibility),
                 tint = Coral500,
                 modifier = Modifier.alpha(deleteIconAlpha(offsetPx, widthPx))
             )
