@@ -14,14 +14,19 @@
 
 ## P0 — 缺陷修复（优先做，改动小、收益直接）
 
-- [ ] **小组件按真实尺寸渲染（当前核心功能损坏：任意尺寸都渲染 2×2 单焦）**
+- [x] **小组件按真实尺寸渲染（当前核心功能损坏：任意尺寸都渲染 2×2 单焦）**（2026-08-31 修复，v2.1.19）
   - 现状（2026-08-30 复测）：`dfac4d7` 版本桌面小组件在 4×2 / 4×4 任意尺寸下都只渲染「🌙NEXT + 单条记录」的单焦布局，大组件大面积空白。上一条 v2.1.18 的验收记录写的「模拟器实测小组件铺满」与复测不符，该次验收不充分，以此为准修正
   - 根因（logcat 实锤）：布局行数用 `LocalSize.current` 计算，而 Glance 1.1.1 `SizeMode.Single` 下 `LocalSize` 不反映实例真实尺寸，恒为 manifest 静态 fallback `min(minWidth,minResizeWidth)×min(minHeight,minResizeHeight)` = 110×110dp；110 < 200dp 宽度阈值 → 恒走 2×2 紧凑分支。`SizeMode.Responsive` 同样不可用：系统估算尺寸（竖屏 266×135 / 横屏 465×224）与三档集合互不匹配时退化到最小档被拉伸——两条系统路径都拿不到真实尺寸
   - 功能需求：
     1. 尺寸来源改为自读系统真实值：`AppWidgetManager.getAppWidgetOptions(id)` 的 `OPTION_APPWIDGET_MIN_WIDTH × MIN_HEIGHT`（竖屏语义，放置/resize 时由系统写入）；读取必须放在 composition 内——Glance 的 resize 快速路径只重组、不重跑 provideGlance，读在外面尺寸不会更新
     2. 行数随真实高度自适应（行高 48dp + 行间 6dp，上限 5 行）：4×2 两行、4×3 三行、≥4×4 Hero 聚焦头 + 三行；记录多时铺满不留沉底空白，记录少于行数时底部余白是数据事实、可接受
     3. 验收标准：模拟器实测 266×135（4×2）渲染问候行 + 2 行；resize 后 266×281 渲染 Hero + 行列表；真机 4×4 四条以上记录铺满无沉底空白；全量单测绿
-  - 备注：修复方案已于 2026-08-30 实现并按上述标准验证通过（reflog `68565eb`「小组件改 Single 模式自读 options，行数随高度自适应」），后因回退至 `dfac4d7` 被搁置；可 `git reset --hard 68565eb` 直接恢复，或按本需求重做
+  - 修复（2026-08-31，按上述需求重做）：reflog `68565eb` 的旧补丁只在出问题的那台机器的 reflog 里（`git show` 确认本地无此对象），不可恢复，重建如下
+    - 新增 `widget/WidgetLayout.kt` 纯函数（阈值与换算集中、可单测）：档位分流（宽 <200dp 紧凑 / 高 ≥210dp 大档，含横屏 465×224 样例）；行数换算 `rowsFor`（行高 44dp + 行距 4dp，n ≤ (可用高+行距)/(行高+行距) 取下整，1..5）——48/6 档在 4×2(高135) 配问候行时数学上放不下两行，按验收尺寸反推改 44/4；宽/大档 chrome 扣减（外边距/问候行/Hero 头）常量与 `wideRows/largeRows` 便捷函数；`rowNeedsDense`（行框 <52dp 切紧凑行防裁切）
+    - `BirthWidget.realWidgetSize(appWidgetId)`：composition 内**现读** `getAppWidgetOptions`（不 remember，重绘时必拿最新值），无效时回退 LocalSize（最坏 = 旧紧凑行为）；`MAX_ITEMS` 3→5（宽档最多 5 行、大档 Hero+3 行）；「共 N 个日子」用真实总数（新增 `WidgetData(total, items)`，取数上限后不再拿 items.size 顶替）；宽档外边距 10→6、问候行 ＋ 按钮 26→20dp、Hero 内边距 10→8；`WidgetRow` 加 `dense` 紧凑档（32dp 头像 + 更小内边距/字号）
+    - **实测推翻 TODO 原假设**：这台 launcher 上 resize 后小组件**不会**自动重绘（logcat 无任何动作，桌面内容停在旧尺寸布局）——「resize 快速路径只重组、不重跑 provideGlance」的断言不成立。兜底方案落地为 `BirthWidgetReceiver.onAppWidgetOptionsChanged` 覆写 → 主动 `updateAll` 重绘（无实例时安全 no-op），覆写后 resize 即时生效；读取放 composition 内保证任何路径触发的重绘都拿到最新 options
+  - 测试：新增 `WidgetLayoutTest` 20 用例（110×110 静态回退→紧凑、4×2/4×3/4×4 验收入档、行数边界 92/140/236、上限 5、dense 判定）；全量单测绿 + assembleDebug 通过
+  - 验收：✅ 模拟器实测三档全过——3×2「🌙问候语 + 两行（小明 5 急 / 小美 20）」（uiautomator 逐字核对）；resize 4 行高「🌙 NEXT UP 小明 / 其他近期 · 共 5 个日子 / 小美·外婆·大哥三行」；resize 2×2「🌙 NEXT 小明单条」；resize 即时重绘（→3 行宽档）与数据变更重绘（清库→导入→重绘）双链路过；App 首页基线回归正常；真机 4×4 铺满留待用户实测
 
 - [x] **用户实测三项优化：首页返回重播动效 / 图标星贴边 / 小组件沉底空白**（2026-08-30 修复，v2.1.18）
   - 现象：① 保存/删除后返回首页，列表慢悠悠整体重播错峰入场（约 1.3s 才完全呈现）；② 图标月亮偏大（占可见区 65.5%）、三颗星贴着 33dp 安全区（主星顶点 33.1 微超、副星外缘 34.8 出界）；③ 小组件被拉高时内容沉底、下方堆一截空白
