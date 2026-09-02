@@ -62,7 +62,7 @@ data class WidgetItem(
  * - 窄（宽 <200dp）：2×2 居中大字——emoji + 名字 + 「N 天后」整句，倒计时按类型配色
  * - 宽（宽 ≥200dp、高 <210dp）：「辰记」品牌头 + 右侧「＋」+ 3 行弹性列表
  *   （行框 defaultWeight 均分高度，无纸笺行色条/头像块/日期等）
- * - 大（高 ≥210dp）：同上但 6 行；记录不足时空白行垫底，防单条悬空
+ * - 大（高 ≥210dp）：同上但 5 行；记录不足时空白行垫底，防单条悬空
  * - 空态两行字无按钮；行不可点（整卡点开 App，「＋」直达新增页）
  */
 class BirthWidget : GlanceAppWidget() {
@@ -108,8 +108,8 @@ class BirthWidget : GlanceAppWidget() {
     }
 }
 
-// 取数上限：大档显示 6 行，宽档在 WidgetBody 里再截断
-private const val MAX_ITEMS = 6
+// 取数上限：大档显示 5 行，宽档在 WidgetBody 里再截断
+private const val MAX_ITEMS = 5
 
 // 小组件颜色全部收敛在 [WidgetTheme]（日/夜两套 + 对比度修正），这里只留简短别名
 private val BgColor get() = WidgetTheme.bg
@@ -131,11 +131,25 @@ private val SolemnColor get() = WidgetTheme.solemn
  */
 @Composable
 private fun realWidgetSize(appWidgetId: Int): Pair<Dp, Dp> {
+    val ctx = LocalContext.current
     if (appWidgetId > 0) {
-        val options = AppWidgetManager.getInstance(LocalContext.current)
-            .getAppWidgetOptions(appWidgetId)
-        val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
-        val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
+        val mgr = AppWidgetManager.getInstance(ctx)
+        var opts = mgr.getAppWidgetOptions(appWidgetId)
+        // 若刚发生 resize，系统可能还未把 newOptions 写入持久化，优先用缓存的新值
+        val cached = WidgetSizeCache.lastOptions
+        if (cached != null && WidgetSizeCache.lastId == appWidgetId &&
+            System.currentTimeMillis() - WidgetSizeCache.lastAt < 5000) {
+            // 取缓存与持久化中较小的尺寸（收缩场景取小值，避免旧大值卡住）
+            val cW = cached.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
+            val cH = cached.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
+            val pW = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
+            val pH = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
+            if (cW > 0 && cH > 0 && (cW < pW || cH < pH)) {
+                opts = cached
+            }
+        }
+        val width = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
+        val height = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
         if (width > 0 && height > 0) return width.dp to height.dp
     }
     return LocalSize.current.width to LocalSize.current.height
@@ -183,7 +197,7 @@ private fun EmptyBody() {
 @Composable
 private fun ListBody(items: List<WidgetItem>, tier: WidgetLayout.Tier, height: Dp) {
     val ctx = LocalContext.current
-    // 目标行数（宽 3 / 大 6）与高度护栏的交集：行框 defaultWeight 均分高度，
+    // 目标行数（宽 3 / 大 5）与高度护栏的交集：行框 defaultWeight 均分高度，
     // 真实尺寸过矮（如 4×1）时按 WidgetLayout.maxRowsFor 降行数，防文字裁切
     val rows = WidgetLayout.maxRowsFor(height.value.roundToInt(), tier)
     Column(modifier = GlanceModifier.fillMaxSize()) {

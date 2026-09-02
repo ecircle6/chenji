@@ -14,6 +14,13 @@ import kotlinx.coroutines.launch
  *
  * 真正的界面在 BirthWidget 里，这里只负责把系统的广播接过来。
  */
+/** 最新一次 options 变更的缓存：解决缩小后 MIN 值在 getAppWidgetOptions 中短暂滞后的问题 */
+internal object WidgetSizeCache {
+    @Volatile var lastOptions: Bundle? = null
+    @Volatile var lastId: Int = -1
+    @Volatile var lastAt: Long = 0L
+}
+
 class BirthWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = BirthWidget()
 
@@ -37,6 +44,9 @@ class BirthWidgetReceiver : GlanceAppWidgetReceiver() {
         appWidgetId: Int,
         newOptions: Bundle
     ) {
+        WidgetSizeCache.lastOptions = Bundle(newOptions)
+        WidgetSizeCache.lastId = appWidgetId
+        WidgetSizeCache.lastAt = System.currentTimeMillis()
         super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
         CoroutineScope(Dispatchers.Default).launch { WidgetRefresher.refresh(context) }
     }

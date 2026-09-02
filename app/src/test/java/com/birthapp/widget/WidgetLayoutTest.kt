@@ -7,7 +7,7 @@ import org.junit.Test
  * 小组件布局纯函数测试：档位分流 + 行数换算（还原「版本 A」）。
  * 锁验收尺寸——真实 options 竖屏语义：
  * 110×110 静态回退 → 紧凑大字；4×2(266×135) → 宽档 3 行；
- * 4×3(266×208) → 宽档 3 行；4×4(266×281) → 大档 6 行；行数上限 6。
+ * 4×3(266×208) → 宽档 3 行；4×4(266×281) → 大档 5 行；行数上限 5。
  */
 class WidgetLayoutTest {
 
@@ -51,10 +51,10 @@ class WidgetLayoutTest {
     // ---- 目标行数（A 版固定）----
 
     @Test
-    fun `目标行数_宽档3行_大档6行_紧凑1行`() {
+    fun `目标行数_宽档3行_大档5行_紧凑1行`() {
         assertEquals(1, WidgetLayout.targetRows(WidgetLayout.Tier.COMPACT))
         assertEquals(3, WidgetLayout.targetRows(WidgetLayout.Tier.WIDE))
-        assertEquals(6, WidgetLayout.targetRows(WidgetLayout.Tier.LARGE))
+        assertEquals(5, WidgetLayout.targetRows(WidgetLayout.Tier.LARGE))
     }
 
     // ---- 实际行数（目标 × 高度护栏）----
@@ -70,18 +70,18 @@ class WidgetLayoutTest {
     }
 
     @Test
-    fun `4x4高281_大档6行`() {
-        assertEquals(6, WidgetLayout.maxRowsFor(281, WidgetLayout.Tier.LARGE))
+    fun `4x4高281_大档5行`() {
+        assertEquals(5, WidgetLayout.maxRowsFor(281, WidgetLayout.Tier.LARGE))
     }
 
     @Test
-    fun `横屏465x224_大档6行`() {
-        assertEquals(6, WidgetLayout.maxRowsFor(224, WidgetLayout.Tier.LARGE))
+    fun `横屏465x224_大档5行`() {
+        assertEquals(5, WidgetLayout.maxRowsFor(224, WidgetLayout.Tier.LARGE))
     }
 
     @Test
     fun `高度富余_不超目标与上限`() {
-        assertEquals(6, WidgetLayout.maxRowsFor(400, WidgetLayout.Tier.LARGE))
+        assertEquals(5, WidgetLayout.maxRowsFor(400, WidgetLayout.Tier.LARGE))
         assertEquals(3, WidgetLayout.maxRowsFor(400, WidgetLayout.Tier.WIDE))
     }
 

@@ -7,10 +7,10 @@ package com.birthapp.widget
  * 恒为 manifest 静态 fallback（110×110dp），真实宽高从系统 options 读
  * （OPTION_APPWIDGET_MIN_WIDTH × MIN_HEIGHT，放置/resize 时写入）。
  * 这里的函数只做「拿到真实尺寸之后」的数学换算，不碰系统读值，
- * 以便纯 JUnit 锁验收尺寸：4×2(高≈135dp)→3 行、4×4(≈281dp)→6 行。
+ * 以便纯 JUnit 锁验收尺寸：4×2(高≈135dp)→3 行、4×4(≈281dp)→5 行。
  *
  * 行数语义（还原「版本 A」显示形态）：
- * - 目标行数固定——宽档 3 行、大档 6 行（A 版行为，不是随高度自适应）；
+ * - 目标行数固定——宽档 3 行、大档 5 行；
  * - 高度护栏——行框由 defaultWeight 均分，均分后行高低于 [MIN_ROW_HEIGHT]
  *   就降行数，防止文字在真实尺寸过矮时被裁切（4×1 等高仅可放的场景）。
  */
@@ -31,9 +31,9 @@ internal object WidgetLayout {
     /** 宽档目标行数（4×2 / 4×3） */
     const val WIDE_TARGET_ROWS = 3
     /** 大档目标行数（≥4×4，与取数上限 MAX_ITEMS 一致） */
-    const val LARGE_TARGET_ROWS = 6
-    /** 行数上限：桌面拉多高都不超过 6 行 */
-    const val MAX_ROWS = 6
+    const val LARGE_TARGET_ROWS = 5
+    /** 行数上限：桌面拉多高都不超过 5 行 */
+    const val MAX_ROWS = 5
     /** 单行最低高度：14sp 文字一行约 19dp，24dp 留出垂直余量 */
     const val MIN_ROW_HEIGHT = 24
 
@@ -46,7 +46,7 @@ internal object WidgetLayout {
         else -> Tier.WIDE
     }
 
-    /** 目标行数：宽档 3 行、大档 6 行、紧凑档 1 行 */
+    /** 目标行数：宽档 3 行、大档 5 行、紧凑档 1 行 */
     fun targetRows(tier: Tier): Int = when (tier) {
         Tier.COMPACT -> 1
         Tier.WIDE -> WIDE_TARGET_ROWS
