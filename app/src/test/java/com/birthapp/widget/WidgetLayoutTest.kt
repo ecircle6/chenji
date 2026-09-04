@@ -9,7 +9,7 @@ import org.junit.Test
  * 小组件布局纯函数测试：档位分流 + 行数换算。
  * 锁验收尺寸——真实 options 竖屏语义：
  * 110×110 静态回退 → 紧凑单焦；4×2(266×135) → 宽档 2 行；
- * 4×3(266×208) → 宽档 3 行；4×4(266×281) → 大档 3 行；行数上限 5。
+ * 4×3(266×208) → 宽档 3 行；4×4(266×281) → 大档 4 行（Hero+4 = 5 条）；行数上限 5。
  */
 class WidgetLayoutTest {
 
@@ -97,18 +97,18 @@ class WidgetLayoutTest {
         assertEquals(5, WidgetLayout.wideRows(400))
     }
 
-    // ---- 大档：≥4×4 → Hero + 3 行 ----
+    // ---- 大档：≥4×4 → Hero + 4 行（完整 5 条）----
 
     @Test
-    fun `4x4高281_大档3行`() {
-        assertEquals(3, WidgetLayout.largeRows(281))
+    fun `4x4高281_大档4行`() {
+        assertEquals(4, WidgetLayout.largeRows(281))
     }
 
     @Test
     fun `大档拉高逐步加行_上限5`() {
         assertEquals(5, WidgetLayout.largeRows(400))
-        assertEquals(4, WidgetLayout.largeRows(355))
-        assertEquals(3, WidgetLayout.largeRows(281))
+        assertEquals(5, WidgetLayout.largeRows(355))
+        assertEquals(4, WidgetLayout.largeRows(281))
     }
 
     // ---- 行框挤压实态 ----

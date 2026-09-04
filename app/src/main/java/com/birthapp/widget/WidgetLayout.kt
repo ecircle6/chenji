@@ -7,7 +7,7 @@ package com.birthapp.widget
  * 就是系统实际尺寸（整数 dp），resize 时 Glance 自动重新组合拿到新值。
  * 这里的函数只做「拿到真实尺寸之后」的数学换算，不碰系统读值，
  * 以便纯 JUnit 锁验收尺寸：4×2(高≈135dp)→2 行、4×3(≈208dp)→3 行、
- * ≥4×4(≥281dp)→Hero 大档 3 行；行数上限 5。
+ * ≥4×4(≥281dp)→Hero 大档 4 行（Hero+4 = 完整 5 条）；行数上限 5。
  *
  * 行数公式：n 行需 n×ROW_HEIGHT + (n-1)×ROW_GAP ≤ 可用高，
  * 反解 n ≤ (可用高+ROW_GAP)/(ROW_HEIGHT+ROW_GAP) 取下整，
@@ -33,11 +33,13 @@ internal object WidgetLayout {
     const val GREETING_GAP = 4
 
     // ---- 大档 chrome（dp）：外边距×2 + Hero + 头行「其他近期」+ 两处间距 ----
-    const val LARGE_OUTER_PADDING = 14
-    const val HERO_HEADER_HEIGHT = 70
-    const val LARGE_HEADER_GAP = 6
-    const val LARGE_TITLE_ROW = 14
-    const val LARGE_LIST_GAP = 4
+    // 压到 93dp 总量：4×4(高281) 可用高 188dp 恰好放 4 行列表（Hero + 4 行 = 5 条），
+    // 行数上限不变仍为 5（rest 最多 4 行，Hero 占一条）。
+    const val LARGE_OUTER_PADDING = 8
+    const val HERO_HEADER_HEIGHT = 60
+    const val LARGE_HEADER_GAP = 3
+    const val LARGE_TITLE_ROW = 12
+    const val LARGE_LIST_GAP = 2
 
     enum class Tier { COMPACT, WIDE, LARGE }
 

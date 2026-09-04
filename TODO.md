@@ -18,7 +18,8 @@
   - 现象（用户实测 + 模拟器复现）：① 小组件缩到最小（宽 <200dp）后**仍显示多行列表**而非单焦；② 缩到最小后再放大，**恢复不到多条状态**，依旧只有单条内容占满小组件；③ 其他变体：放大后行数与高度错位、行距被拉出巨大空档——本质都是渲染停在旧档位、被 launcher 拉伸
   - 根因（logcat + Glance 1.1.1 反编译实锤）：v2.1.19 的尺寸链路是 `SizeMode.Single` + 「composition 内现读 `getAppWidgetOptions`」。但 Single 模式下 `LocalSize` 恒为 manifest 静态 110dp、**组合不订阅尺寸状态**；Glance 的组合只在 `glanceState`/订阅状态变化时重跑，resize 且数据未变时 update 复用旧组合——**组合内读 options 的代码根本不重新执行**（logcat 证据：`onAppWidgetOptionsChanged` 已收到新值 minW=172，但 WidgetBody 无任何重新组合日志，桌面呈现的仍是旧档位布局的拉伸结果）。v2.1.19「读取放在 composition 内保证每次重绘拿到最新」的前提（每次 resize 都会重组合）不成立
   - 修复：`SizeMode.Single → SizeMode.Exact`；`realWidgetSize` 改为优先读 `LocalSize.current`（Exact 下即系统实际尺寸整数 dp，且组合订阅尺寸变化 → resize 自动重新组合拿新值），`getAppWidgetOptions` 保留作 LocalSize 异常时的兜底；`onAppWidgetOptionsChanged → updateAll` 保留为额外保险（Exact 已自动重组合，实测 options 变更后组合先于 updateAll 重跑）
-  - 验收：✅ 全量单测 223 用例绿 + assembleDebug 通过；模拟器实测——覆盖安装后 2×4 渲染 COMPACT 单焦（LocalSize=172dp 生效）；放大宽度→组合自动重跑 `266.28×464dp → LARGE` Hero 三行恢复；复用「缩小→放大」方向再验证：缩小→ `172.19×464dp → COMPACT` 单焦；三轮 logcat 组合重跑证据齐备。多轮连拖与真机长尾留待用户实测（模拟器 launcher 在连续触摸下偶发 ANR、widget 会丢，属 launcher 自身问题）
+  - 追加（2026-09-04 用户要求大档 5 条）：压缩大档 chrome（Hero 头 70→60dp 去掉次要日期·关系行、外边距 14→8、标题行 14→12、两处间距 6/4→3/2），chore 总量 122→93dp，4×4(高281) 可用高 188dp 恰好放 **4 行列表 = Hero + 4 = 完整 5 条**（行高 44dp 不变，行内容不受影响）；`WidgetLayoutTest` 同步改 `largeRows(281)=4 / largeRows(355)=5`
+  - 验收：✅ 全量单测绿 + assembleDebug 通过；模拟器实测——覆盖安装后 2×4 渲染 COMPACT 单焦（LocalSize=172dp 生效）；放大宽度→组合自动重跑 `266.28×464dp → LARGE` Hero 恢复；「共 5 个日子」总数正确、Hero 取最近非缅怀、列表行渲染正常。4 行列表的物理展开未在模拟器测到（launcher 对 motionevent 高度拖动时灵时不灵，属模拟器问题），行数由单测锁定。多轮连拖与真机长尾留待用户实测
 
 - [x] **小组件按真实尺寸渲染（当前核心功能损坏：任意尺寸都渲染 2×2 单焦）**（2026-08-31 修复，v2.1.19）
   - 现状（2026-08-30 复测）：`dfac4d7` 版本桌面小组件在 4×2 / 4×4 任意尺寸下都只渲染「🌙NEXT + 单条记录」的单焦布局，大组件大面积空白。上一条 v2.1.18 的验收记录写的「模拟器实测小组件铺满」与复测不符，该次验收不充分，以此为准修正

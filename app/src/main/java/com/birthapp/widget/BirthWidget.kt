@@ -363,9 +363,9 @@ private fun HeroWidgetHeader(item: WidgetItem) {
             Column(modifier = GlanceModifier.defaultWeight()) {
                 Text(text = "🌙 NEXT UP", style = TextStyle(color = WhiteAlpha90, fontSize = 10.sp))
                 Spacer(modifier = GlanceModifier.height(2.dp))
+                // 头高压到 60dp（大档 chrome 让位给第 4 行列表，4×4 即显示 5 条）：
+                // 日期·关系在列表行里已有，Hero 只留名称 + 右侧倒计时
                 Text(text = item.name, maxLines = 1, style = TextStyle(color = WhiteProvider, fontSize = 15.sp, fontWeight = FontWeight.Bold))
-                Spacer(modifier = GlanceModifier.height(2.dp))
-                Text(text = "${item.dateLabel} · ${item.relationLabel}", maxLines = 1, style = TextStyle(color = WhiteAlpha85, fontSize = 11.sp))
             }
             Spacer(modifier = GlanceModifier.width(10.dp))
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
