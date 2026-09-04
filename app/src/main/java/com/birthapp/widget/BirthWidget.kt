@@ -74,8 +74,11 @@ data class WidgetData(val total: Int, val items: List<WidgetItem>)
 /**
  * 桌面小组件 — 纸笺辰刻（Paper Slip, Time Carved）。
  *
- * SizeMode.Single 下 LocalSize 恒为 manifest 静态 fallback（110×110dp，并非真实尺寸），
- * 真实宽高从系统 options 读（OPTION_APPWIDGET_MIN_WIDTH × MIN_HEIGHT，放置/resize 写入），
+ * SizeMode.Exact：LocalSize 是系统实际尺寸（整数 dp），组合订阅尺寸变化——
+ * resize 时 Glance 会重新组合并拿到新尺寸，档位/行数随真实宽高实时切换
+ * （曾用 SizeMode.Single + 组合内读 options 的方案：Single 下 LocalSize 恒为
+ * manifest 静态 110dp、组合不订阅尺寸，resize 后组合复用导致档位锁死在旧值，
+ * 表现为「缩到最小还是多条」「放大回不去多条」。Exact 修复此链路）。
  * 布局按真实宽高分流（阈值与行数换算见 WidgetLayout）：
  * 窄（宽 <200dp）：日历撕页单焦，NEXT + 头像 + 倒计时
  * 宽而矮：问候语头部 + N 行纸笺行（N 按实际高度算），行框均分剩余高度铺满
@@ -85,7 +88,7 @@ data class WidgetData(val total: Int, val items: List<WidgetItem>)
  */
 class BirthWidget : GlanceAppWidget() {
 
-    override val sizeMode = SizeMode.Single
+    override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         // 坐在 Flow 上订阅而不是进来时读一次快照：provideContent 之前的代码
@@ -164,17 +167,22 @@ private fun widgetAccent(item: WidgetItem) = WidgetTheme.accent(item.eventType, 
 private fun avatarBg(item: WidgetItem) = WidgetTheme.wash(item.eventType)
 
 /**
- * 真实尺寸（dp）：从系统 options 读 MIN_WIDTH × MIN_HEIGHT（竖屏语义，
- * launcher 放置/resize 时写入）。
+ * 真实尺寸（dp）。SizeMode.Exact 下 LocalSize 就是系统实际尺寸（整数 dp，
+ * 竖屏语义，launcher 放置/resize 时驱动），且组合订阅尺寸变化——resize 时
+ * Glance 重新组合、必拿到新值，档位随真实宽高切换（不再依赖手工 update
+ * 与组合内现读 options 的旧链路）。这里不 remember，任何路径的重绘都现读。
  *
- * 读取放在 composition 内、不 remember：重绘（resize 由
- * BirthWidgetReceiver.onAppWidgetOptionsChanged 触发 update，数据变更由
- * WidgetRefresher 触发）时每次现读，保证任何路径拿到的都是最新尺寸。
- * options 未写入（id=-1 / 值为 0）时回退 LocalSize（静态 fallback 110×110dp，
- * 最坏情况 = 旧行为：紧凑单焦），等下一次重绘拿到真实值。
+ * LocalSize 异常（理论不会：Exact 下恒有值）时兜底读系统 options
+ * OPTION_APPWIDGET_MIN_WIDTH × MIN_HEIGHT（放置/resize 由 launcher 写入）。
  */
 @Composable
 private fun realWidgetSize(appWidgetId: Int): Pair<Dp, Dp> {
+    // SizeMode.Exact：LocalSize 是系统实际尺寸（整数 dp），且组合订阅尺寸变化——
+    // resize 时 Glance 会重新组合，这里每次都能拿到新值（Single 模式下 LocalSize
+    // 恒为 manifest 静态 110dp 且组合不订阅尺寸，正是 resize 不更新的根因）。
+    val local = LocalSize.current
+    if (local.width.value > 0 && local.height.value > 0) return local.width to local.height
+    // 兜底：LocalSize 异常时现读系统 options（放置/resize 时由 launcher 写入）
     if (appWidgetId > 0) {
         val options = AppWidgetManager.getInstance(LocalContext.current)
             .getAppWidgetOptions(appWidgetId)
@@ -187,7 +195,7 @@ private fun realWidgetSize(appWidgetId: Int): Pair<Dp, Dp> {
 
 @Composable
 private fun WidgetBody(items: List<WidgetItem>, total: Int, appWidgetId: Int) {
-    // 真实尺寸从系统 options 读（见 realWidgetSize）：按宽度/高度分流，不猜格子数
+    // 真实尺寸从系统读（见 realWidgetSize）：按宽度/高度分流，不猜格子数
     val (width, height) = realWidgetSize(appWidgetId)
     val tier = WidgetLayout.tierOf(width.value.roundToInt(), height.value.roundToInt())
     // 窄高时可用空间极小，需更小内边距避免内容溢出裁切

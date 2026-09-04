@@ -3,9 +3,8 @@ package com.birthapp.widget
 /**
  * 小组件布局纯函数：档位分流与行数换算。
  *
- * 真实尺寸由来（见 [BirthWidget.realWidgetSize]）：SizeMode.Single 下 LocalSize
- * 恒为 manifest 静态 fallback（110×110dp），真实宽高从系统 options 读
- * （OPTION_APPWIDGET_MIN_WIDTH × MIN_HEIGHT，放置/resize 时写入）。
+ * 真实尺寸由来（见 [BirthWidget.realWidgetSize]）：SizeMode.Exact 下 LocalSize
+ * 就是系统实际尺寸（整数 dp），resize 时 Glance 自动重新组合拿到新值。
  * 这里的函数只做「拿到真实尺寸之后」的数学换算，不碰系统读值，
  * 以便纯 JUnit 锁验收尺寸：4×2(高≈135dp)→2 行、4×3(≈208dp)→3 行、
  * ≥4×4(≥281dp)→Hero 大档 3 行；行数上限 5。
