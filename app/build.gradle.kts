@@ -133,6 +133,10 @@ dependencies {
     // 所以只能用 Glance 自己的组件，不能直接搬 Compose UI 过去
     implementation("androidx.glance:glance-appwidget:1.1.1")
 
+    // Compose 代码健康度 lint 规则集（slackhq/compose-lints），UI 改版前的基线检查用。
+    // 1.5+ 需 AGP/lint 9.3+，本项目 AGP 8.7.3 对应 lint 31.7.x，故锁 1.4.2（lint 31.7.1 构建）
+    lintChecks("com.slack.lint.compose:compose-lint-checks:1.4.2")
+
     // 单元测试：农历换算这种纯算法靠已知日期对照验证，不依赖模拟器
     testImplementation("junit:junit:4.13.2")
     // 备份编解码用的 org.json 在本地单测里是空壳（Android 框架类），

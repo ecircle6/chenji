@@ -12,7 +12,7 @@
 4. **推荐执行顺序（吸收方案 C）**：先审计出问题清单（截图基线 + Accessibility Scanner + compose-lints），再按方案 A 逐页改版——比一次性全局重写风险更低。
 5. **明确排除项**：Motiff/妙多已于 2026-07-31 关停（一票否决）；material-theme-builder 已归档；FigmaToCompose、design-lint、compose-material3-datetime-pickers 等已停更，均不可选型。
 6. **不需要补充任何信息**：技术栈版本、主题体系、设计稿现状均已从仓库直接查明（§2）；改版实施时的基线截图用 `tools/verify-on-emulator.sh` 生成即可。
-7. **后续想动手优化时怎么操作**：一次性准备（可选装 compose-lints / MaterialKolor / superdesign-skill）与逐页改版的可复制指令模板见 §9。
+7. **后续想动手优化时怎么操作**：一次性准备（compose-lints / MaterialKolor / superdesign-skill / Scanner）与逐页改版的可复制指令模板见 §9；其中 §9.1 已于 2026-09-05 执行完毕，结论直接可查。
 
 ---
 
@@ -157,21 +157,23 @@ abi/screenshot-to-code（73,388★，MIT，活跃）、wandb/openui（22,536★�
 
 > 本节回答「选型确定后，实际开工时怎么操作」：§9.1 是一次性准备（全部可选，跳过也能直接开工），§9.2 是每次改版时可直接照抄的指令模板。
 
-### 9.1 一次性准备（按需选装）
+### 9.1 一次性准备（✅ 2026-09-05 已执行，以下为实际结论）
 
-1. **compose-lints（推荐，约 5 分钟）**：在 `app/build.gradle.kts` 的 `dependencies {}` 中加：
-   ```kotlin
-   lintChecks("com.slack.lint.compose:compose-lint-checks:1.6.0")
-   ```
-   （写法来自官方文档站 [slackhq.github.io/compose-lints](https://slackhq.github.io/compose-lints/)；辰记是 Android 项目，无需额外插件。）然后跑 `./gradlew lint` 生成基线报告（`app/build/reports/lint-results-debug.html`），作为改版前的代码健康度底账。
-2. **MaterialKolor（可选，换配色用）**：`implementation("com.materialkolor:material-kolor:5.0.1")`，主题层用
-   ```kotlin
-   val colorScheme = rememberDynamicColorScheme(seedColor = Coral500, isDark = darkTheme)
-   MaterialTheme(colors = colorScheme, content = content)
-   ```
-   可选 `style = PaletteStyle.Expressive` 换风格、`specVersion = ColorSpec.SpecVersion.SPEC_2025` 用新色彩规范。⚠️ **兼容性提示**：5.0.1 官方以 Kotlin 2.4.10 构建，辰记是 Kotlin 2.0.21，先开分支试装 `./gradlew assembleDebug` 验证；若不兼容，退回 M3 自带 `dynamicLight/DarkColorScheme`（零依赖，`Theme.kt` 已预留开关）。
-3. **superdesign-skill（可选，补设计判断力）**：通用安装 `npx skills add superdesigndev/superdesign-skill`，但需先装其 CLI 并登录账号（`npm install -g @superdesign/cli@latest` + `superdesign login`，外部服务），之后以 `/superdesign <需求>` 显式调用。若不想引入账号依赖，最简做法是把仓库里的 SKILL.md 拷入本地技能目录，仅当风格评审清单参考。
-4. **Google Accessibility Scanner**：需带 Play 商店的模拟器镜像或真机（Play 商店搜索安装）。若 chenji_test 镜像无 Play 商店，用 Compose UI 单测里的无障碍断言兜底（`ui-test-junit4` 已在依赖里），并人工对照 Material 对比度要求。
+1. **compose-lints —— ✅ 已接入，版本锁定 1.4.2**
+   - 版本实证：1.6.0 与 1.5.5 均面向 AGP 9.3 工具链构建（1.6.0 release 原文 "requires AGP/lint 9.3+"；1.5.5 build against lint 32.3.2），辰记 AGP 8.7.3 不可用；**1.4.2**（release 注明 build against lint 31.7.1 + Kotlin 2.0.21）与辰记完全匹配。项目未来升级 AGP 9.x 后可升 1.6.x。
+   - `app/build.gradle.kts` 已加：`lintChecks("com.slack.lint.compose:compose-lint-checks:1.4.2")`。
+   - **lint 基线（2026-09-05，`./gradlew lintDebug`，共 75 项）**：
+     * compose-lints 新增发现 24 项（14 error + 10 warning）：`ComposeModifierMissing`×8（各页根组件缺 modifier 参数，AddEditScreen:85 / CalendarScreenPage:37 / DetailScreen:98 / HomeScreen:131 / MainNavigationBar:28 / SettingsScreen:177 / SharedComponents:197、235）、`Modifier.composed` 性能反模式×2（Motion.kt:63、142）、`ContentEmitter`×2（AddEditScreen:776、858）、`ComposeParamOrder`×1（AddEditScreen:45）、`ComposeModifierWithoutDefault`×1（BirthWidget:252）、`UnstableCollections`×9（List 参数稳定性）、`ComposeCompositionLocalUsage`×1（Theme.kt:92 LocalDarkTheme，有意设计）；
+     * Android 官方 lint 存量 51 项（6 error + 45 warning），其中 **P0 苗头（改版前值得先修）**：`StringFormatMatches`×3——`date_solar_full_en` / `share_date_line_en` 英文格式串与参数类型/数量不匹配（DateUtils.kt:52、ShareCardGenerator.kt:383，疑似真 bug）、`MissingSuperCall`（BirthWidgetReceiver.kt:97 未调 `super.onAppWidgetOptionsChanged`，影响小组件尺寸变化回调）；其余为 PluralsCandidate×21（复数化候选）、UnusedResources×12、UnusedAttribute×4、DefaultLocale×3 等。
+   - ⚠️ 存量 error 会使 `./gradlew lintDebug` 失败中止（接入前即如此——CI 只跑单测所以未暴露）。是否建 `lint { baseline = ... }` 快照或调整严重级，留到改版阶段决策，本次未改 lint 配置。
+2. **MaterialKolor —— ✅ 兼容性已实证：仅 1.7.1 可用**
+   - 实测（2026-09-05，AGP 8.7.3 / Kotlin 2.0.21 / BOM 2024.12.01，临时加依赖试装后已还原）：
+     * **5.0.1 ❌**：传递依赖 Compose 1.12.0，`checkDebugAarMetadata` 直接失败（要求 AGP 9.1.0+），且其 Kotlin 2.4.x metadata 亦不兼容 Kotlin 2.0.21；
+     * **1.7.1 ✅**：Kotlin 2.0.20 构建，`assembleDebug` 通过，无任何冲突；
+     * 2.x 全线不兼容（2.0.2 = Kotlin 2.1.10 起）。
+   - 改版换色时三选一：① 引入 1.7.1（`implementation("com.materialkolor:material-kolor:1.7.1")`，`rememberDynamicColorScheme(seedColor, isDark)`，功能够用）；② 用 M3 自带 `dynamicLight/DarkColorScheme`（零依赖，`Theme.kt` 已预留开关）；③ 升级项目 Kotlin/AGP 后用新版（工程量大，需另立项）。
+3. **superdesign-skill —— ⏸ 跳过（装法留档）**：需 npm 全局 CLI + 外部服务账号登录，与「不引入设计工具」的偏好不符。要装时：`npm install -g @superdesign/cli@latest` → `superdesign login` → `npx skills add superdesigndev/superdesign-skill`，以 `/superdesign <需求>` 显式调用。
+4. **Google Accessibility Scanner —— 路径已定案：单测兜底 + 真机可选**：chenji_test 模拟器为 google_apis 镜像（config.ini `PlayStore.enabled=no`、`image.sysdir.1=...google_apis...`），无 Play 商店，无法从 Play 安装 Scanner。改版审计改用 Compose/Robolectric 无障碍断言兜底（`ui-test-junit4` 已在依赖，具体接入第 1 步审计时按官方文档核实落地）；真机侧装 Scanner（`com.google.android.apps.accessibility.auditor`）作为可选增强（辰记 APK 本就是侧载流程）。
 
 ### 9.2 每次改版的操作流程（可照抄的指令模板）
 
@@ -211,9 +213,9 @@ abi/screenshot-to-code（73,388★，MIT，活跃）、wandb/openui（22,536★�
 | stackblitz-labs/bolt.diy | https://github.com/stackblitz-labs/bolt.diy | MIT | 19,846★，7 个月未推送 |
 | android/nowinandroid | https://github.com/android/nowinandroid | Apache-2.0 | 21,766★，活跃 |
 | Gurupreet/ComposeCookBook | https://github.com/Gurupreet/ComposeCookBook | MIT | 6,876★，活跃 |
-| jordond/MaterialKolor | https://github.com/jordond/MaterialKolor | MIT | 933★，活跃（最新 5.0.1，2026-08-27 发布） |
+| jordond/MaterialKolor | https://github.com/jordond/MaterialKolor | MIT | 933★，活跃（最新 5.0.1 需 AGP 9.1+/Kotlin 2.4，**本项目实测可用 1.7.1**，2026-09-05） |
 | skydoves/colorpicker-compose | https://github.com/skydoves/colorpicker-compose | Apache-2.0 | 758★，活跃 |
-| slackhq/compose-lints | https://github.com/slackhq/compose-lints | Apache-2.0 | 511★，活跃（lint-checks 最新 1.6.0，2026-08-27 发布） |
+| slackhq/compose-lints | https://github.com/slackhq/compose-lints | Apache-2.0 | 511★，活跃（1.6.0/1.5.x 需 AGP 9.3+，**本项目已接入 1.4.2**，2026-09-05） |
 | material-foundation/material-color-utilities | https://github.com/material-foundation/material-color-utilities | Apache-2.0 | 2,258★，活跃 |
 | material-foundation/material-theme-builder | https://github.com/material-foundation/material-theme-builder | Apache-2.0 | 597★，**已归档** |
 | CaelumF/FigmaToCompose | https://github.com/CaelumF/FigmaToCompose | 无 license | 451★，**2023-10 停更** |

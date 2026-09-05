@@ -359,6 +359,14 @@
 
 ## P2 — 工程与体验现代化
 
+- [x] **UI 改版第 0 步：一次性准备（compose-lints 基线 + MaterialKolor 兼容性实证）**（2026-09-05 完成）
+  - 背景：选型调研报告 `docs/ui-redesign-tooling.md`（同日入库）确定「本地 Agent + 设计技能包直接改 Compose」主线，本条为报告 §9.1 一次性准备的执行结论
+  - compose-lints：已接入 `lintChecks("com.slack.lint.compose:compose-lint-checks:1.4.2")`——1.5+/1.6.0 需 AGP/lint 9.3+（release 原文），本项目 AGP 8.7.3 锁 1.4.2（build against lint 31.7.1 + Kotlin 2.0.21，完全匹配）；未来升 AGP 9.x 后可升 1.6.x
+  - lint 基线（lintDebug，2026-09-05，共 75 项）：compose-lints 新增 24（ComposeModifierMissing×8 / Modifier.composed 性能反模式×2 / ContentEmitter×2 / ComposeParamOrder×1 / ComposeModifierWithoutDefault×1 / UnstableCollections×9 / CompositionLocal×1）；官方 lint 存量 51（6 error + 45 warning）。**P0 苗头**：StringFormatMatches×3（`date_solar_full_en`/`share_date_line_en` 英文格式串参数不匹配，DateUtils.kt:52、ShareCardGenerator.kt:383，疑似真 bug）、MissingSuperCall（BirthWidgetReceiver.kt:97 未调 super.onAppWidgetOptionsChanged，影响小组件尺寸回调）；其余 PluralsCandidate×21、UnusedResources×12 等
+  - ⚠️ 存量 error 使 `./gradlew lintDebug` 中止（接入前即红，CI 只跑单测未暴露）；是否建 `lint { baseline }` 快照留改版阶段决策，本次未改 lint 配置
+  - MaterialKolor 兼容性实证（临时加依赖试装后已还原，build.gradle.kts 不留残余）：**5.0.1 ❌**（传递 Compose 1.12.0 要求 AGP 9.1+，checkDebugAarMetadata 失败；Kotlin 2.4 metadata 亦不兼容）；**1.7.1 ✅**（Kotlin 2.0.20 构建，assembleDebug 通过）；2.x 全线（Kotlin 2.1.10+）不兼容。改版换色三选一：引入 1.7.1 / M3 自带 dynamicColorScheme（零依赖，Theme.kt 已预留）/ 升级 Kotlin+AGP 后用新版
+  - 其他结论：chenji_test 模拟器为 google_apis 镜像无 Play 商店（config.ini `PlayStore.enabled=no`）→ Accessibility Scanner 走 Compose/Robolectric 无障碍断言兜底 + 真机侧装可选；superdesign-skill 跳过（需外部服务账号），装法留档报告 §9.1
+
 - [x] **GitHub Actions CI**（2026-08-14 完成）
   - `.github/workflows/ci.yml`：push/PR 自动跑全部单测 + 构建 Debug 包（含 APK 产物上传）
   - `.github/workflows/release.yml`：打 `v*` tag 自动签名构建正式包并发布 GitHub Release（签名密钥走 repo Secrets：KEYSTORE_BASE64/STORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD）
