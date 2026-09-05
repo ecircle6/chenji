@@ -15,5 +15,7 @@ object WidgetRefresher {
 
     suspend fun refresh(context: Context) {
         runCatching { BirthWidget().updateAll(context) }
+            .onSuccess { dbg("refresh: updateAll 成功") }
+            .onFailure { dbg("refresh: updateAll 失败 ${it.message}") }
     }
 }

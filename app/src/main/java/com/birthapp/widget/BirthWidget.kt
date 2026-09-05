@@ -148,14 +148,24 @@ private fun realWidgetSize(appWidgetId: Int): Pair<Dp, Dp> {
     ) {
         val cW = cached.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
         val cH = cached.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
-        if (cW > 0 && cH > 0) return cW.dp to cH.dp
+        if (cW > 0 && cH > 0) {
+            dbg("realWidgetSize id=$appWidgetId 来源=缓存 ${cW}x$cH")
+            return cW.dp to cH.dp
+        }
     }
     if (appWidgetId > 0) {
         val opts = AppWidgetManager.getInstance(ctx).getAppWidgetOptions(appWidgetId)
         val width = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
         val height = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
-        if (width > 0 && height > 0) return width.dp to height.dp
+        if (width > 0 && height > 0) {
+            dbg("realWidgetSize id=$appWidgetId 来源=持久化 options ${width}x$height")
+            return width.dp to height.dp
+        }
     }
+    dbg(
+        "realWidgetSize id=$appWidgetId 来源=LocalSize 兜底 " +
+            "${LocalSize.current.width.value}x${LocalSize.current.height.value}"
+    )
     return LocalSize.current.width to LocalSize.current.height
 }
 
@@ -164,6 +174,10 @@ private fun WidgetBody(items: List<WidgetItem>, appWidgetId: Int) {
     // 真实尺寸从系统 options 读（见 realWidgetSize）：按宽度/高度分流，不猜格子数
     val (width, height) = realWidgetSize(appWidgetId)
     val tier = WidgetLayout.tierOf(width.value.roundToInt(), height.value.roundToInt())
+    dbg(
+        "WidgetBody id=$appWidgetId ${width.value.roundToInt()}x${height.value.roundToInt()} " +
+            "tier=$tier items=${items.size}"
+    )
 
     Box(
         modifier = GlanceModifier
