@@ -56,12 +56,12 @@ data class WidgetItem(
 /**
  * 桌面小组件 — 白底列表（还原「版本 A」显示形态）。
  *
- * 机制：SizeMode.Exact——LocalSize 即系统实际尺寸（整数 dp）且组合订阅尺寸变化，
- * resize 时 Glance 自动重新组合，档位/行数随真实宽高实时切换（曾用 SizeMode.Single：
- * LocalSize 恒为 manifest 静态 110dp 且组合不订阅尺寸，resize 后组合复用导致档位
- * 锁死在旧值——「缩到最小还是多条」「放大回不去多条」）。真实尺寸仍以系统 options
- * 读值（竖屏语义，见 [realWidgetSize]），Receiver.onAppWidgetOptionsChanged 主动
- * 重绘作额外保险。
+ * 机制：SizeMode.Exact（LocalSize 即系统实际尺寸，每次重组合都拿得到真实宽高；
+ * 曾用 Single——LocalSize 恒为 manifest 静态 110dp 且组合不订阅尺寸，档位会
+ * 锁死在旧值——「缩到最小还是多条」「放大回不去多条」）+ 系统 options 读值
+ * （竖屏语义，见 [realWidgetSize]，新鲜 resize 缓存优先）。拖拽缩放的重画由
+ * Receiver 防抖触发：拖动中不换画面（避免桌面端切换新旧档位时的叠影），
+ * 停稳后一次性应用新档位。
  * 显示与交互完整还原 A 版（v2.1.9，白底列表时代）：
  * - 窄（宽 <200dp）：2×2 居中大字——emoji + 名字 + 「N 天后」整句，倒计时按类型配色
  * - 宽（宽 ≥200dp、高 <210dp）：「辰记」品牌头 + 右侧「＋」+ 3 行弹性列表
@@ -115,6 +115,9 @@ class BirthWidget : GlanceAppWidget() {
 // 取数上限：大档显示 5 行，宽档在 WidgetBody 里再截断
 private const val MAX_ITEMS = 5
 
+// resize 缓存可信窗口：防抖重画发生在拖拽停稳后不久，此窗口内缓存即最终尺寸
+private const val SIZE_CACHE_FRESH_MS = 5000L
+
 // 小组件颜色全部收敛在 [WidgetTheme]（日/夜两套 + 对比度修正），这里只留简短别名
 private val BgColor get() = WidgetTheme.bg
 private val NameColor get() = WidgetTheme.name
@@ -124,36 +127,31 @@ private val NormalColor get() = WidgetTheme.teal
 private val SolemnColor get() = WidgetTheme.solemn
 
 /**
- * 真实尺寸（dp）。SizeMode.Exact 下 LocalSize 就是系统实际尺寸（整数 dp）且组合
- * 订阅尺寸变化——resize 时 Glance 自动重新组合；这里仍优先读系统 options
- * （OPTION_APPWIDGET_MIN_WIDTH × MIN_HEIGHT，竖屏语义，launcher 放置/resize 时
- * 写入），保证档位换算与单测锁定的尺寸语义一致。
+ * 真实尺寸（dp）。优先读系统 options（OPTION_APPWIDGET_MIN_WIDTH × MIN_HEIGHT，
+ * 竖屏语义，launcher 放置/resize 时写入），保证档位换算与单测锁定的尺寸语义
+ * 一致；options 未写入（id=-1 / 值为 0）时回退 LocalSize（Exact 下即真实尺寸，
+ * 不再是 Single 时代的静态 110dp）。
  *
- * 读取放在 composition 内、不 remember：重绘（resize 由
- * BirthWidgetReceiver.onAppWidgetOptionsChanged 触发 update，数据变更由
- * WidgetRefresher 触发）时每次现读，保证任何路径拿到的都是最新尺寸。
- * options 未写入（id=-1 / 值为 0）时回退 LocalSize（Exact 下即真实尺寸，
- * 不再是 Single 时代的静态 110dp），等下一次重绘拿到 options 值。
+ * resize 的重画由 Receiver 防抖触发（拖动中不重绘、停稳后一次应用，见
+ * BirthWidgetReceiver），读取放在 composition 内、不 remember：无论哪条路径
+ * 触发的重绘都现读，拿到的就是当下值。
  */
 @Composable
 private fun realWidgetSize(appWidgetId: Int): Pair<Dp, Dp> {
     val ctx = LocalContext.current
+    // 持久化 options 可能滞后于最后一次回调（放大/缩小皆然），而缓存正是最后
+    // 一次回调带给的最终值——新鲜时直接信缓存。（旧逻辑只在缓存更小时才采用，
+    // 防抖后放大场景会拿滞后的旧小值卡住档位，且没有后续重绘可自愈）
+    val cached = WidgetSizeCache.lastOptions
+    if (cached != null && WidgetSizeCache.lastId == appWidgetId &&
+        System.currentTimeMillis() - WidgetSizeCache.lastAt < SIZE_CACHE_FRESH_MS
+    ) {
+        val cW = cached.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
+        val cH = cached.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
+        if (cW > 0 && cH > 0) return cW.dp to cH.dp
+    }
     if (appWidgetId > 0) {
-        val mgr = AppWidgetManager.getInstance(ctx)
-        var opts = mgr.getAppWidgetOptions(appWidgetId)
-        // 若刚发生 resize，系统可能还未把 newOptions 写入持久化，优先用缓存的新值
-        val cached = WidgetSizeCache.lastOptions
-        if (cached != null && WidgetSizeCache.lastId == appWidgetId &&
-            System.currentTimeMillis() - WidgetSizeCache.lastAt < 5000) {
-            // 取缓存与持久化中较小的尺寸（收缩场景取小值，避免旧大值卡住）
-            val cW = cached.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
-            val cH = cached.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
-            val pW = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
-            val pH = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
-            if (cW > 0 && cH > 0 && (cW < pW || cH < pH)) {
-                opts = cached
-            }
-        }
+        val opts = AppWidgetManager.getInstance(ctx).getAppWidgetOptions(appWidgetId)
         val width = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
         val height = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
         if (width > 0 && height > 0) return width.dp to height.dp
