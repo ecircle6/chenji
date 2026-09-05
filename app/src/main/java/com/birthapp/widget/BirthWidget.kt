@@ -56,12 +56,11 @@ data class WidgetItem(
 /**
  * 桌面小组件 — 白底列表（还原「版本 A」显示形态）。
  *
- * 机制：SizeMode.Exact（LocalSize 即系统实际尺寸，每次重组合都拿得到真实宽高；
- * 曾用 Single——LocalSize 恒为 manifest 静态 110dp 且组合不订阅尺寸，档位会
- * 锁死在旧值——「缩到最小还是多条」「放大回不去多条」）+ 系统 options 读值
- * （竖屏语义，见 [realWidgetSize]，新鲜 resize 缓存优先）。拖拽缩放的重画由
- * Receiver 防抖触发：拖动中不换画面（避免桌面端切换新旧档位时的叠影），
- * 停稳后一次性应用新档位。
+ * 机制：SizeMode.Exact + 系统 options 读值（竖屏语义，见 [realWidgetSize]）。
+ * 尺寸是可观察状态（[WidgetSizeCache]）：拖拽缩放的重画由 Receiver 防抖触发
+ * ——拖动中不换画面（避免桌面端切换新旧档位时的叠影），停稳后把新尺寸写入
+ * 状态流，运行中的组合会话据此自动重组一次。之所以走状态流而非 update()：
+ * Glance 长活会话期间 update() 只刷 state 不重组，档位会锁死在会话开始时。
  * 显示与交互完整还原 A 版（v2.1.9，白底列表时代）：
  * - 窄（宽 <200dp）：2×2 居中大字——emoji + 名字 + 「N 天后」整句，倒计时按类型配色
  * - 宽（宽 ≥200dp、高 <210dp）：「辰记」品牌头 + 右侧「＋」+ 3 行弹性列表
@@ -115,9 +114,6 @@ class BirthWidget : GlanceAppWidget() {
 // 取数上限：大档显示 5 行，宽档在 WidgetBody 里再截断
 private const val MAX_ITEMS = 5
 
-// resize 缓存可信窗口：防抖重画发生在拖拽停稳后不久，此窗口内缓存即最终尺寸
-private const val SIZE_CACHE_FRESH_MS = 5000L
-
 // 小组件颜色全部收敛在 [WidgetTheme]（日/夜两套 + 对比度修正），这里只留简短别名
 private val BgColor get() = WidgetTheme.bg
 private val NameColor get() = WidgetTheme.name
@@ -138,21 +134,16 @@ private val SolemnColor get() = WidgetTheme.solemn
  */
 @Composable
 private fun realWidgetSize(appWidgetId: Int): Pair<Dp, Dp> {
-    val ctx = LocalContext.current
-    // 持久化 options 可能滞后于最后一次回调（放大/缩小皆然），而缓存正是最后
-    // 一次回调带给的最终值——新鲜时直接信缓存。（旧逻辑只在缓存更小时才采用，
-    // 防抖后放大场景会拿滞后的旧小值卡住档位，且没有后续重绘可自愈）
-    val cached = WidgetSizeCache.lastOptions
-    if (cached != null && WidgetSizeCache.lastId == appWidgetId &&
-        System.currentTimeMillis() - WidgetSizeCache.lastAt < SIZE_CACHE_FRESH_MS
-    ) {
-        val cW = cached.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
-        val cH = cached.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
-        if (cW > 0 && cH > 0) {
-            dbg("realWidgetSize id=$appWidgetId 来源=缓存 ${cW}x$cH")
-            return cW.dp to cH.dp
-        }
+    // 尺寸是可观察状态（见 WidgetSizeCache）：Receiver 防抖停稳后写入，运行中
+    // 的组合会话 collect 它自动重组——Glance 长活会话期间 update() 只刷 state
+    // 不重组，纯读值链路的档位会锁死在会话开始时的尺寸上
+    val observed = WidgetSizeCache.stateFor(appWidgetId).size.collectAsState().value
+        ?.takeIf { it.width > 0 && it.height > 0 }
+    if (observed != null) {
+        dbg("realWidgetSize id=$appWidgetId 来源=状态流 ${observed.width}x${observed.height}")
+        return observed.width.dp to observed.height.dp
     }
+    val ctx = LocalContext.current
     if (appWidgetId > 0) {
         val opts = AppWidgetManager.getInstance(ctx).getAppWidgetOptions(appWidgetId)
         val width = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
