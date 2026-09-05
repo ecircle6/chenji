@@ -14,6 +14,14 @@
 
 ## P0 — 缺陷修复（优先做，改动小、收益直接）
 
+- [x] **小组件尺寸变化后档位锁死：缩到最小仍多条 / 放大回不去多条**（2026-09-04 修复，v2.1.19 后）
+  - 现象（用户实测 + 模拟器复现）：① 小组件缩到最小（宽 <200dp）后**仍显示多行列表**而非单焦；② 缩到最小后再放大，**恢复不到多条状态**，依旧只有单条内容占满小组件；③ 其他变体：放大后行数与高度错位、行距被拉出巨大空档——本质都是渲染停在旧档位、被 launcher 拉伸
+  - 根因（logcat + Glance 1.1.1 反编译实锤）：v2.1.19 的尺寸链路是 `SizeMode.Single` + 「composition 内现读 `getAppWidgetOptions`」。但 Single 模式下 `LocalSize` 恒为 manifest 静态 110dp、**组合不订阅尺寸状态**；Glance 的组合只在 `glanceState`/订阅状态变化时重跑，resize 且数据未变时 update 复用旧组合——**组合内读 options 的代码根本不重新执行**（logcat 证据：`onAppWidgetOptionsChanged` 已收到新值 minW=172，但 WidgetBody 无任何重新组合日志，桌面呈现的仍是旧档位布局的拉伸结果）。v2.1.19「读取放在 composition 内保证每次重绘拿到最新」的前提（每次 resize 都会重组合）不成立
+  - 修复：`SizeMode.Single → SizeMode.Exact`；`realWidgetSize` 改为优先读 `LocalSize.current`（Exact 下即系统实际尺寸整数 dp，且组合订阅尺寸变化 → resize 自动重新组合拿新值），`getAppWidgetOptions` 保留作 LocalSize 异常时的兜底；`onAppWidgetOptionsChanged → updateAll` 保留为额外保险（Exact 已自动重组合，实测 options 变更后组合先于 updateAll 重跑）
+  - 追加（2026-09-04 用户要求大档 5 条）：压缩大档 chrome（Hero 头 70→60dp 去掉次要日期·关系行、外边距 14→8、标题行 14→12、两处间距 6/4→3/2），chore 总量 122→93dp，4×4(高281) 可用高 188dp 恰好放 **4 行列表 = Hero + 4 = 完整 5 条**（行高 44dp 不变，行内容不受影响）；`WidgetLayoutTest` 同步改 `largeRows(281)=4 / largeRows(355)=5`
+  - 验收：✅ 全量单测绿 + assembleDebug 通过；模拟器实测——覆盖安装后 2×4 渲染 COMPACT 单焦（LocalSize=172dp 生效）；放大宽度→组合自动重跑 `266.28×464dp → LARGE` Hero 恢复；「共 5 个日子」总数正确、Hero 取最近非缅怀、列表行渲染正常。4 行列表的物理展开未在模拟器测到（launcher 对 motionevent 高度拖动时灵时不灵，属模拟器问题），行数由单测锁定。多轮连拖与真机长尾留待用户实测
+  - 合并说明（2026-09-05，与 v2.1.20 白底列表重写合流）：`SizeMode.Exact` 机制保留；`realWidgetSize` 沿用新形态的「options 优先 + 5s resize 缓存」链路（竖屏语义与单测锁定值一致），LocalSize 降为兜底；Hero chrome 压缩随旧纸笺形态一并移除——新形态大档 5 行由 `LARGE_TARGET_ROWS`/`MAX_ROWS` = 5 实现
+
 - [x] **小组件按真实尺寸渲染（当前核心功能损坏：任意尺寸都渲染 2×2 单焦）**（2026-08-31 修复，v2.1.19）
   - 现状（2026-08-30 复测）：`dfac4d7` 版本桌面小组件在 4×2 / 4×4 任意尺寸下都只渲染「🌙NEXT + 单条记录」的单焦布局，大组件大面积空白。上一条 v2.1.18 的验收记录写的「模拟器实测小组件铺满」与复测不符，该次验收不充分，以此为准修正
   - 根因（logcat 实锤）：布局行数用 `LocalSize.current` 计算，而 Glance 1.1.1 `SizeMode.Single` 下 `LocalSize` 不反映实例真实尺寸，恒为 manifest 静态 fallback `min(minWidth,minResizeWidth)×min(minHeight,minResizeHeight)` = 110×110dp；110 < 200dp 宽度阈值 → 恒走 2×2 紧凑分支。`SizeMode.Responsive` 同样不可用：系统估算尺寸（竖屏 266×135 / 横屏 465×224）与三档集合互不匹配时退化到最小档被拉伸——两条系统路径都拿不到真实尺寸

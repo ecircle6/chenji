@@ -56,8 +56,12 @@ data class WidgetItem(
 /**
  * 桌面小组件 — 白底列表（还原「版本 A」显示形态）。
  *
- * 机制保留 v2.1.19 的可靠路径：SizeMode.Single + 系统 options 真实尺寸
- * （见 [realWidgetSize]）+ Receiver.onAppWidgetOptionsChanged 主动重绘；
+ * 机制：SizeMode.Exact——LocalSize 即系统实际尺寸（整数 dp）且组合订阅尺寸变化，
+ * resize 时 Glance 自动重新组合，档位/行数随真实宽高实时切换（曾用 SizeMode.Single：
+ * LocalSize 恒为 manifest 静态 110dp 且组合不订阅尺寸，resize 后组合复用导致档位
+ * 锁死在旧值——「缩到最小还是多条」「放大回不去多条」）。真实尺寸仍以系统 options
+ * 读值（竖屏语义，见 [realWidgetSize]），Receiver.onAppWidgetOptionsChanged 主动
+ * 重绘作额外保险。
  * 显示与交互完整还原 A 版（v2.1.9，白底列表时代）：
  * - 窄（宽 <200dp）：2×2 居中大字——emoji + 名字 + 「N 天后」整句，倒计时按类型配色
  * - 宽（宽 ≥200dp、高 <210dp）：「辰记」品牌头 + 右侧「＋」+ 3 行弹性列表
@@ -67,7 +71,7 @@ data class WidgetItem(
  */
 class BirthWidget : GlanceAppWidget() {
 
-    override val sizeMode = SizeMode.Single
+    override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         // 坐在 Flow 上订阅而不是进来时读一次快照：provideContent 之前的代码
@@ -120,14 +124,16 @@ private val NormalColor get() = WidgetTheme.teal
 private val SolemnColor get() = WidgetTheme.solemn
 
 /**
- * 真实尺寸（dp）：从系统 options 读 MIN_WIDTH × MIN_HEIGHT（竖屏语义，
- * launcher 放置/resize 时写入）。
+ * 真实尺寸（dp）。SizeMode.Exact 下 LocalSize 就是系统实际尺寸（整数 dp）且组合
+ * 订阅尺寸变化——resize 时 Glance 自动重新组合；这里仍优先读系统 options
+ * （OPTION_APPWIDGET_MIN_WIDTH × MIN_HEIGHT，竖屏语义，launcher 放置/resize 时
+ * 写入），保证档位换算与单测锁定的尺寸语义一致。
  *
  * 读取放在 composition 内、不 remember：重绘（resize 由
  * BirthWidgetReceiver.onAppWidgetOptionsChanged 触发 update，数据变更由
  * WidgetRefresher 触发）时每次现读，保证任何路径拿到的都是最新尺寸。
- * options 未写入（id=-1 / 值为 0）时回退 LocalSize（静态 fallback 110×110dp，
- * 最坏情况 = 旧行为：紧凑大字），等下一次重绘拿到真实值。
+ * options 未写入（id=-1 / 值为 0）时回退 LocalSize（Exact 下即真实尺寸，
+ * 不再是 Single 时代的静态 110dp），等下一次重绘拿到 options 值。
  */
 @Composable
 private fun realWidgetSize(appWidgetId: Int): Pair<Dp, Dp> {

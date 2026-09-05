@@ -31,12 +31,12 @@ class BirthWidgetReceiver : GlanceAppWidgetReceiver() {
     }
 
     /**
-     * 用户拖动调整小组件大小后，主动拉起重画。
+     * 用户拖动调整小组件大小后的兜底重画。
      *
-     * Glance 1.1.1 的 provider 对 options 变更没有任何处理（实测 resize 后
-     * 桌面内容停在旧尺寸布局上），必须在这里 update 触发 provideGlance 重跑——
-     * BirthWidget 的 composition 会从系统 options 读到新尺寸（见
-     * BirthWidget.realWidgetSize）。updateAll 在没有任何实例时是安全的 no-op。
+     * SizeMode.Exact 下 Glance 已订阅尺寸变化，resize 会自动重新组合并读新
+     * 尺寸（见 BirthWidget.realWidgetSize），这里主动 updateAll 只作额外保险：
+     * 覆盖个别 launcher 回调时序异常时组合未被拉起的情况。updateAll 在没有
+     * 任何实例时是安全的 no-op。
      */
     override fun onAppWidgetOptionsChanged(
         context: Context,
