@@ -52,13 +52,14 @@ jobs:
             echo "has_keystore=false" >> "$GITHUB_OUTPUT"
           else
             echo "$KEYSTORE_BASE64" | base64 -d > birthapp-release.jks
-            # 注意：heredoc 终止符 EOF 必须顶行，缩进会让 bash 吞到文件尾报语法错误
-            cat > keystore.properties <<EOF
-storeFile=birthapp-release.jks
-storePassword=$STORE_PASSWORD
-keyAlias=$KEY_ALIAS
-keyPassword=$KEY_PASSWORD
-EOF
+            # 用 echo 组而非 heredoc：heredoc 内容在 YAML 块标量里不能顶行，
+            # 而带缩进的 EOF 终止符 bash 又不认（已两次踩坑）
+            {
+              echo "storeFile=birthapp-release.jks"
+              echo "storePassword=$STORE_PASSWORD"
+              echo "keyAlias=$KEY_ALIAS"
+              echo "keyPassword=$KEY_PASSWORD"
+            } > keystore.properties
             echo "has_keystore=true" >> "$GITHUB_OUTPUT"
           fi
 
