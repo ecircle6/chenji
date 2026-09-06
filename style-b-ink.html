@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案 B · 墨石排印 —— 辰记风格提案</title>
+<style>
+  :root{
+    --ink:#191919; --t2:#8A8A85; --line:#E6E4DF; --bg:#FAFAF9; --coral:#E85555; --coralSoft:#FBEDED;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:#EBEAE7;color:var(--ink);line-height:1.55;padding:30px 18px 80px}
+  .wrap{max-width:1780px;margin:0 auto}
+  h1{font-size:26px;font-weight:800}
+  .sub{color:#6E6A60;font-size:14px;margin:6px 0 10px;max-width:980px}
+  .points{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px}
+  .pt{font-size:12.5px;font-weight:700;background:#fff;border:1px solid var(--line);border-radius:20px;padding:6px 13px}
+  .row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+  .col{display:flex;flex-direction:column;gap:8px}
+  .cap{font-size:13px;font-weight:800;color:#57524A;display:flex;align-items:center;gap:7px}
+  .cap i{width:8px;height:8px;border-radius:50%;background:var(--ink);display:inline-block}
+  .phone{width:332px;border:8px solid #23231F;border-radius:34px;overflow:hidden;background:var(--bg);box-shadow:0 8px 26px rgba(0,0,0,.14)}
+  .status{height:24px;display:flex;justify-content:space-between;align-items:center;padding:0 15px;font-size:10.5px;color:var(--t2)}
+  .appbar{padding:10px 16px 4px;font-size:15px;font-weight:800;letter-spacing:2px}
+  .datebar{padding:0 16px 14px;font-size:26px;font-weight:900;letter-spacing:.5px}
+  .datebar small{display:block;font-size:12px;font-weight:600;color:var(--t2);letter-spacing:1px;margin-top:2px}
+  /* filter：下划线式 */
+  .tabs{display:flex;gap:16px;padding:0 16px 10px;overflow:hidden;font-size:12.5px;color:var(--t2)}
+  .tabs .on{color:var(--ink);font-weight:800;border-bottom:2.5px solid var(--ink);padding-bottom:4px}
+  .tabs::after{content:"";flex:1;border-bottom:1px solid var(--line);align-self:flex-end;margin-bottom:0}
+  /* timeline list */
+  .tl{position:relative;margin:6px 0 8px}
+  .tl::before{content:"";position:absolute;left:26px;top:8px;bottom:8px;width:1.5px;background:var(--line)}
+  .node{display:flex;align-items:center;gap:12px;padding:13px 16px;position:relative}
+  .node .dot{width:9px;height:9px;border-radius:50%;background:#C9C6BF;flex:0 0 auto;margin-left:1px;z-index:1}
+  .node.hot .dot{background:var(--coral);box-shadow:0 0 0 4px var(--coralSoft)}
+  .node .nm{font-size:16px;font-weight:800;flex:1}
+  .node .nm small{display:block;font-size:11px;font-weight:600;color:var(--t2);margin-top:1px}
+  .node .num{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .node.hot .num{color:var(--coral);font-size:34px}
+  .node .un{font-size:11px;color:var(--t2);margin-left:2px}
+  .group{padding:10px 16px 2px;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--t2)}
+  .hero{margin:4px 16px 10px;padding:18px 2px 14px;border-bottom:1.5px solid var(--ink)}
+  .hero .k{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--t2)}
+  .hero .nm{font-size:22px;font-weight:900;margin-top:4px}
+  .hero .row2{display:flex;align-items:baseline;gap:6px;margin-top:2px}
+  .hero .num{font-size:64px;font-weight:900;color:var(--coral);line-height:1.05;font-variant-numeric:tabular-nums}
+  .hero .un{font-size:14px;font-weight:700;color:var(--ink)}
+  .hero .dt{font-size:12px;color:var(--t2);margin-top:2px}
+  .empty{margin:8px 16px;padding:20px 14px;border:1px dashed var(--line);text-align:center;color:var(--t2);font-size:12.5px}
+  .bnav{display:flex;border-top:1px solid var(--line);background:var(--bg);padding:9px 0 14px;margin-top:8px}
+  .bnav div{flex:1;text-align:center;font-size:11px;color:var(--t2)}
+  .bnav .on{color:var(--ink);font-weight:800}
+  /* detail：排印式 */
+  .dhead{display:flex;align-items:center;gap:8px;padding:10px 14px 6px;font-size:15px;font-weight:800}
+  .dhead .sp{flex:1}
+  .dhead .ai{font-size:14px;color:var(--t2);letter-spacing:9px}
+  .dbig{padding:14px 16px 10px;border-bottom:1.5px solid var(--ink);margin:0 0 4px}
+  .dbig .k{font-size:11px;letter-spacing:3px;color:var(--t2);font-weight:700}
+  .dbig .n{font-size:68px;font-weight:900;color:var(--coral);line-height:1.02;font-variant-numeric:tabular-nums}
+  .dbig .u{font-size:15px;font-weight:700}
+  .sect{padding:12px 16px 4px;font-size:11px;letter-spacing:3px;font-weight:800;color:var(--t2)}
+  .dr{display:flex;font-size:13.5px;padding:9px 16px;border-bottom:1px solid var(--line)}
+  .dr b{width:48px;color:var(--t2);font-weight:600;flex:0 0 auto}
+  .dava{width:72px;height:72px;border-radius:50%;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;margin:12px auto 6px}
+  .dnm{text-align:center;font-size:20px;font-weight:900}
+  .dtags{display:flex;justify-content:center;gap:14px;margin:6px 0 4px;font-size:11.5px;color:var(--t2)}
+  .btnfull{margin:14px 16px;background:var(--ink);color:#fff;border-radius:2px;padding:13px;text-align:center;font-size:14px;font-weight:700;letter-spacing:6px}
+  /* add：下划线表单 */
+  .ftitle{padding:12px 16px 4px;font-size:11px;font-weight:800;letter-spacing:2px;color:var(--t2)}
+  .types{display:flex;gap:6px;padding:0 16px;flex-wrap:wrap}
+  .type{font-size:12.5px;padding:8px 13px;border:1px solid var(--line);background:transparent;color:var(--t2);white-space:nowrap}
+  .type.on{border-color:var(--ink);color:var(--ink);font-weight:800;background:#fff}
+  .uline{margin:4px 16px 0;display:flex;border-bottom:1.5px solid var(--ink);padding:9px 2px;font-size:15px;align-items:baseline;justify-content:space-between}
+  .uline .lab{font-size:11px;color:var(--t2);font-weight:700}
+  .uline .v{font-weight:800}
+  .seg{margin:4px 16px 0;display:flex;gap:8px}
+  .seg div{flex:1;text-align:center;font-size:12.5px;padding:9px;border:1px solid var(--line);color:var(--t2)}
+  .seg .on{border-color:var(--ink);color:var(--ink);font-weight:800;background:#fff}
+  .drop{flex:1;border:1px solid var(--line);background:#fff;padding:9px 12px;font-size:13px;display:flex;justify-content:space-between;color:var(--ink)}
+  .drow{display:flex;gap:8px;margin:4px 16px 0}
+  .cal{border-bottom:1.5px solid var(--ink);color:var(--ink);font-size:12.5px;padding:10px 4px;font-weight:800;white-space:nowrap}
+  /* settings：纯列表 */
+  .sgroup{margin:4px 0 0}
+  .srow{display:flex;align-items:center;gap:11px;padding:13px 16px;border-bottom:1px solid var(--line);font-size:14px}
+  .srow .ti{flex:1}.srow .ti small{display:block;font-size:11.5px;color:var(--t2);font-weight:400}
+  .radio{width:16px;height:16px;border-radius:50%;border:1.5px solid #C9C6BF;flex:0 0 auto}
+  .radio.on{border-color:var(--ink);background:radial-gradient(circle at center,var(--ink) 40%,transparent 46%)}
+  .sw{width:40px;height:22px;border-radius:12px;background:#D8D6D1;position:relative;flex:0 0 auto}
+  .sw::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:3px;left:3px}
+  .sw.on{background:var(--ink)}.sw.on::after{left:21px}
+  .chev{color:#C9C6BF;font-size:13px}
+  /* widgets：极简 */
+  .wall{width:332px;border-radius:26px;padding:18px;background:linear-gradient(150deg,#3A3F45,#4A4E52 60%,#5A5350);display:flex;flex-direction:column;gap:12px}
+  .wglab{font-size:11px;color:rgba(255,255,255,.75);font-weight:700}
+  .wg{background:rgba(250,250,249,.97);border-radius:14px;padding:12px 14px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+  .wg.night{background:rgba(20,20,20,.96)}
+  .wg2{width:150px;text-align:center;padding:22px 10px}
+  .wg2 .n{font-size:13px;font-weight:700;margin:4px 0 0;color:var(--ink)}
+  .wg2 .c{font-size:26px;font-weight:900;color:var(--coral);font-variant-numeric:tabular-nums}
+  .wg2 .c small{font-size:11px;color:var(--t2);font-weight:600}
+  .wgrow2{display:flex;gap:10px;flex-wrap:wrap}
+  .wghd{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:var(--t2);margin-bottom:7px}
+  .wghd b{font-size:12px;color:var(--ink);letter-spacing:2px}
+  .wghd .plus{width:20px;height:20px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+  .wline{display:flex;align-items:center;gap:9px;padding:6px 0;border-top:1px solid var(--line);font-size:12.5px}
+  .wline .dot{width:6px;height:6px;border-radius:50%;background:#C9C6BF;flex:0 0 auto}
+  .wline b{flex:1;font-weight:700;color:var(--ink)}
+  .wline .d{font-weight:900;color:var(--ink);font-variant-numeric:tabular-nums}
+  .wline .d.hot{color:var(--coral)}
+  .night .wline b,.night .wghd b{color:#E8E8E6}
+  .night .wline .d{color:#E8E8E6}
+  .night .wline .dot{background:#4A4A48}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>方案 B · 墨石排印</h1>
+  <div class="sub">定位：<b>去卡片化的极简编辑风</b>。色彩大幅退位（黑白灰 + 珊瑚红单点强调），用留白、字阶与细线表达层次；首页改为「时间轴列表」，倒计时数字即视觉主角。气质克制、耐看，与常见提醒类 App 拉开差距最大。</div>
+  <div class="points">
+    <span class="pt">① 时间轴 + 节点圆点，告别卡片堆叠</span>
+    <span class="pt">② 倒计时大数字排印（coral 单点强调）</span>
+    <span class="pt">③ 无底色 hairline 分组，信息密度更高</span>
+    <span class="pt">④ 风险：视觉冲击低于 C/D，适合喜欢素净的取向</span>
+  </div>
+  <div class="row">
+
+    <div class="col"><div class="cap"><i></i>首页</div>
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>▲ ▮ ▉</span></div>
+        <div class="appbar">辰记</div>
+        <div class="datebar">9月6日 周日<small>珍惜当下，铭记过往</small></div>
+        <div class="tabs"><span class="on">全部</span><span>家人</span><span>朋友</span><span>同事</span><span>其他</span><span>☰</span></div>
+        <div class="hero">
+          <div class="k">即将到来</div>
+          <div class="nm">zz <span style="font-size:12px;color:var(--t2);font-weight:600">🎂 家人</span></div>
+          <div class="row2"><span class="num">117</span><span class="un">天后</span></div>
+          <div class="dt">1月1日 · 农历冬月廿五</div>
+        </div>
+        <div class="group">2027 年</div>
+        <div class="tl">
+          <div class="node"><span class="dot"></span><span class="nm">Test <small>2月2日 · 朋友</small></span><span><span class="num">149</span><span class="un">天后</span></span></div>
+        </div>
+        <div class="empty">最近的日子都安排上了</div>
+        <div class="bnav"><div class="on">首页</div><div>日历</div></div>
+      </div>
+    </div>
+
+    <div class="col"><div class="cap"><i></i>详情</div>
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>▲ ▮ ▉</span></div>
+        <div class="dhead">← 详情<span class="sp"></span><span class="ai">📌 ⇪ ✎ 🗑</span></div>
+        <div class="dava">Z</div>
+        <div class="dnm">zz</div>
+        <div class="dtags"><span>🎂 生日 · 👥 家人</span></div>
+        <div class="dbig">
+          <div class="k">COUNTDOWN · 距离下次</div>
+          <span class="n">117</span><span class="u"> 天后</span>
+        </div>
+        <div class="sect">日期</div>
+        <div class="dr"><b>记录</b>阳历 2000年1月1日</div>
+        <div class="dr"><b>换算</b>对应农历 冬月廿五</div>
+        <div class="dr"><b>下次</b>阳历 2027年1月1日</div>
+        <div class="dr"><b>年龄</b>🐉 属龙 · 26岁</div>
+        <div class="sect">提醒</div>
+        <div class="dr" style="align-items:center"><b>提醒</b><span style="flex:1;font-weight:700">已开启</span><span class="sw on"></span></div>
+        <div class="dr"><b>下次</b>2027年1月1日 08:00（还有 117 天）</div>
+        <div class="dr"><b>方式</b>当天提醒 · 08:00</div>
+        <div class="btnfull">编 辑</div>
+      </div>
+    </div>
+
+    <div class="col"><div class="cap"><i></i>编辑 / 新增</div>
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>▲ ▮ ▉</span></div>
+        <div class="dhead">← 添加记录</div>
+        <div class="ftitle">类型</div>
+        <div class="types"><span class="type on">🎂 生日</span><span class="type">❤️ 情侣纪念</span><span class="type">🕯 缅怀</span><span class="type">📌 其他</span></div>
+        <div class="ftitle">姓名</div>
+        <div class="uline"><span class="lab">姓名</span><span class="v">Verifygt</span></div>
+        <div class="ftitle">头像 EMOJI（可选）</div>
+        <div class="uline"><span style="font-size:15px">😀 自动头像</span><span style="font-size:12px;color:var(--t2)">选择 ›</span></div>
+        <div class="ftitle">生日偏好</div>
+        <div class="seg"><div class="on">☀️ 阳历</div><div>🌙 农历</div></div>
+        <div class="ftitle">出生日期（阳历）</div>
+        <div class="drow">
+          <div class="drop">2000年<span>▾</span></div><div class="drop">1月<span>▾</span></div><div class="drop">1日<span>▾</span></div>
+        </div>
+        <div class="drow"><div class="cal" style="flex:1;text-align:center">📅 打开日历选择</div></div>
+        <div class="ftitle">提醒时间</div>
+        <div class="uline"><span class="lab">提醒时间</span><span class="v">08:00</span></div>
+        <div class="ftitle">提前提醒</div>
+        <div class="types"><span class="type on">当天</span><span class="type">1天</span><span class="type">3天</span><span class="type">5天</span><span class="type">7天</span><span class="type">自定义</span></div>
+        <div class="ftitle">关系分类</div>
+        <div class="types"><span class="type on">家人</span><span class="type">朋友</span><span class="type">同事</span><span class="type">其他</span></div>
+        <div class="uline"><span class="lab">备注</span><span style="color:#B9B6B0">＋</span></div>
+        <div class="btnfull">保 存</div>
+      </div>
+    </div>
+
+    <div class="col"><div class="cap"><i></i>设置</div>
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>▲ ▮ ▉</span></div>
+        <div class="dhead">← 设置</div>
+        <div class="sect">深夜模式</div>
+        <div class="sgroup">
+          <div class="srow"><span class="radio on"></span><span class="ti"><b>跟随系统</b><small>随手机的深色模式自动切换</small></span></div>
+          <div class="srow"><span class="radio"></span><span class="ti"><b>始终浅色</b><small>无论系统如何都用浅色</small></span></div>
+          <div class="srow"><span class="radio"></span><span class="ti"><b>始终深色</b><small>无论系统如何都用深色</small></span></div>
+          <div class="srow"><span class="ti"><b>动态取色</b><small>跟随系统壁纸配色（Material You）</small></span><span class="sw"></span></div>
+        </div>
+        <div class="sect">通知</div>
+        <div class="sgroup">
+          <div class="srow"><span class="ti"><b>默认提醒时间</b><small>新建记录默认在几点提醒</small></span><b>08:00</b></div>
+          <div class="srow"><span class="ti"><b>提醒</b><small>关闭后不再提醒任何记录</small></span><span class="sw on"></span></div>
+          <div class="srow"><span class="ti"><b>系统通知设置</b><small>声音、震动、锁屏显示等</small></span><span class="chev">›</span></div>
+        </div>
+        <div class="sect">数据备份</div>
+        <div class="sgroup">
+          <div class="srow"><span class="ti"><b>导出备份到手机</b><small>存成一个文件，换手机、误删时可恢复</small></span></div>
+          <div class="srow"><span class="ti"><b>从备份文件恢复</b><small>选择之前导出的备份文件</small></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col"><div class="cap"><i></i>小组件（浅 / 夜）</div>
+      <div class="wall">
+        <div class="wglab">2×2 单焦</div>
+        <div class="wgrow2">
+          <div class="wg wg2"><div class="n">zz</div><div class="c">117<small> 天后</small></div></div>
+          <div class="wg wg2 night"><div class="n">zz</div><div class="c">117<small> 天后</small></div></div>
+        </div>
+        <div class="wglab">4×2 三行</div>
+        <div class="wg">
+          <div class="wghd"><b>辰记</b><span class="plus">＋</span></div>
+          <div class="wline"><span class="dot" style="background:var(--coral)"></span><b>zz</b><span class="d hot">117 天后</span></div>
+          <div class="wline"><span class="dot"></span><b>Test</b><span class="d">149 天后</span></div>
+          <div class="wline"><span class="dot"></span><b>爷爷</b><span class="d">212 天后</span></div>
+        </div>
+        <div class="wglab">4×4 六行（夜色）</div>
+        <div class="wg night">
+          <div class="wghd"><b>辰记</b><span class="plus">＋</span></div>
+          <div class="wline"><span class="dot" style="background:var(--coral)"></span><b>zz</b><span class="d hot">117 天后</span></div>
+          <div class="wline"><span class="dot"></span><b>Test</b><span class="d">149 天后</span></div>
+          <div class="wline"><span class="dot"></span><b>爷爷</b><span class="d">212 天后</span></div>
+          <div class="wline"><span class="dot"></span><b>阿明 & 小雨</b><span class="d">34 天后</span></div>
+          <div class="wline"><span class="dot"></span><b>外婆</b><span class="d">88 天后</span></div>
+          <div class="wline"><span class="dot"></span><b>妈妈</b><span class="d">120 天后</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
