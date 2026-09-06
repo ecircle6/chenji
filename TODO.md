@@ -19,6 +19,7 @@
   - 修复：① `date_solar_full_en` → `%1$s %2$d, %3$d`（values/values-en 双份）；② `share_date_line_en` 两份模板不一致（默认 4 占位/values-en 3 占位）且调用只传 3 参（`%4$s` 缺参必抛异常）——统一为 `%1$s %2$d, %3$d · %4$s`，调用点（ShareCardGenerator）改传 (月份, 日, 年, kind)，去掉尾部字符串拼接；③ 语言口径：Android 13+ 分应用语言切换后进程不重启时 Application 级 Resources 滞后（UI 已中文而格式化仍走英文模板，并触发崩溃），新增 `LocaleUtils.localizedResources(context)`（读 LocaleManager.applicationLocales 包 configuration context），Home/Detail/Settings 三处 ViewModel 调用点替换；④ BirthWidgetReceiver 不调 super 为防叠影刻意设计（见上方叠影条目），MissingSuperCall 属 lint 误报，加 `@SuppressLint` 消噪音，行为不变
   - 验收：✅ 全量单测 220 绿；lintDebug error 20→16（StringFormatMatches×3、MissingSuperCall 消除，余 14 条 compose-lints + 2 条 RestrictedApi 存量；GradleDependency +12 为 lint 联网比对出的依赖新版本提示，非本次引入）；模拟器实测——分应用语言 en 冷启动点详情正常渲染 "Solar Jan 1, 2000"（`audit_detail_en_fixed.png`），切回 zh-CN 冷启动详情正常（`audit_detail_zh_fixed.png`）。连带发现记入审计 P2：英文「Converted」标签折行、「in 117 day(s)」复数硬编码
   - 发版（2026-09-06）：versionCode 23→24 / versionName 2.1.20→2.1.21；`Changelog.kt` 头部加 v2.1.21 条目；模拟器实测升级首启弹窗渲染正常（`verify_20260906_131710.png`）、「知道了」关闭正常；assembleRelease 签名包构建通过（`辰记_v2.1.21.apk`）
+  - GitHub Release 首次成功发布（历史从未发过，修障两处）：① workflow「还原签名密钥」heredoc 连续踩坑——终止符 `EOF` 带缩进 bash 不认 → 顶行内容又破坏 YAML 块标量，最终改用 echo 组写 `keystore.properties`；② GitHub Release 资产名不支持中文，「辰记」被剥成 `_v*.apk`——workflow 改为复制 ASCII 名副本（`chenji_v*.apk`）上传，本侧载包中文名不变，本次资产已手工改名 `chenji_v2.1.21.apk`
 
 - [x] **小组件拖拽缩放过程中新旧档位画面短暂重叠（叠影）**（2026-09-05 修复）
   - 现象：拖动放大/缩小时，「单焦」与「多行」两套画面短暂叠在一起
