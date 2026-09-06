@@ -66,9 +66,18 @@ jobs:
       - name: 构建签名 Release 包
         run: ./gradlew assembleRelease
 
+      - name: 复制 ASCII 文件名副本（GitHub Release 资产名不支持中文，会剥掉「辰记」）
+        run: |
+          cd app/build/outputs/apk/release
+          mkdir -p upload
+          for f in 辰记_v*.apk; do
+            [ -f "$f" ] || continue
+            cp "$f" "upload/chenji_${f#辰记_}"
+          done
+
       - name: 发布 GitHub Release（含 APK 与自动生成发布说明）
         if: steps.keystore.outputs.has_keystore == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/release/*.apk
+          files: app/build/outputs/apk/release/upload/*.apk
           generate_release_notes: true
