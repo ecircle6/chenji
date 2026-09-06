@@ -52,12 +52,13 @@ jobs:
             echo "has_keystore=false" >> "$GITHUB_OUTPUT"
           else
             echo "$KEYSTORE_BASE64" | base64 -d > birthapp-release.jks
+            # 注意：heredoc 终止符 EOF 必须顶行，缩进会让 bash 吞到文件尾报语法错误
             cat > keystore.properties <<EOF
-            storeFile=birthapp-release.jks
-            storePassword=$STORE_PASSWORD
-            keyAlias=$KEY_ALIAS
-            keyPassword=$KEY_PASSWORD
-            EOF
+storeFile=birthapp-release.jks
+storePassword=$STORE_PASSWORD
+keyAlias=$KEY_ALIAS
+keyPassword=$KEY_PASSWORD
+EOF
             echo "has_keystore=true" >> "$GITHUB_OUTPUT"
           fi
 
