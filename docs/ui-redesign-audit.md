@@ -19,24 +19,23 @@
 
 ---
 
-## 1. P0 —— 真缺陷 / 崩溃风险（改版动工前先修）
+## 1. P0 —— 真缺陷 / 崩溃风险（✅ 2026-09-06 已全部处置，验收见 TODO.md 同日条目）
 
-### P0-1【崩溃】英文环境下打开任意详情页必崩
+### P0-1【崩溃】英文环境下打开任意详情页必崩 ✅ 已修复
 - **现象**：点击首页 Hero 卡进详情，App 直接崩溃退到桌面（已复现，崩溃日志在 `adb logcat -b crash`）。
 - **根因**：`values*/strings.xml:31` 的 `date_solar_full_en` 模板占位符序号写错——`%2$s %3$d, %1$d`，而 `DateUtils.formatSolarDate`（DateUtils.kt:52）按「月份(String)、日(Int)、年(Int)」顺序传参，`%1$d` 把 String 当 `%d` 格式化 → `IllegalFormatConversionException: d != java.lang.String`。**英文系统用户（isEnglish=true）打开详情 100% 崩溃**；纯中文系统不受影响（走 `date_solar_full_zh`）。
-- **修法**：模板改为 `%1$s %2$d, %3$d`；同批核对全部 `_en` 日期模板（`date_solar_month_day_en`）与 `share_date_line_en`（见 P0-4）。此条即 lint StringFormatMatches 的实锤。
-- **关联截图**：audit_home_light.png（点击的 Hero 卡）。
+- **修复**：模板改为 `%1$s %2$d, %3$d`（values/values-en 双份）。实测英文环境详情正常渲染 "Solar Jan 1, 2000"（`audit_detail_en_fixed.png`）。
 
-### P0-2【i18n 口径】分应用语言与实际格式化 locale 分裂
+### P0-2【i18n 口径】分应用语言与实际格式化 locale 分裂 ✅ 已修复
 - **现象**：系统 en + 分应用语言 zh-CN 时，界面文案是中文，但首页 Hero 日期显示「Jan 1」、远景行「Feb 2」（英文模板）；且此状态下点详情触发 P0-1 崩溃。**force-stop 冷启动后全部恢复中文**（对比 audit_home_light.png 与 audit_home_light_v2.png）。
-- **根因**：UI 字符串走 Activity 级 Resources（per-app locale 生效），而 `DetailViewModel`/`HomeTier` 等经 `getApplication().resources` 取 Resources——该实例在语言变更后、进程重启前仍是旧 locale，`LocaleUtils.isEnglish`（LocaleUtils.kt:12）随之判错。
-- **修法方向**：统一「资源获取 + 语言判定」口径为单一来源（建议 ViewModel 层统一改用 Activity/带 override 的 context，或封装 LocaleStore 监听变更）；至少保证模板选择与字符串资源解析用同一份 configuration。
+- **根因**：UI 字符串走 Activity 级 Resources（per-app locale 生效），而 `DetailViewModel`/`HomeViewModel` 等经 `getApplication().resources` 取 Resources——该实例在语言变更后、进程重启前仍是旧 locale，`LocaleUtils.isEnglish`（LocaleUtils.kt）随之判错。
+- **修复**：`LocaleUtils` 新增 `localizedResources(context)`——读 `LocaleManager.applicationLocales` 包一层 configuration context，与 UI 口径对齐（未设置分应用语言时原样返回）；Home/Detail/Settings 三处 ViewModel 调用点替换。英文/中文双环境回归通过。
 
-### P0-3【行为】小组件尺寸变化回调未调 super
-- BirthWidgetReceiver.kt:97 覆写 `onAppWidgetOptionsChanged` 未调 `super.`（lint MissingSuperCall error）。v2.1.19/20 的尺寸自适应链路依赖 options 回调，缺 super 调用可能丢失系统侧处理。修法：补 `super.onAppWidgetOptionsChanged(...)`。
+### P0-3【行为】小组件尺寸变化回调未调 super → 审计后更正：刻意设计 ✅ 已消噪
+- BirthWidgetReceiver.kt:97 覆写 `onAppWidgetOptionsChanged` 未调 `super.`（lint MissingSuperCall error）。**核实：这是防叠影的刻意设计**（见 TODO.md P0「小组件拖拽缩放叠影」条目——super 逐次 resize 正是叠影来源），属 lint 误报。已加 `@SuppressLint("MissingSuperCall")` 消除噪音，行为不变。
 
-### P0-4【格式】英文分享卡日期行参数不匹配
-- ShareCardGenerator.kt:383 处 `share_date_line_en` 要求 4 个参数但调用传入不匹配（lint StringFormatMatches）。分享卡是 Canvas 直绘，若在英文分支走到该模板存在同类格式化异常风险。修法：核对模板占位与传参并修正。
+### P0-4【格式】英文分享卡日期行参数不匹配 ✅ 已修复
+- ShareCardGenerator.kt:383 调用只传 3 参，而默认 `share_date_line_en` 模板有 4 个占位（`%4$s` 缺参抛异常）；且两份模板还不一致（values-en 版只有 3 占位）。**修复**：统一为 `%1$s %2$d, %3$d · %4$s`，调用点改传 (月份, 日, 年, kind)，去掉尾部字符串拼接。
 
 ---
 
@@ -76,6 +75,7 @@
 5. **compose-lints API 规范 12 项**：ComposeModifierMissing×8、ContentEmitter×2、ComposeParamOrder×1、ComposeModifierWithoutDefault×1——逐页改版时按 slack 规则统一，不单独返工。
 6. **RestrictedApi×2**（BirthWidget.kt:81 Glance AppWidgetId 跨组访问）：评估 `@OptIn` 或替代 API。
 7. **底栏选中态视觉过重**：teal 胶囊 + 黑色图标 + 加粗文字三层叠加（主观项，随 P1-1 色彩规则与改版方向一起定）。
+8. **英文 UI 两处（2026-09-06 修复验证时新发现）**：详情页 Date 卡「Converted」标签过长约折行为「Convert/ed」（英文 label 与窄左列不适配）；提醒行「(in 117 day(s))」复数硬编码——正是 PluralsCandidate 的实锤样例。
 
 ---
 

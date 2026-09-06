@@ -382,10 +382,11 @@ fun draw(canvas: Canvas, b: Birthday, resources: android.content.res.Resources) 
             } else {
                 resources.getString(
                     R.string.share_date_line_en,
-                    b.birthYear,
                     resources.getStringArray(R.array.months_short)[(b.birthMonth - 1).coerceIn(0, 11)],
-                    b.birthDay
-                ) + " · " + kind
+                    b.birthDay,
+                    b.birthYear,
+                    kind
+                )
             }
         } else {
             if (b.calendarType == "lunar") {

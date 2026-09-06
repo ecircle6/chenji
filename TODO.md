@@ -14,6 +14,11 @@
 
 ## P0 — 缺陷修复（优先做，改动小、收益直接）
 
+- [x] **英文环境详情页崩溃 + i18n 语言口径分裂（UI 改版审计 P0）**（2026-09-06 修复）
+  - 发现：模拟器审计（`docs/ui-redesign-audit.md`）点击 Hero 卡进详情必崩——`date_solar_full_en` 模板占位符序号错位（`%2$s %3$d, %1$d`），`%1$d` 落在 String 参数上抛 `IllegalFormatConversionException`；lint 基线 StringFormatMatches×3 全部属实
+  - 修复：① `date_solar_full_en` → `%1$s %2$d, %3$d`（values/values-en 双份）；② `share_date_line_en` 两份模板不一致（默认 4 占位/values-en 3 占位）且调用只传 3 参（`%4$s` 缺参必抛异常）——统一为 `%1$s %2$d, %3$d · %4$s`，调用点（ShareCardGenerator）改传 (月份, 日, 年, kind)，去掉尾部字符串拼接；③ 语言口径：Android 13+ 分应用语言切换后进程不重启时 Application 级 Resources 滞后（UI 已中文而格式化仍走英文模板，并触发崩溃），新增 `LocaleUtils.localizedResources(context)`（读 LocaleManager.applicationLocales 包 configuration context），Home/Detail/Settings 三处 ViewModel 调用点替换；④ BirthWidgetReceiver 不调 super 为防叠影刻意设计（见上方叠影条目），MissingSuperCall 属 lint 误报，加 `@SuppressLint` 消噪音，行为不变
+  - 验收：✅ 全量单测 220 绿；lintDebug error 20→16（StringFormatMatches×3、MissingSuperCall 消除，余 14 条 compose-lints + 2 条 RestrictedApi 存量；GradleDependency +12 为 lint 联网比对出的依赖新版本提示，非本次引入）；模拟器实测——分应用语言 en 冷启动点详情正常渲染 "Solar Jan 1, 2000"（`audit_detail_en_fixed.png`），切回 zh-CN 冷启动详情正常（`audit_detail_zh_fixed.png`）。连带发现记入审计 P2：英文「Converted」标签折行、「in 117 day(s)」复数硬编码
+
 - [x] **小组件拖拽缩放过程中新旧档位画面短暂重叠（叠影）**（2026-09-05 修复）
   - 现象：拖动放大/缩小时，「单焦」与「多行」两套画面短暂叠在一起
   - 根因（Glance 1.1.1 字节码实锤）：拖拽期间系统每变一格就回调一次 `onAppWidgetOptionsChanged`，默认实现 `super` 会调 `GlanceAppWidget.resize()` 立即按新尺寸重组合并推新 RemoteViews，Receiver 又主动 `refresh` 一次——桌面端每次收到内容切换都做新旧布局的过渡动画，逐格连续切换时两套画面交叉淡入淡出即叠影

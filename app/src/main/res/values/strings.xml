@@ -28,7 +28,7 @@
 
     <!-- ============ 日期/星期/月份 ============ -->
     <string name="date_solar_full_zh">%1$d年%2$d月%3$d日</string>
-    <string name="date_solar_full_en">%2$s %3$d, %1$d</string>
+    <string name="date_solar_full_en">%1$s %2$d, %3$d</string>
     <string name="date_solar_month_day_zh">%1$d月%2$d日</string>
     <string name="date_solar_month_day_en">%1$s %2$d</string>
     <string name="date_lunar_prefix">农历%1$s</string>
@@ -325,7 +325,7 @@
     <string name="share_days_unit">天后</string>
     <string name="share_day_unit">天</string>
     <string name="share_date_line_zh">%1$d年%2$d月%3$d日 · %4$s</string>
-    <string name="share_date_line_en">%2$s %3$d, %1$d · %4$s</string>
+    <string name="share_date_line_en">%1$s %2$d, %3$d · %4$s</string>
     <string name="share_kind_lunar">农历</string>
     <string name="share_kind_solar">阳历</string>
     <string name="share_memorial_date_zh">%1$s · %2$d年</string>

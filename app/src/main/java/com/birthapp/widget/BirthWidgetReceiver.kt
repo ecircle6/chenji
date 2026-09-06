@@ -1,5 +1,6 @@
 package com.birthapp.widget
 
+import android.annotation.SuppressLint
 import android.appwidget.AppWidgetManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -94,6 +95,8 @@ class BirthWidgetReceiver : GlanceAppWidgetReceiver() {
      * 必须自己 [goAsync]：冷启动进程里 onReceive 返回后进程立即可被回收，
      * 300ms 后的防抖应用会随进程一起丢掉；新回调取代旧任务时提前 finish。
      */
+    // MissingSuperCall 在此是误报：不调 super 正是上方注释所述的防叠影设计
+    @SuppressLint("MissingSuperCall")
     override fun onAppWidgetOptionsChanged(
         context: Context,
         appWidgetManager: AppWidgetManager,

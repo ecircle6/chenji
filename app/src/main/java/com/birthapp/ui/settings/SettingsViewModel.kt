@@ -15,6 +15,7 @@ import com.birthapp.backup.ImportItem
 import com.birthapp.data.AppDatabase
 import com.birthapp.settings.ThemeMode
 import com.birthapp.settings.ThemeStore
+import com.birthapp.util.LocaleUtils
 import com.birthapp.widget.WidgetRefresher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -208,9 +209,9 @@ class SettingsViewModel @JvmOverloads constructor(
 
     private suspend fun toast(text: String) = _events.emit(SettingsEvent.Toast(text))
 
-    /** 资源取文案（含格式化参数） */
+    /** 资源取文案（含格式化参数）；统一走分应用语言口径，避免语言切换后滞后（审计 P0-2） */
     private fun res(id: Int, vararg args: Any): String =
-        getApplication<Application>().getString(id, *args)
+        LocaleUtils.localizedResources(getApplication()).getString(id, *args)
 
     /** 自己抛的 IllegalArgumentException 里都是给用户看的话，直接用；其余给兜底文案 */
     private fun friendlyMessage(e: Throwable, fallback: String): String =

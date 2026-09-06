@@ -14,6 +14,7 @@ import com.birthapp.data.EventType
 import com.birthapp.lunar.LunarCalendar
 import com.birthapp.util.DateUtils
 import com.birthapp.util.EventCalc
+import com.birthapp.util.LocaleUtils
 import com.birthapp.util.ZodiacUtils
 import com.birthapp.widget.WidgetRefresher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -157,8 +158,9 @@ class DetailViewModel @JvmOverloads constructor(
     private fun Birthday.toDetailState(): DetailUiState {
         val today = LocalDate.now()
         val currentYear = today.year
-        // 展示文案按当前语言走资源（中文/英文系统显示各自语言）
-        val resources = getApplication<Application>().resources
+        // 展示文案按当前语言走资源；统一走分应用语言口径，
+        // 避免 Application 级 Resources 在语言切换后滞后（审计 P0-2）
+        val resources = LocaleUtils.localizedResources(getApplication())
 
         // 下一次事件发生的阳历日期：今年的已经过了就取明年
         val nextSolar = EventCalc.nextSolarDate(this, today)

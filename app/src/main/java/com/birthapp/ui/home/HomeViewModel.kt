@@ -13,6 +13,7 @@ import com.birthapp.lunar.LunarCalendar
 import com.birthapp.util.DateUtils
 import com.birthapp.util.EventCalc
 import com.birthapp.util.EventTextUtils
+import com.birthapp.util.LocaleUtils
 import com.birthapp.util.ZodiacUtils
 import com.birthapp.widget.WidgetRefresher
 import kotlinx.coroutines.coroutineScope
@@ -172,8 +173,9 @@ class HomeViewModel @JvmOverloads constructor(
     private fun Birthday.toDisplay(): BirthdayDisplay {
         val today = LocalDate.now()
         val currentYear = today.year
-        // 展示文案按当前语言走资源（showing 在简体中文/英文系统的行为与旧版一致）
-        val resources = getApplication<Application>().resources
+        // 展示文案按当前语言走资源（showing 在简体中文/英文系统的行为与旧版一致）；
+        // 统一走分应用语言口径，避免 Application 级 Resources 在语言切换后滞后（审计 P0-2）
+        val resources = LocaleUtils.localizedResources(getApplication())
 
         val countdown = EventCalc.countdown(this, today)
 
